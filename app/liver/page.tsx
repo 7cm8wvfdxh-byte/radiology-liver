@@ -147,6 +147,10 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+function uniq(arr: string[], limit = 10) {
+  return Array.from(new Set(arr)).slice(0, limit);
+}
+
 /** ---------------------------
  *   Ana Page
  *  --------------------------*/
@@ -287,7 +291,6 @@ export default function LiverPage() {
     const hasGb = gbPath === "Var";
     const hasBd = bdPath === "Var";
 
-    // yardımcı “if” metinleri
     const sizeTxt = largestMm ? `${largestMm} mm` : "ölçülemeyen";
     const segTxt = segment !== "Bilinmiyor" ? `${segment}` : "segmenti";
     const marginTxt =
@@ -297,23 +300,22 @@ export default function LiverPage() {
         ? "düzensiz sınırlı"
         : "sınır özellikleri belirsiz";
 
-    // --- Rapor Dili (sadece VAR olanlar)
+    /** ---------------- Rapor Dili (sadece VAR olanlar) ---------------- */
     const reportLines: string[] = [];
 
     if (hasLiver) {
-      // modality-uyumlu kısa özet
       const modalityBits: string[] = [];
       if (strictCt || both) {
         if (ctContrast === "Kontrastsız") {
           modalityBits.push(
-            `Kontrastsız BT'de ${segTxt} düzeyinde ${sizeTxt} lezyon izlenmektedir; densitesi ${ctDensity.toLowerCase()}.`
+            `Kontrastsız BT'de ${segTxt} düzeyinde ${sizeTxt} lezyon; densite ${ctDensity.toLowerCase()}.`
           );
         } else {
           modalityBits.push(
-            `BT'de ${segTxt} düzeyinde ${sizeTxt} lezyon izlenmektedir; nonkontrast densite ${ctDensity.toLowerCase()}, kontrastlanma paterni ${ctEnhPattern.toLowerCase()}.`
+            `BT'de ${segTxt} düzeyinde ${sizeTxt} lezyon; nonkontrast densite ${ctDensity.toLowerCase()}, kontrast paterni ${ctEnhPattern.toLowerCase()}.`
           );
           if (ctFillIn !== "Bilinmiyor")
-            modalityBits.push(`Geç dolum (fill-in): ${ctFillIn.toLowerCase()}.`);
+            modalityBits.push(`Geç dolum: ${ctFillIn.toLowerCase()}.`);
           if (ctWashout !== "Bilinmiyor")
             modalityBits.push(`Washout: ${ctWashout.toLowerCase()}.`);
         }
@@ -321,11 +323,11 @@ export default function LiverPage() {
       if (strictMr || both) {
         const tBits = `MR'da T1: ${mrT1}, T2: ${mrT2}, DWI kısıtlılığı: ${dwiRestrict}.`;
         if (mrDynamic === "Dinamiksiz") {
-          modalityBits.push(tBits + ` Dinamik kontrast serisi yok.`);
+          modalityBits.push(tBits + ` Dinamik seri yok.`);
         } else {
           modalityBits.push(
             tBits +
-              ` Dinamik kontrast paterni: ${mrEnhPattern}, washout: ${mrWashout}, HBP: ${hbPhase}.`
+              ` Dinamik patern: ${mrEnhPattern}, washout: ${mrWashout}, HBP: ${hbPhase}.`
           );
         }
       }
@@ -336,9 +338,7 @@ export default function LiverPage() {
           (fattyLiver === "Var" ? " Yağlı karaciğer bulguları eşlik edebilir." : "")
       );
       reportLines.push(`• ${modalityBits.join(" ")}`.replace(/\s+/g, " ").trim());
-      if (vascularInv === "Var") {
-        reportLines.push(`• Vasküler invazyon lehine bulgular mevcuttur.`);
-      }
+      if (vascularInv === "Var") reportLines.push(`• Vasküler invazyon lehine bulgular mevcuttur.`);
     }
 
     if (hasGb) {
@@ -351,7 +351,6 @@ export default function LiverPage() {
       if (gbGas === "Var") gbParts.push("Duvar/lümende gaz izlenmesi (emfizemli değişiklik?) açısından dikkat.");
       if (gbDx === "Polip" && polypMm) gbParts.push(`Polip boyutu: ~${polypMm} mm.`);
       if (gbComp !== "Yok") gbParts.push(`Komplikasyon: ${gbComp}.`);
-
       reportLines.push(gbParts.join(" "));
     }
 
@@ -362,11 +361,11 @@ export default function LiverPage() {
       if (bdStone === "Var") bdParts.push(`Koledok taşı ile uyumlu görünüm mevcuttur.`);
       if (bdStricture !== "Yok" && bdStricture !== "Bilinmiyor")
         bdParts.push(`Striktür: ${bdStricture.toLowerCase()}.`);
-      if (pscPattern === "Var") bdParts.push(`PSC paterni düşündüren düzensizlik/segmenter daralma-genişleme olabilir.`);
+      if (pscPattern === "Var")
+        bdParts.push("PSC paterni düşündüren segmenter daralma-genişleme olabilir.");
       if (cholangitis === "Var") bdParts.push(`Kolanjit lehine bulgular mevcuttur.`);
       if (bdMassSuspect === "Var") bdParts.push(`Kitle/obstrüksiyon odağı açısından şüpheli bulgular mevcuttur.`);
       bdParts.push(`Olası neden: ${bdCause}.`);
-
       reportLines.push(bdParts.join(" "));
     }
 
@@ -374,12 +373,10 @@ export default function LiverPage() {
       reportLines.push("• Karaciğer, safra kesesi ve safra yollarında belirgin patoloji lehine bulgu izlenmemektedir.");
     }
 
-    // --- Ayırıcı Tanı (Organ bazlı, yüksek/orta)
+    /** ---------------- Ayırıcı Tanı (Organ bazlı) ---------------- */
     function liverDDX() {
-      // kaba kural tabanlı
       const high: string[] = [];
       const mid: string[] = [];
-
       const cirrh = cirrhosis === "Var";
       const malign = malignHx === "Var";
 
@@ -389,37 +386,28 @@ export default function LiverPage() {
           if (ctEnhPattern === "Arteryel hiper" && (ctWashout === "Var" || cirrh)) high.push("HCC (özellikle siroz zemini)");
           if (ctEnhPattern === "Halka (rim)") mid.push("Metastaz");
           if (ctEnhPattern === "Halka (rim)") mid.push("Kolanjiyokarsinom (periferik)");
-          if (ctEnhPattern === "Homojen" && ctDensity === "Hipodens") mid.push("Adenom");
-          if (ctEnhPattern === "Homojen" && hbPhase === "Hipointens") mid.push("Adenom");
+          if (ctEnhPattern === "Homojen") mid.push("Adenom / FNH (MR-HBP ile ayrım)");
         } else {
-          // kontrastsız ise kısıtlı DDX
-          if (ctDensity === "Hiperdens") mid.push("Hematom / hiperdens metastaz / hipervasküler lezyon (kontrastla doğrula)");
           if (ctDensity === "Hipodens") mid.push("Kist / metastaz / HCC (kontrast veya MR ile karakterizasyon)");
+          if (ctDensity === "Hiperdens") mid.push("Hematom / hipervasküler lezyon (kontrastla doğrula)");
         }
       }
 
       if (strictMr || both) {
-        if (mrT2 === "Hiper" && mrT1 !== "Hiper" && hbPhase !== "Hipointens") high.push("Hemangiom (T2 parlak lezyon)");
+        if (mrT2 === "Hiper" && dwiRestrict !== "Var") mid.push("Hemangiom (dinamik/HBP ile desteklenebilir)");
         if (dwiRestrict === "Var") mid.push("Abse / malignite (DWI+klinik korelasyon)");
         if (mrDynamic !== "Dinamiksiz") {
           if (mrEnhPattern === "Arteryel hiper" && (mrWashout === "Var" || cirrh)) high.push("HCC");
           if (mrEnhPattern === "Periferik nodüler" && mrWashout === "Yok") high.push("Hemangiom");
-          if (hbPhase === "Hipointens" && mrEnhPattern === "Arteryel hiper") mid.push("Adenom / HCC (zemine göre)");
           if (hbPhase === "Hiperintens") high.push("FNH");
+          if (hbPhase === "Hipointens" && mrEnhPattern === "Arteryel hiper") mid.push("Adenom / HCC (zemine göre)");
         } else {
-          // dinamiksiz MR
-          if (mrT2 === "Hiper" && dwiRestrict !== "Var") mid.push("Hemangiom (dinamik/HBP ile desteklenebilir)");
           if (hbPhase === "Hiperintens") high.push("FNH");
         }
       }
 
-      if (malign) {
-        if (!mid.includes("Metastaz")) mid.unshift("Metastaz (malignite öyküsü ile)");
-      }
-
-      // tekrarları temizle
-      const uniq = (arr: string[]) => Array.from(new Set(arr)).slice(0, 6);
-      return { high: uniq(high), mid: uniq(mid) };
+      if (malign) mid.unshift("Metastaz (malignite öyküsü ile)");
+      return { high: uniq(high, 6), mid: uniq(mid, 6) };
     }
 
     function gbDDX() {
@@ -427,20 +415,20 @@ export default function LiverPage() {
       const mid: string[] = [];
 
       if (gbDx.includes("taş")) high.push("Kolesistolitiazis");
-      if (gbDx.includes("Akut kolesistit")) high.push("Akut kolesistit");
       if (gbWallThick === "Var" && gbPeriFluid === "Var") high.push("Akut kolesistit");
+      if (gbDx.includes("Akut kolesistit")) high.push("Akut kolesistit");
+      if (gbDx.includes("Kronik kolesistit")) mid.push("Kronik kolesistit");
       if (gbGas === "Var") high.push("Emfizemli kolesistit");
       if (gbDx === "Polip") {
         high.push("Safra kesesi polipi");
-        if (Number(polypMm) >= 10) mid.push("Neoplastik polip / erken malignite (>=10 mm)");
+        if (Number(polypMm) >= 10) mid.push("Neoplastik polip / erken malignite (≥10 mm)");
       }
       if (gbDx.includes("Kitle")) high.push("Safra kesesi malignitesi (şüpheli)");
       if (gbDx === "Adenomiyomatozis") high.push("Adenomiyomatozis");
       if (gbDx === "Bilier çamur") mid.push("Bilier çamur");
       if (gbDx === "Porcelain GB") high.push("Porcelain safra kesesi (malignite riski artabilir)");
 
-      const uniq = (arr: string[]) => Array.from(new Set(arr)).slice(0, 6);
-      return { high: uniq(high), mid: uniq(mid) };
+      return { high: uniq(high, 6), mid: uniq(mid, 6) };
     }
 
     function bdDDX() {
@@ -450,85 +438,193 @@ export default function LiverPage() {
       if (bdStone === "Var" || bdCause === "Koledok taşı") high.push("Koledok taşı / koledokolitiazis");
       if (bdDil === "Var" && jaundiceChol === "Var") high.push("Obstrüktif kolestaz");
       if (bdStricture === "Benign striktür") mid.push("Benign striktür (iatrojenik / inflamatuvar)");
-      if (bdStricture === "Malign striktür" || bdCause === "Malign obstrüksiyon") high.push("Malign obstrüksiyon (kolanjiyokarsinom / pankreatik nedenler)");
+      if (bdStricture === "Malign striktür" || bdCause === "Malign obstrüksiyon" || bdMassSuspect === "Var")
+        high.push("Malign obstrüksiyon (kolanjiyokarsinom / periampuller nedenler)");
       if (pscPattern === "Var" || bdCause === "PSC (şüpheli)") mid.push("PSC");
       if (cholangitis === "Var") high.push("Akut kolanjit");
-      if (bdMassSuspect === "Var") high.push("Kitle/obstrüksiyon odağı (kolanjiyokarsinom vb.)");
 
-      const uniq = (arr: string[]) => Array.from(new Set(arr)).slice(0, 6);
-      return { high: uniq(high), mid: uniq(mid) };
+      // seviye ipucu
+      if (bdDil === "Var" && (bdLevel === "Ekstrahepatik" || bdLevel === "Her ikisi"))
+        mid.push("Distal obstrüksiyon (ampulla/pankreas başı) — etiyolojiye göre");
+
+      return { high: uniq(high, 6), mid: uniq(mid, 6) };
     }
 
-    const ddx = {
-      liver: liverDDX(),
-      gb: gbDDX(),
-      bd: bdDDX(),
-    };
+    const ddx = { liver: liverDDX(), gb: gbDDX(), bd: bdDDX() };
 
-    // --- Öneriler (daha güçlü)
+    /** ---------------- Öneriler + İleri İnceleme ---------------- */
     const rec: string[] = [];
+    const advanced: { title: string; items: string[] }[] = [];
 
-    // karaciğer
-    if (liverLesion === "Var") {
-      if (cirrhosis === "Var") {
-        rec.push("Siroz zemini varsa LI-RADS yaklaşımı ile sınıflama ve AFP/hepatoloji korelasyonu önerilir.");
-      }
+    // --- Karaciğer önerileri
+    if (hasLiver) {
+      if (cirrhosis === "Var") rec.push("Siroz zemini varsa LI-RADS yaklaşımı ile sınıflama ve AFP/hepatoloji korelasyonu önerilir.");
       if (strictCt || both) {
         if (ctContrast === "Kontrastsız") {
           rec.push("Kontrastsız BT ile karakterizasyon sınırlı: Uygunsa dinamik kontrastlı BT veya (tercihen) dinamik MR + HBP ile ileri değerlendirme önerilir.");
+          advanced.push({
+            title: "Karaciğer – ileri karakterizasyon",
+            items: [
+              "Dinamik karaciğer MR (arteryel-portal-geç faz) + hepatobiliyer faz (gadoxetic asit, HBP)",
+              "DWI/ADC, T2 (SSFSE/HASTE), T1 in/out-phase, pre-contrast T1",
+              "Alternatif: 3-faz dinamik karaciğer BT (arteryel/portal/geç)",
+            ],
+          });
         } else {
-          rec.push("Lezyon karakterizasyonu için patern/klinik zemin birlikte değerlendirilmelidir; önceki tetkiklerle karşılaştırma önerilir.");
+          rec.push("Lezyon paterni/zemin birlikte değerlendirilmelidir; önceki tetkiklerle karşılaştırma önerilir.");
+          if (mrDynamic === "Dinamiksiz" && (strictMr || both)) {
+            advanced.push({
+              title: "Karaciğer – dinamik eksikse",
+              items: [
+                "Dinamik karaciğer MR (arteryel-portal-geç) + HBP ile tamamlanması",
+                "DWI/ADC + T2 + T1 in/out-phase",
+              ],
+            });
+          }
         }
       }
       if (strictMr || both) {
         if (mrDynamic === "Dinamiksiz") {
           rec.push("Dinamik seri yoksa tanısal güç azalır: Uygunsa dinamik MR (arteryel/portal/geç) + HBP ile tamamlanması önerilir.");
+          advanced.push({
+            title: "Karaciğer – önerilen MR sekansları",
+            items: [
+              "T2 (SSFSE/HASTE) ± fat-sat",
+              "DWI (b0/50/400/800-1000) + ADC",
+              "T1 in/out-phase",
+              "Dinamik T1 3D GRE: pre + arterial + portal venous + delayed",
+              "Hepatobiliyer faz (20 dk, gadoxetic asit) ± T2*",
+            ],
+          });
         } else {
-          rec.push("HBP (gadoxetic asit) bulguları FNH/adenom ayrımında yardımcıdır; atipik olguda multidisipliner karar önerilir.");
+          rec.push("HBP bulguları FNH/adenom ayrımında yardımcıdır; atipik olguda multidisipliner karar önerilir.");
         }
       }
-      if (vascularInv === "Var") {
-        rec.push("Vasküler invazyon şüphesi varsa acil onkoloji/hepatobiliyer cerrahi değerlendirmesi ve evreleme önerilir.");
-      }
+      if (vascularInv === "Var") rec.push("Vasküler invazyon şüphesi varsa acil hepatobiliyer cerrahi/onkoloji değerlendirmesi ve evreleme önerilir.");
     }
 
-    // safra kesesi
-    if (gbPath === "Var") {
+    // --- Safra kesesi önerileri
+    if (hasGb) {
       rec.push("Safra kesesi bulguları klinik (ağrı/ateş) ve laboratuvar (lökosit, CRP, kolestaz) ile korele edilmelidir.");
-      if (gbDx.includes("Akut kolesistit") || (gbWallThick === "Var" && gbPeriFluid === "Var")) {
-        rec.push("Akut kolesistit düşünülüyorsa USG korelasyonu ve komplikasyon (perforasyon/ampiyem) açısından yakın klinik takip önerilir.");
+
+      // akut kolesistit olasılığı
+      const acuteFeatures =
+        gbDx === "Akut kolesistit" ||
+        (gbWallThick === "Var" && gbPeriFluid === "Var") ||
+        murphy === "Pozitif";
+
+      if (acuteFeatures) {
+        rec.push("Akut kolesistit düşünülüyorsa USG korelasyonu ve komplikasyon (perforasyon/ampiyem/gangren) açısından değerlendirme önerilir.");
+        advanced.push({
+          title: "Safra Kesesi – ileri/ek inceleme",
+          items: [
+            "Hedefli sağ üst kadran USG (taş, duvar kalınlığı, perikolesistik sıvı, sonografik Murphy)",
+            "Komplike olguda kontrastlı BT abdomen (perforasyon/ampiyem/gangren)",
+            "HIDA sintigrafi (seçilmiş olgular, USG belirsizse)",
+          ],
+        });
       }
+
       if (gbDx === "Polip") {
-        rec.push("Polip boyutu ve risk faktörlerine göre takip: ≥10 mm veya hızlı büyüme varsa cerrahi görüş önerilir.");
+        rec.push("Polip boyutu ve risk faktörlerine göre takip: ≥10 mm, hızlı büyüme veya semptom varsa cerrahi görüş önerilir.");
+        advanced.push({
+          title: "Safra Kesesi Polipi – takip/inceleme",
+          items: [
+            "USG ile seri ölçüm/takip (boyut artışı)",
+            "Yüksek riskte (≥10 mm) cerrahi değerlendirme",
+            "Şüpheli kitle görünümünde MR/BT ile evreleme",
+          ],
+        });
       }
+
       if (gbGas === "Var") {
         rec.push("Duvar/lümende gaz varlığında emfizemli kolesistit olasılığı nedeniyle acil klinik değerlendirme önerilir.");
       }
     }
 
-    // safra yolları
-    if (bdPath === "Var") {
-      rec.push("Safra yolu dilatasyonu varsa obstrüksiyon seviyesi/nedeni açısından MRCP ile değerlendirme önerilir.");
+    // --- Safra yolları önerileri (seviye + neden uyumlu)
+    if (hasBd) {
+      // Dilatasyon var ise MRCP ana öneri
+      if (bdDil === "Var") {
+        rec.push("Safra yolu dilatasyonu varsa obstrüksiyon seviyesi/nedeni açısından MRCP ile değerlendirme önerilir.");
+        advanced.push({
+          title: "MRCP – önerilen sekanslar",
+          items: [
+            "Kalın kesit 2D heavily T2 (slab MRCP)",
+            "İnce kesit 3D heavily T2 (resp. triggered) + MIP rekonstrüksiyon",
+            "Aksiyel T2 (SSFSE/HASTE) ± fat-sat",
+            "Aksiyel T1 ± kontrast (şüpheye göre), DWI/ADC (kolanjit/tümör/abse şüphesinde)",
+          ],
+        });
+      }
+
+      // Taş / benign obstrüksiyon
       if (bdStone === "Var" || bdCause === "Koledok taşı") {
-        rec.push("Koledok taşı/obstrüksiyon şüphesinde klinik uygunluk halinde ERCP planlaması düşünülebilir (gastroenteroloji ile).");
+        rec.push("Koledok taşı şüphesinde klinik uygunluk halinde EUS/MRCP ile doğrulama ve tedavi amaçlı ERCP planlaması düşünülebilir.");
+        advanced.push({
+          title: "Koledok taşı – yaklaşım",
+          items: [
+            "MRCP veya EUS ile doğrulama",
+            "Tedavi amaçlı ERCP (gastroenteroloji) – klinik uygunlukta",
+            "Kolanjit bulgusu varsa acil drenaj önceliği",
+          ],
+        });
       }
-      if (bdCause === "Malign obstrüksiyon" || bdMassSuspect === "Var") {
-        rec.push("Malign obstrüksiyon şüphesinde pankreas/periampuller bölge değerlendirmesi ve kontrastlı kesitsel görüntüleme + tümör konseyine yönlendirme önerilir.");
+
+      // Malign obstrüksiyon/kitle şüphesi
+      const malignObstruction =
+        bdCause === "Malign obstrüksiyon" || bdMassSuspect === "Var" || bdStricture === "Malign striktür";
+
+      if (malignObstruction) {
+        rec.push("Malign obstrüksiyon şüphesinde pankreas/periampuller bölge odaklı değerlendirme ve evreleme önerilir.");
+        advanced.push({
+          title: "Malign obstrüksiyon – önerilen tetkikler",
+          items: [
+            "Pankreas protokol kontrastlı BT (arteryel + portal venöz faz, ince kesit)",
+            "Pankreas/MRCP protokol MR: 3D MRCP + aksiyel T2 + DWI/ADC + dinamik kontrastlı T1 3D GRE",
+            "Gereğinde EUS + biyopsi (klinik kararla)",
+          ],
+        });
       }
-      if (cholangitis === "Var") {
+
+      // Kolanjit
+      if (cholangitis === "Var" || bdCause === "Kolanjit" || (feverInf === "Var" && bdDil === "Var")) {
         rec.push("Kolanjit şüphesinde acil klinik/laboratuvar korelasyonu ve sepsis parametreleri açısından değerlendirme önerilir.");
+        advanced.push({
+          title: "Kolanjit – pratik ek değerlendirme",
+          items: [
+            "USG: dilatasyon, taş, koleksiyon",
+            "MRCP (obstrüksiyon etiyolojisi)",
+            "Klinik/lab: LFT, bilirubin, CRP/lökosit, hemokültür (klinik kararla)",
+          ],
+        });
       }
-      if (pscPattern === "Var") {
+
+      // PSC
+      if (pscPattern === "Var" || bdCause === "PSC (şüpheli)") {
         rec.push("PSC şüphesinde hepatoloji takibi ve seri MRCP ile takip/karşılaştırma önerilir.");
+        advanced.push({
+          title: "PSC – takip",
+          items: [
+            "MRCP ile segmenter daralma-genişleme paterninin gösterimi",
+            "Seri MRCP ile progresyon takibi",
+            "Kolanjiyokarsinom riski açısından klinik protokollere göre izlem",
+          ],
+        });
+      }
+
+      // Seviye ipucu: ekstrahepatik/her ikisi → distal obstrüksiyon düşün
+      if (bdDil === "Var" && (bdLevel === "Ekstrahepatik" || bdLevel === "Her ikisi")) {
+        rec.push("Ekstrahepatik (± intrahepatik) dilatasyonda distal obstrüksiyon (ampulla/pankreas başı) mutlaka değerlendirilmelidir.");
       }
     }
 
-    // Acil/Uyarı
+    /** ---------------- Acil / Uyarı ---------------- */
     const alert: string[] = [];
     if (feverInf === "Var" && (dwiRestrict === "Var" || cholangitis === "Var")) {
       alert.push("Enfeksiyon/sepsis riski açısından acil klinik değerlendirme önerilir.");
     }
-    if (jaundiceChol === "Var" && bdPath === "Var") {
+    if (jaundiceChol === "Var" && hasBd) {
       alert.push("Obstrüktif kolestaz olasılığı: klinik + lab korelasyonu ve hızlı etiyoloji değerlendirmesi önerilir.");
     }
     if (vascularInv === "Var") {
@@ -538,12 +634,15 @@ export default function LiverPage() {
       alert.push("Emfizemli kolesistit olasılığı: acil klinik değerlendirme önerilir.");
     }
 
-    // Final tek cümle formatları
+    /** ---------------- Final tek cümle ---------------- */
     const pathologySentenceCore: string[] = [];
-    if (liverLesion === "Var") pathologySentenceCore.push(`Karaciğerde ${segTxt} düzeyinde ${sizeTxt} lezyon`);
-    if (gbPath === "Var") pathologySentenceCore.push(`safra kesesinde ${gbDx.toLowerCase()}`);
-    if (bdPath === "Var") {
-      const bdShort = bdDil === "Var" ? `safra yollarında ${bdLevel.toLowerCase()} dilatasyon` : "safra yollarında patoloji";
+    if (hasLiver) pathologySentenceCore.push(`Karaciğerde ${segTxt} düzeyinde ${sizeTxt} lezyon`);
+    if (hasGb) pathologySentenceCore.push(`safra kesesinde ${gbDx.toLowerCase()}`);
+    if (hasBd) {
+      const bdShort =
+        bdDil === "Var"
+          ? `safra yollarında ${bdLevel.toLowerCase()} dilatasyon`
+          : "safra yollarında patoloji";
       pathologySentenceCore.push(bdShort);
     }
 
@@ -561,20 +660,16 @@ export default function LiverPage() {
     const finalSuggest =
       pathologySentenceCore.length > 0
         ? coreJoined +
-          " Uygunsa hedefe yönelik ileri değerlendirme (MRCP / dinamik MR / klinik-lab korelasyon) önerilir."
+          " Uygunsa hedefe yönelik ileri değerlendirme (MRCP / dinamik MR / pankreas protokol BT/MR / klinik-lab korelasyon) önerilir."
         : coreJoined;
 
     return {
-      hasAnyPath: hasLiver || hasGb || hasBd,
       reportLines,
       ddx,
-      rec,
-      alert,
-      final: {
-        neutral: finalNeutral,
-        prob: finalProb,
-        suggest: finalSuggest,
-      },
+      rec: uniq(rec, 12),
+      advanced: advanced.map((b) => ({ title: b.title, items: uniq(b.items, 10) })),
+      alert: uniq(alert, 8),
+      final: { neutral: finalNeutral, prob: finalProb, suggest: finalSuggest },
     };
   }, [
     liverLesion,
@@ -832,17 +927,7 @@ export default function LiverPage() {
                 <Select
                   value={segment}
                   onChange={(v) => setSegment(v as any)}
-                  options={[
-                    "Bilinmiyor",
-                    "S1",
-                    "S2",
-                    "S3",
-                    "S4",
-                    "S5",
-                    "S6",
-                    "S7",
-                    "S8",
-                  ]}
+                  options={["Bilinmiyor", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"]}
                   disabled={liverLesion !== "Var"}
                 />
               </Field>
@@ -890,7 +975,6 @@ export default function LiverPage() {
                     />
                   </Field>
 
-                  {/* Kontrastsız BT ise kontrast sorularını gizle */}
                   <Field
                     label="Kontrastlanma paterni"
                     disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}
@@ -1043,102 +1127,100 @@ export default function LiverPage() {
                 />
               </Field>
 
-              <Field label="Ön tanı / sık patoloji" disabled={gbPath !== "Var"}>
-                <Select
-                  value={gbDx}
-                  onChange={(v) => setGbDx(v as any)}
-                  options={[
-                    "Kolesistolitiazis (taş)",
-                    "Akut kolesistit",
-                    "Kronik kolesistit",
-                    "Polip",
-                    "Kitle (şüpheli)",
-                    "Bilier çamur",
-                    "Porcelain GB",
-                    "Adenomiyomatozis",
-                    "Bilinmiyor",
-                  ]}
-                  disabled={gbPath !== "Var"}
-                />
-              </Field>
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
-              <div className="mb-3 text-sm font-semibold">Detay bulgular</div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Field label="Duvar kalınlaşması" disabled={gbPath !== "Var"}>
+              {gbPath === "Var" && (
+                <Field label="Ön tanı / sık patoloji">
                   <Select
-                    value={gbWallThick}
-                    onChange={(v) => setGbWallThick(v as any)}
-                    options={["Bilinmiyor", "Yok", "Var"]}
-                    disabled={gbPath !== "Var"}
-                  />
-                </Field>
-
-                <Field label="Perikolesistik sıvı" disabled={gbPath !== "Var"}>
-                  <Select
-                    value={gbPeriFluid}
-                    onChange={(v) => setGbPeriFluid(v as any)}
-                    options={["Bilinmiyor", "Yok", "Var"]}
-                    disabled={gbPath !== "Var"}
-                  />
-                </Field>
-
-                <Field label="Distansiyon" disabled={gbPath !== "Var"}>
-                  <Select
-                    value={gbDistension}
-                    onChange={(v) => setGbDistension(v as any)}
-                    options={["Bilinmiyor", "Yok", "Var"]}
-                    disabled={gbPath !== "Var"}
-                  />
-                </Field>
-
-                <Field label="Murphy (klinik)" disabled={gbPath !== "Var"}>
-                  <Select
-                    value={murphy}
-                    onChange={(v) => setMurphy(v as any)}
-                    options={["Bilinmiyor", "Negatif", "Pozitif"]}
-                    disabled={gbPath !== "Var"}
-                  />
-                </Field>
-
-                <Field
-                  label="Polip boyutu (mm)"
-                  disabled={gbPath !== "Var" || gbDx !== "Polip"}
-                >
-                  <Input
-                    value={polypMm}
-                    onChange={setPolypMm}
-                    placeholder="örn: 6"
-                    disabled={gbPath !== "Var" || gbDx !== "Polip"}
-                  />
-                </Field>
-
-                <Field label="Duvar/lümende gaz" disabled={gbPath !== "Var"}>
-                  <Select
-                    value={gbGas}
-                    onChange={(v) => setGbGas(v as any)}
-                    options={["Yok", "Var"]}
-                    disabled={gbPath !== "Var"}
-                  />
-                </Field>
-
-                <Field label="Perforasyon/komplikasyon" disabled={gbPath !== "Var"}>
-                  <Select
-                    value={gbComp}
-                    onChange={(v) => setGbComp(v as any)}
+                    value={gbDx}
+                    onChange={(v) => setGbDx(v as any)}
                     options={[
-                      "Yok",
-                      "Perforasyon şüphesi",
-                      "Ampiyem",
-                      "Gangren",
+                      "Kolesistolitiazis (taş)",
+                      "Akut kolesistit",
+                      "Kronik kolesistit",
+                      "Polip",
+                      "Kitle (şüpheli)",
+                      "Bilier çamur",
+                      "Porcelain GB",
+                      "Adenomiyomatozis",
                       "Bilinmiyor",
                     ]}
-                    disabled={gbPath !== "Var"}
                   />
                 </Field>
-              </div>
+              )}
             </div>
+
+            {/* SUB-SEÇİMLER SADECE VAR ise görünür */}
+            {gbPath === "Var" && (
+              <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
+                <div className="mb-3 text-sm font-semibold">Detay bulgular</div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <Field label="Duvar kalınlaşması">
+                    <Select
+                      value={gbWallThick}
+                      onChange={(v) => setGbWallThick(v as any)}
+                      options={["Bilinmiyor", "Yok", "Var"]}
+                    />
+                  </Field>
+
+                  <Field label="Perikolesistik sıvı">
+                    <Select
+                      value={gbPeriFluid}
+                      onChange={(v) => setGbPeriFluid(v as any)}
+                      options={["Bilinmiyor", "Yok", "Var"]}
+                    />
+                  </Field>
+
+                  <Field label="Distansiyon">
+                    <Select
+                      value={gbDistension}
+                      onChange={(v) => setGbDistension(v as any)}
+                      options={["Bilinmiyor", "Yok", "Var"]}
+                    />
+                  </Field>
+
+                  <Field label="Murphy (klinik)">
+                    <Select
+                      value={murphy}
+                      onChange={(v) => setMurphy(v as any)}
+                      options={["Bilinmiyor", "Negatif", "Pozitif"]}
+                    />
+                  </Field>
+
+                  <Field label="Duvar/lümende gaz">
+                    <Select
+                      value={gbGas}
+                      onChange={(v) => setGbGas(v as any)}
+                      options={["Yok", "Var"]}
+                    />
+                  </Field>
+
+                  <Field
+                    label="Polip boyutu (mm)"
+                    disabled={gbDx !== "Polip"}
+                  >
+                    <Input
+                      value={polypMm}
+                      onChange={setPolypMm}
+                      placeholder="örn: 6"
+                      disabled={gbDx !== "Polip"}
+                    />
+                  </Field>
+
+                  <Field label="Perforasyon/komplikasyon">
+                    <Select
+                      value={gbComp}
+                      onChange={(v) => setGbComp(v as any)}
+                      options={[
+                        "Yok",
+                        "Perforasyon şüphesi",
+                        "Ampiyem",
+                        "Gangren",
+                        "Bilinmiyor",
+                      ]}
+                    />
+                  </Field>
+                </div>
+              </div>
+            )}
           </Section>
 
           {/* 4) Safra yolları */}
@@ -1152,91 +1234,88 @@ export default function LiverPage() {
                 />
               </Field>
 
-              <Field label="Olası neden" disabled={bdPath !== "Var"}>
-                <Select
-                  value={bdCause}
-                  onChange={(v) => setBdCause(v as any)}
-                  options={[
-                    "Belirsiz",
-                    "Koledok taşı",
-                    "Benign striktür",
-                    "Malign obstrüksiyon",
-                    "Kolanjit",
-                    "PSC (şüpheli)",
-                    "İatrojenik",
-                  ]}
-                  disabled={bdPath !== "Var"}
-                />
-              </Field>
+              {bdPath === "Var" && (
+                <Field label="Olası neden">
+                  <Select
+                    value={bdCause}
+                    onChange={(v) => setBdCause(v as any)}
+                    options={[
+                      "Belirsiz",
+                      "Koledok taşı",
+                      "Benign striktür",
+                      "Malign obstrüksiyon",
+                      "Kolanjit",
+                      "PSC (şüpheli)",
+                      "İatrojenik",
+                    ]}
+                  />
+                </Field>
+              )}
             </div>
 
-            <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
-              <div className="mb-3 text-sm font-semibold">Detay bulgular</div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Field label="Dilatas­yon" disabled={bdPath !== "Var"}>
-                  <Select
-                    value={bdDil}
-                    onChange={(v) => setBdDil(v as any)}
-                    options={["Bilinmiyor", "Yok", "Var"]}
-                    disabled={bdPath !== "Var"}
-                  />
-                </Field>
+            {/* SUB-SEÇİMLER SADECE VAR ise görünür */}
+            {bdPath === "Var" && (
+              <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
+                <div className="mb-3 text-sm font-semibold">Detay bulgular</div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <Field label="Dilatas­yon">
+                    <Select
+                      value={bdDil}
+                      onChange={(v) => setBdDil(v as any)}
+                      options={["Bilinmiyor", "Yok", "Var"]}
+                    />
+                  </Field>
 
-                <Field label="Seviye" disabled={bdPath !== "Var"}>
-                  <Select
-                    value={bdLevel}
-                    onChange={(v) => setBdLevel(v as any)}
-                    options={["Bilinmiyor", "İntrahepatik", "Ekstrahepatik", "Her ikisi"]}
-                    disabled={bdPath !== "Var"}
-                  />
-                </Field>
+                  <Field label="Seviye">
+                    <Select
+                      value={bdLevel}
+                      onChange={(v) => setBdLevel(v as any)}
+                      options={["Bilinmiyor", "İntrahepatik", "Ekstrahepatik", "Her ikisi"]}
+                    />
+                  </Field>
 
-                <Field label="Kolanjit şüphesi" disabled={bdPath !== "Var"}>
-                  <Select
-                    value={cholangitis}
-                    onChange={(v) => setCholangitis(v as any)}
-                    options={["Yok", "Var"]}
-                    disabled={bdPath !== "Var"}
-                  />
-                </Field>
+                  <Field label="Kolanjit şüphesi">
+                    <Select
+                      value={cholangitis}
+                      onChange={(v) => setCholangitis(v as any)}
+                      options={["Yok", "Var"]}
+                    />
+                  </Field>
 
-                <Field label="Koledok taşı" disabled={bdPath !== "Var"}>
-                  <Select
-                    value={bdStone}
-                    onChange={(v) => setBdStone(v as any)}
-                    options={["Yok", "Var"]}
-                    disabled={bdPath !== "Var"}
-                  />
-                </Field>
+                  <Field label="Koledok taşı">
+                    <Select
+                      value={bdStone}
+                      onChange={(v) => setBdStone(v as any)}
+                      options={["Yok", "Var"]}
+                    />
+                  </Field>
 
-                <Field label="Striktür tipi" disabled={bdPath !== "Var"}>
-                  <Select
-                    value={bdStricture}
-                    onChange={(v) => setBdStricture(v as any)}
-                    options={["Bilinmiyor", "Yok", "Benign striktür", "Malign striktür"]}
-                    disabled={bdPath !== "Var"}
-                  />
-                </Field>
+                  <Field label="Striktür tipi">
+                    <Select
+                      value={bdStricture}
+                      onChange={(v) => setBdStricture(v as any)}
+                      options={["Bilinmiyor", "Yok", "Benign striktür", "Malign striktür"]}
+                    />
+                  </Field>
 
-                <Field label="PSC patern" disabled={bdPath !== "Var"}>
-                  <Select
-                    value={pscPattern}
-                    onChange={(v) => setPscPattern(v as any)}
-                    options={["Yok", "Var"]}
-                    disabled={bdPath !== "Var"}
-                  />
-                </Field>
+                  <Field label="PSC patern">
+                    <Select
+                      value={pscPattern}
+                      onChange={(v) => setPscPattern(v as any)}
+                      options={["Yok", "Var"]}
+                    />
+                  </Field>
 
-                <Field label="Kitle şüphesi" disabled={bdPath !== "Var"}>
-                  <Select
-                    value={bdMassSuspect}
-                    onChange={(v) => setBdMassSuspect(v as any)}
-                    options={["Bilinmiyor", "Yok", "Var"]}
-                    disabled={bdPath !== "Var"}
-                  />
-                </Field>
+                  <Field label="Kitle şüphesi">
+                    <Select
+                      value={bdMassSuspect}
+                      onChange={(v) => setBdMassSuspect(v as any)}
+                      options={["Bilinmiyor", "Yok", "Var"]}
+                    />
+                  </Field>
+                </div>
               </div>
-            </div>
+            )}
           </Section>
 
           {/* AI Çıktı */}
@@ -1249,7 +1328,7 @@ export default function LiverPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {/* 1) Rapor dili */}
+              {/* Rapor dili */}
               <div className="rounded-2xl border border-neutral-200 p-4">
                 <div className="mb-2 font-semibold">Rapor Dili</div>
                 {!evaluated ? (
@@ -1265,7 +1344,7 @@ export default function LiverPage() {
                 )}
               </div>
 
-              {/* 2) Ayırıcı tanı organ bazlı */}
+              {/* Ayırıcı tanı */}
               <div className="rounded-2xl border border-neutral-200 p-4">
                 <div className="mb-2 font-semibold">Ayırıcı Tanı (Organ bazlı)</div>
                 {!evaluated ? (
@@ -1367,7 +1446,7 @@ export default function LiverPage() {
                 )}
               </div>
 
-              {/* 3) Öneriler */}
+              {/* Öneriler */}
               <div className="rounded-2xl border border-neutral-200 p-4">
                 <div className="mb-2 font-semibold">Öneriler</div>
                 {!evaluated ? (
@@ -1386,7 +1465,7 @@ export default function LiverPage() {
                 )}
               </div>
 
-              {/* 4) Acil/Uyarı */}
+              {/* Acil/Uyarı */}
               <div className="rounded-2xl border border-neutral-200 p-4">
                 <div className="mb-2 font-semibold">Acil / Uyarı</div>
                 {!evaluated ? (
@@ -1406,7 +1485,34 @@ export default function LiverPage() {
               </div>
             </div>
 
-            {/* 5) Final Tek Cümle */}
+            {/* İleri İnceleme (Yeni kutu) */}
+            <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
+              <div className="mb-2 font-semibold">İleri İnceleme (Tetkik + Sekans)</div>
+              {!evaluated ? (
+                <div className="text-sm text-neutral-500">
+                  Öneriler için <b>Değerlendir</b>'e bas.
+                </div>
+              ) : buildOutputs.advanced.length === 0 ? (
+                <div className="text-sm text-neutral-600">
+                  Mevcut seçimlere göre ileri inceleme önerisi otomatik üretilmedi.
+                </div>
+              ) : (
+                <div className="space-y-4 text-sm">
+                  {buildOutputs.advanced.map((b) => (
+                    <div key={b.title}>
+                      <div className="font-semibold">{b.title}</div>
+                      <ul className="mt-1 list-disc space-y-1 pl-5">
+                        {b.items.map((it) => (
+                          <li key={b.title + it}>{it}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Final Tek Cümle */}
             <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <div className="font-semibold">Final Rapor (Tek Cümle)</div>
