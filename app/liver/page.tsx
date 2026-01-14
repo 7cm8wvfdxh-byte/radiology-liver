@@ -310,6 +310,7 @@ export default function LiverPage() {
     const hasBD = bdPath === "Var";
 
     const report: string[] = [];
+    const reportExtraBucket: string[] = []; // Ek bulgular burada ayrıca tutulacak
 
     const ddx = {
       liver: { high: [] as string[], mid: [] as string[] },
@@ -571,10 +572,10 @@ export default function LiverPage() {
       addUnique(rec, `Malignite öyküsü varlığında metastaz açısından klinik korelasyon ve sistemik tarama/önceki tetkiklerle karşılaştırma önerilir.`);
     }
 
-    // Ek bulgu entegrasyonu
+    // Ek bulgular ayrı başlık için
     const extra = normalizeSentence(extraFindings);
     if (extra) {
-      report.push(`Ek bulgular: ${extra}`);
+      reportExtraBucket.push(extra);
     }
 
     // Final tek cümle
@@ -606,6 +607,7 @@ export default function LiverPage() {
 
     return {
       reportLines: report,
+      reportExtraBucket,
       ddx,
       rec: Array.from(new Set(rec)),
       advanced: Array.from(new Set(advanced)),
@@ -691,24 +693,46 @@ export default function LiverPage() {
     return chunks.length ? chunks.join("\n").trim() : "—";
   }, [outputs.ddx]);
 
-  // 1) Klinik kullanım için “rapor-only” kopyalama
+  // Hastane formatlı “Raporu Kopyala”
   const reportOnlyToCopy = useMemo(() => {
     const lines: string[] = [];
-    lines.push("RAPOR:");
-    outputs.reportLines.forEach((l) => lines.push(`- ${l}`));
+
+    lines.push("BULGULAR:");
+    if (outputs.reportLines.length) outputs.reportLines.forEach((l) => lines.push(`- ${l}`));
+    else lines.push("- Belirgin patoloji lehine bulgu izlenmemektedir.");
     lines.push("");
+
+    if (outputs.reportExtraBucket.length) {
+      lines.push("EK BULGULAR:");
+      outputs.reportExtraBucket.forEach((x) => lines.push(`- ${x}`));
+      lines.push("");
+    }
+
     lines.push("SONUÇ:");
     lines.push(outputs.finalSentence);
-    return lines.join("\n");
-  }, [outputs.reportLines, outputs.finalSentence]);
+    lines.push("");
 
-  // 2) Tam çıktı kopyalama
+    lines.push("ÖNERİLER:");
+    if (outputs.rec.length) outputs.rec.forEach((x) => lines.push(`- ${x}`));
+    else lines.push("- —");
+
+    return lines.join("\n");
+  }, [outputs.reportLines, outputs.reportExtraBucket, outputs.finalSentence, outputs.rec]);
+
+  // Tam çıktı
   const allTextToCopy = useMemo(() => {
     const lines: string[] = [];
 
-    lines.push("=== RAPOR DİLİ ===");
+    lines.push("=== BULGULAR ===");
     outputs.reportLines.forEach((l) => lines.push(`• ${l}`));
+    if (!outputs.reportLines.length) lines.push("• Belirgin patoloji lehine bulgu izlenmemektedir.");
     lines.push("");
+
+    if (outputs.reportExtraBucket.length) {
+      lines.push("=== EK BULGULAR ===");
+      outputs.reportExtraBucket.forEach((x) => lines.push(`• ${x}`));
+      lines.push("");
+    }
 
     lines.push("=== AYIRICI TANI (ORGAN BAZLI) ===");
     lines.push(ddxText === "—" ? "—" : ddxText);
@@ -729,11 +753,11 @@ export default function LiverPage() {
     else lines.push("—");
     lines.push("");
 
-    lines.push("=== FINAL (TEK CÜMLE) ===");
+    lines.push("=== SONUÇ (TEK CÜMLE) ===");
     lines.push(outputs.finalSentence);
 
     return lines.join("\n");
-  }, [outputs.reportLines, outputs.rec, outputs.advanced, outputs.alerts, outputs.finalSentence, ddxText]);
+  }, [outputs.reportLines, outputs.reportExtraBucket, outputs.rec, outputs.advanced, outputs.alerts, outputs.finalSentence, ddxText]);
 
   function resetAll() {
     setMode("Var/Yok → Detay");
@@ -794,7 +818,6 @@ export default function LiverPage() {
   return (
     <div className="min-h-screen bg-neutral-50">
       <div className="mx-auto max-w-6xl px-4 py-10">
-        {/* HEADER */}
         <div className="mb-4 flex flex-col gap-2">
           <div className="text-center text-2xl font-semibold">Abdomen AI Yardımcı Ajan (v1) — Karaciğer + Safra</div>
 
@@ -823,7 +846,6 @@ export default function LiverPage() {
               onClick={() => {
                 outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
-              title="Çıktı zaten canlı güncelleniyor. Bu buton sadece sağ paneldeki AI Çıktı bölümüne götürür."
             >
               Çıktıya Git
             </button>
@@ -842,7 +864,6 @@ export default function LiverPage() {
           </div>
         </div>
 
-        {/* LAYOUT */}
         <div className="grid gap-4 lg:grid-cols-12">
           {/* LEFT */}
           <div className="lg:col-span-7 xl:col-span-8 grid gap-4">
@@ -858,21 +879,13 @@ export default function LiverPage() {
 
                 {showCT && (
                   <Field label="BT kontrast durumu" hint="Kontrastsız BT seçilirse kontrast patern soruları gizlenir.">
-                    <Select
-                      value={ctContrast}
-                      onChange={(v) => setCtContrast(v as any)}
-                      options={["Bilinmiyor", "Kontrastsız", "Kontrastlı (dinamik)"]}
-                    />
+                    <Select value={ctContrast} onChange={(v) => setCtContrast(v as any)} options={["Bilinmiyor", "Kontrastsız", "Kontrastlı (dinamik)"]} />
                   </Field>
                 )}
 
                 {showMR && (
                   <Field label="MR dinamik seri" hint="Dinamiksiz seçilirse dinamik patern soruları gizlenir.">
-                    <Select
-                      value={mrDynamic}
-                      onChange={(v) => setMrDynamic(v as any)}
-                      options={["Bilinmiyor", "Dinamiksiz", "Dinamik (arteryel/portal/geç)"]}
-                    />
+                    <Select value={mrDynamic} onChange={(v) => setMrDynamic(v as any)} options={["Bilinmiyor", "Dinamiksiz", "Dinamik (arteryel/portal/geç)"]} />
                   </Field>
                 )}
 
@@ -901,21 +914,11 @@ export default function LiverPage() {
                 </Field>
 
                 <Field label="Lezyon sayısı" disabled={liverLesion !== "Var"}>
-                  <Select
-                    value={lesionCount}
-                    onChange={(v) => setLesionCount(v as any)}
-                    options={["Tek", "Çok", "Bilinmiyor"]}
-                    disabled={liverLesion !== "Var"}
-                  />
+                  <Select value={lesionCount} onChange={(v) => setLesionCount(v as any)} options={["Tek", "Çok", "Bilinmiyor"]} disabled={liverLesion !== "Var"} />
                 </Field>
 
                 <Field label="Segment" disabled={liverLesion !== "Var"}>
-                  <Select
-                    value={segment}
-                    onChange={(v) => setSegment(v as any)}
-                    options={["Bilinmiyor", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"]}
-                    disabled={liverLesion !== "Var"}
-                  />
+                  <Select value={segment} onChange={(v) => setSegment(v as any)} options={["Bilinmiyor", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"]} disabled={liverLesion !== "Var"} />
                 </Field>
 
                 <Field label="En büyük boyut (mm)" disabled={liverLesion !== "Var"}>
@@ -923,21 +926,11 @@ export default function LiverPage() {
                 </Field>
 
                 <Field label="Sınır" disabled={liverLesion !== "Var"}>
-                  <Select
-                    value={margin}
-                    onChange={(v) => setMargin(v as any)}
-                    options={["Düzgün", "Düzensiz", "Bilinmiyor"]}
-                    disabled={liverLesion !== "Var"}
-                  />
+                  <Select value={margin} onChange={(v) => setMargin(v as any)} options={["Düzgün", "Düzensiz", "Bilinmiyor"]} disabled={liverLesion !== "Var"} />
                 </Field>
 
                 <Field label="Vasküler invazyon" disabled={liverLesion !== "Var"}>
-                  <Select
-                    value={vascularInv}
-                    onChange={(v) => setVascularInv(v as any)}
-                    options={["Bilinmiyor", "Yok", "Var"]}
-                    disabled={liverLesion !== "Var"}
-                  />
+                  <Select value={vascularInv} onChange={(v) => setVascularInv(v as any)} options={["Bilinmiyor", "Yok", "Var"]} disabled={liverLesion !== "Var"} />
                 </Field>
               </div>
 
@@ -946,23 +939,14 @@ export default function LiverPage() {
                   <div className="mb-3 text-sm font-semibold">BT (Karaciğer)</div>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <Field label="Nonkontrast densite" disabled={liverLesion !== "Var"}>
-                      <Select
-                        value={ctDensity}
-                        onChange={(v) => setCtDensity(v as any)}
-                        options={["Hipodens", "İzodens", "Hiperdens", "Bilinmiyor"]}
-                        disabled={liverLesion !== "Var"}
-                      />
+                      <Select value={ctDensity} onChange={(v) => setCtDensity(v as any)} options={["Hipodens", "İzodens", "Hiperdens", "Bilinmiyor"]} disabled={liverLesion !== "Var"} />
                     </Field>
 
                     <Field
                       label="Kontrastlanma paterni"
                       disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}
                       hint={
-                        isCtNonContrast
-                          ? "Kontrastsız BT → patern soruları kapalı."
-                          : ctContrast === "Bilinmiyor"
-                          ? "Kontrast durumu bilinmiyor → patern sınırlı yorumlanır."
-                          : undefined
+                        isCtNonContrast ? "Kontrastsız BT → patern soruları kapalı." : ctContrast === "Bilinmiyor" ? "Kontrast durumu bilinmiyor → patern sınırlı yorumlanır." : undefined
                       }
                     >
                       <Select
@@ -974,21 +958,11 @@ export default function LiverPage() {
                     </Field>
 
                     <Field label="Geç dolum (fill-in)" disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}>
-                      <Select
-                        value={ctFillIn}
-                        onChange={(v) => setCtFillIn(v as any)}
-                        options={["Bilinmiyor", "Yok", "Var"]}
-                        disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}
-                      />
+                      <Select value={ctFillIn} onChange={(v) => setCtFillIn(v as any)} options={["Bilinmiyor", "Yok", "Var"]} disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"} />
                     </Field>
 
                     <Field label="Washout" disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}>
-                      <Select
-                        value={ctWashout}
-                        onChange={(v) => setCtWashout(v as any)}
-                        options={["Bilinmiyor", "Yok", "Var"]}
-                        disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}
-                      />
+                      <Select value={ctWashout} onChange={(v) => setCtWashout(v as any)} options={["Bilinmiyor", "Yok", "Var"]} disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"} />
                     </Field>
                   </div>
                 </div>
@@ -1014,11 +988,7 @@ export default function LiverPage() {
                       label="Dinamik kontrast paterni"
                       disabled={liverLesion !== "Var" || isMrNoDynamic || mrDynamic === "Bilinmiyor"}
                       hint={
-                        isMrNoDynamic
-                          ? "Dinamiksiz MR → patern soruları kapalı."
-                          : mrDynamic === "Bilinmiyor"
-                          ? "Dinamik durumu bilinmiyor → patern sınırlı yorumlanır."
-                          : undefined
+                        isMrNoDynamic ? "Dinamiksiz MR → patern soruları kapalı." : mrDynamic === "Bilinmiyor" ? "Dinamik durumu bilinmiyor → patern sınırlı yorumlanır." : undefined
                       }
                     >
                       <Select
@@ -1106,11 +1076,7 @@ export default function LiverPage() {
 
                 {bdPath === "Var" && (
                   <Field label="Olası neden">
-                    <Select
-                      value={bdCause}
-                      onChange={(v) => setBdCause(v as any)}
-                      options={["Belirsiz", "Koledok taşı", "Benign striktür", "Malign obstrüksiyon", "Kolanjit", "PSC (şüpheli)", "İatrojenik"]}
-                    />
+                    <Select value={bdCause} onChange={(v) => setBdCause(v as any)} options={["Belirsiz", "Koledok taşı", "Benign striktür", "Malign obstrüksiyon", "Kolanjit", "PSC (şüpheli)", "İatrojenik"]} />
                   </Field>
                 )}
               </div>
@@ -1152,12 +1118,12 @@ export default function LiverPage() {
                 placeholder="Örn: Sağ böbrek alt polde 6 mm nonobstrüktif taş. Dalakta 8 mm hipodens lezyon (kist lehine). Akciğer bazallerinde bant atelektazi..."
               />
               <div className="mt-2 text-xs text-neutral-500">
-                Buraya yazdığın metin, otomatik olarak <b>Rapor Dili</b> ve <b>Final</b> bölümüne uygun formatta eklenir.
+                Bu alan <b>EK BULGULAR</b> başlığına düşer ve SONUÇ cümlesine de kısa şekilde entegre edilir.
               </div>
             </Section>
           </div>
 
-          {/* RIGHT: STICKY OUTPUT */}
+          {/* RIGHT */}
           <div className="lg:col-span-5 xl:col-span-4">
             <div className="lg:sticky lg:top-4 grid gap-4">
               <div ref={outputRef} />
@@ -1173,13 +1139,23 @@ export default function LiverPage() {
                 }
               >
                 <div className="grid gap-4">
-                  <Card title="Rapor Dili">
+                  <Card title="Bulgular (Rapor Dili)">
                     <ul className="list-disc space-y-2 pl-5 text-sm">
                       {outputs.reportLines.map((l, i) => (
                         <li key={i}>{l}</li>
                       ))}
                     </ul>
                   </Card>
+
+                  {outputs.reportExtraBucket.length ? (
+                    <Card title="Ek Bulgular">
+                      <ul className="list-disc space-y-2 pl-5 text-sm">
+                        {outputs.reportExtraBucket.map((x, i) => (
+                          <li key={i}>{x}</li>
+                        ))}
+                      </ul>
+                    </Card>
+                  ) : null}
 
                   <Card title="Ayırıcı Tanı (Organ bazlı)">
                     <pre className="whitespace-pre-wrap text-sm leading-relaxed">{ddxText}</pre>
@@ -1223,7 +1199,7 @@ export default function LiverPage() {
 
                   <div className="rounded-2xl border border-neutral-200 bg-white p-4">
                     <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                      <div className="font-semibold">Final (Tek Cümle)</div>
+                      <div className="font-semibold">Sonuç (Tek Cümle)</div>
                       <div className="flex items-center gap-2">
                         <select
                           className="h-10 rounded-xl border border-neutral-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-neutral-200"
@@ -1234,7 +1210,7 @@ export default function LiverPage() {
                           <option>Öneri dili</option>
                           <option>Nötr</option>
                         </select>
-                        <CopyButton text={outputs.finalSentence} label="Finali Kopyala" copiedLabel="Final Kopyalandı" />
+                        <CopyButton text={outputs.finalSentence} label="Sonucu Kopyala" copiedLabel="Sonuç Kopyalandı" />
                       </div>
                     </div>
                     <div className="rounded-xl border border-neutral-300 bg-white p-3 text-sm">{outputs.finalSentence}</div>
