@@ -186,7 +186,6 @@ function addUnique(arr: string[], item: string) {
 function normalizeSentence(s: string) {
   const t = (s || "").trim();
   if (!t) return "";
-  // Nokta yoksa ekle
   const endsWithPunct = /[.!?…]$/.test(t);
   return endsWithPunct ? t : `${t}.`;
 }
@@ -196,12 +195,11 @@ export default function LiverPage() {
 
   const [mode, setMode] = useState<"Var/Yok → Detay" | "Rapor dili + öneri">("Var/Yok → Detay");
 
-  // ✅ Manuel ek bulgular
+  // Manuel ek bulgular
   const [extraFindings, setExtraFindings] = useState("");
 
-  // 1) İnceleme & Klinik
+  // İnceleme tipi
   const [examType, setExamType] = useState<"BT" | "MR" | "BT+MR">("BT");
-
   const showCT = examType === "BT" || examType === "BT+MR";
   const showMR = examType === "MR" || examType === "BT+MR";
 
@@ -211,23 +209,26 @@ export default function LiverPage() {
   );
   const isCtNonContrast = ctContrast === "Kontrastsız";
 
-  // MR dinamik
+  // MR dinamik durumu
   const [mrDynamic, setMrDynamic] = useState<"Dinamiksiz" | "Dinamik (arteryel/portal/geç)" | "Bilinmiyor">(
     "Bilinmiyor"
   );
   const isMrNoDynamic = mrDynamic === "Dinamiksiz";
 
+  // Klinik
   const [malignHx, setMalignHx] = useState<UYN>("Bilinmiyor");
   const [cirrhosis, setCirrhosis] = useState<UYN>("Bilinmiyor");
   const [feverInf, setFeverInf] = useState<UYN>("Bilinmiyor");
   const [jaundiceChol, setJaundiceChol] = useState<UYN>("Bilinmiyor");
 
-  // 2) Karaciğer
+  // Karaciğer
   const [liverLesion, setLiverLesion] = useState<YesNo>("Yok");
   const [fattyLiver, setFattyLiver] = useState<UYN>("Bilinmiyor");
   const [lesionCount, setLesionCount] = useState<"Tek" | "Çok" | "Bilinmiyor">("Tek");
   const [largestMm, setLargestMm] = useState("18");
-  const [segment, setSegment] = useState<"Bilinmiyor" | "S1" | "S2" | "S3" | "S4" | "S5" | "S6" | "S7" | "S8">("S7");
+  const [segment, setSegment] = useState<"Bilinmiyor" | "S1" | "S2" | "S3" | "S4" | "S5" | "S6" | "S7" | "S8">(
+    "S7"
+  );
   const [margin, setMargin] = useState<"Düzgün" | "Düzensiz" | "Bilinmiyor">("Düzgün");
   const [vascularInv, setVascularInv] = useState<UYN>("Bilinmiyor");
 
@@ -251,7 +252,7 @@ export default function LiverPage() {
     "Bilinmiyor"
   );
 
-  // 3) Safra Kesesi
+  // Safra kesesi
   const [gbPath, setGbPath] = useState<YesNo>("Yok");
   const [gbDx, setGbDx] = useState<
     | "Kolesistolitiazis (taş)"
@@ -270,21 +271,28 @@ export default function LiverPage() {
   const [murphy, setMurphy] = useState<"Bilinmiyor" | "Negatif" | "Pozitif">("Bilinmiyor");
   const [gbGas, setGbGas] = useState<YesNo>("Yok");
   const [polypMm, setPolypMm] = useState("6");
-  const [gbComp, setGbComp] = useState<"Yok" | "Perforasyon şüphesi" | "Ampiyem" | "Gangren" | "Bilinmiyor">("Yok");
+  const [gbComp, setGbComp] = useState<"Yok" | "Perforasyon şüphesi" | "Ampiyem" | "Gangren" | "Bilinmiyor">(
+    "Yok"
+  );
 
-  // 4) Safra Yolları
+  // Safra yolları
   const [bdPath, setBdPath] = useState<YesNo>("Yok");
   const [bdCause, setBdCause] = useState<
     "Belirsiz" | "Koledok taşı" | "Benign striktür" | "Malign obstrüksiyon" | "Kolanjit" | "PSC (şüpheli)" | "İatrojenik"
   >("Belirsiz");
   const [bdDil, setBdDil] = useState<UYN>("Bilinmiyor");
-  const [bdLevel, setBdLevel] = useState<"Bilinmiyor" | "İntrahepatik" | "Ekstrahepatik" | "Her ikisi">("Bilinmiyor");
+  const [bdLevel, setBdLevel] = useState<"Bilinmiyor" | "İntrahepatik" | "Ekstrahepatik" | "Her ikisi">(
+    "Bilinmiyor"
+  );
   const [cholangitis, setCholangitis] = useState<YesNo>("Yok");
   const [bdStone, setBdStone] = useState<YesNo>("Yok");
-  const [bdStricture, setBdStricture] = useState<"Bilinmiyor" | "Benign striktür" | "Malign striktür" | "Yok">("Bilinmiyor");
+  const [bdStricture, setBdStricture] = useState<"Bilinmiyor" | "Benign striktür" | "Malign striktür" | "Yok">(
+    "Bilinmiyor"
+  );
   const [pscPattern, setPscPattern] = useState<YesNo>("Yok");
   const [bdMassSuspect, setBdMassSuspect] = useState<UYN>("Bilinmiyor");
 
+  // Final format
   const [finalFormat, setFinalFormat] = useState<"Olasılık dili" | "Öneri dili" | "Nötr">("Olasılık dili");
 
   const outputs = useMemo(() => {
@@ -307,10 +315,14 @@ export default function LiverPage() {
     const sizeTxt = largestMm?.trim() ? `${largestMm.trim()} mm` : "ölçülemeyen";
     const segTxt = segment !== "Bilinmiyor" ? segment : "ilgili segment";
     const marginTxt =
-      margin === "Düzgün" ? "düzgün sınırlı" : margin === "Düzensiz" ? "düzensiz sınırlı" : "sınır özellikleri belirsiz";
+      margin === "Düzgün"
+        ? "düzgün sınırlı"
+        : margin === "Düzensiz"
+        ? "düzensiz sınırlı"
+        : "sınır özellikleri belirsiz";
     const multiTxt = lesionCount === "Çok" ? "Çoklu lezyon lehine." : "";
 
-    // ========= KARACİĞER =========
+    // ===== KARACİĞER =====
     if (hasLiver) {
       report.push(
         `Karaciğerde ${segTxt} düzeyinde ${sizeTxt} boyutlu ${marginTxt} lezyon izlenmektedir. ${multiTxt}`.trim()
@@ -336,13 +348,18 @@ export default function LiverPage() {
           report.push(base + ` Dinamik seri izlenmemiştir.`);
           addUnique(advanced, `Dinamik karakterizasyon için arteriyel-portal-geç faz içeren dinamik KC MR önerilir.`);
         } else if (mrDynamic === "Dinamik (arteryel/portal/geç)") {
-          report.push(base + ` Dinamik kontrast paterni: ${mrEnhPattern}, washout: ${mrWashout}, HBP: ${hbPhase}.`);
+          report.push(
+            base + ` Dinamik kontrast paterni: ${mrEnhPattern}, washout: ${mrWashout}, HBP: ${hbPhase}.`
+          );
         }
       }
 
       const highHccRisk = cirrhosis === "Var";
       if (highHccRisk) {
-        addUnique(alerts, `Siroz/kronik KC zemininde HCC riski artmıştır; lezyonlar LI-RADS yaklaşımı ile değerlendirilmelidir.`);
+        addUnique(
+          alerts,
+          `Siroz/kronik KC zemininde HCC riski artmıştır; lezyonlar LI-RADS yaklaşımı ile değerlendirilmelidir.`
+        );
         addUnique(rec, `AFP ve hepatoloji korelasyonu önerilir.`);
       }
 
@@ -362,7 +379,10 @@ export default function LiverPage() {
       if (hemLikeCT || hemLikeMR) {
         addUnique(ddx.liver.high, "Hemangiom");
         addUnique(ddx.liver.mid, "Atipik hemangiom");
-        addUnique(rec, `Tipik hemangiom paterni varsa önceki tetkiklerle karşılaştırma; şüphede dinamik MR (gerekirse HBP) ile doğrulama.`);
+        addUnique(
+          rec,
+          `Tipik hemangiom paterni varsa önceki tetkiklerle karşılaştırma; şüphede dinamik MR (gerekirse HBP) ile doğrulama.`
+        );
       }
 
       const fnhLike =
@@ -379,8 +399,14 @@ export default function LiverPage() {
       }
 
       const hccLike =
-        (showCT && ctContrast === "Kontrastlı (dinamik)" && ctEnhPattern === "Arteryel hiper" && ctWashout === "Var") ||
-        (showMR && mrDynamic === "Dinamik (arteryel/portal/geç)" && mrEnhPattern === "Arteryel hiper" && mrWashout === "Var");
+        (showCT &&
+          ctContrast === "Kontrastlı (dinamik)" &&
+          ctEnhPattern === "Arteryel hiper" &&
+          ctWashout === "Var") ||
+        (showMR &&
+          mrDynamic === "Dinamik (arteryel/portal/geç)" &&
+          mrEnhPattern === "Arteryel hiper" &&
+          mrWashout === "Var");
 
       if (hccLike && highHccRisk) {
         addUnique(ddx.liver.high, "HCC");
@@ -406,7 +432,10 @@ export default function LiverPage() {
       }
 
       if (vascularInv === "Var") {
-        addUnique(alerts, `Vasküler invazyon lehine bulgular: malignite olasılığı belirgin artar; acil hepatobiliyer/onkoloji değerlendirmesi önerilir.`);
+        addUnique(
+          alerts,
+          `Vasküler invazyon lehine bulgular: malignite olasılığı belirgin artar; acil hepatobiliyer/onkoloji değerlendirmesi önerilir.`
+        );
       }
 
       addUnique(
@@ -419,7 +448,7 @@ export default function LiverPage() {
       );
     }
 
-    // ========= SAFRA KESESİ =========
+    // ===== SAFRA KESESİ =====
     if (hasGB) {
       const parts: string[] = [];
       parts.push(`Safra kesesinde ${gbDx.toLowerCase()} ile uyumlu görünüm mevcuttur.`);
@@ -471,7 +500,7 @@ export default function LiverPage() {
       );
     }
 
-    // ========= SAFRA YOLLARI =========
+    // ===== SAFRA YOLLARI =====
     if (hasBD) {
       const parts: string[] = [];
       parts.push(`Safra yollarında patoloji mevcuttur.`);
@@ -532,7 +561,7 @@ export default function LiverPage() {
       addUnique(rec, `Malignite öyküsü varlığında metastaz açısından klinik korelasyon ve sistemik tarama/önceki tetkiklerle karşılaştırma önerilir.`);
     }
 
-    // ✅ Ek bulgu entegrasyonu
+    // Ek bulgu entegrasyonu
     const extra = normalizeSentence(extraFindings);
     if (extra) {
       report.push(`Ek bulgular: ${extra}`);
@@ -562,7 +591,6 @@ export default function LiverPage() {
         : `${shortBits.join("; ")}.`;
 
     if (extra) {
-      // Final cümleye de ekle (ayrı bir cümle gibi)
       finalSentence = `${finalSentence} Ek bulgu: ${extra}`;
     }
 
@@ -711,7 +739,8 @@ export default function LiverPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      <div className="mx-auto max-w-5xl px-4 py-10">
+      <div className="mx-auto max-w-6xl px-4 py-10">
+        {/* HEADER */}
         <div className="mb-4 flex flex-col gap-2">
           <div className="text-center text-2xl font-semibold">Abdomen AI Yardımcı Ajan (v1) — Karaciğer + Safra</div>
 
@@ -737,8 +766,10 @@ export default function LiverPage() {
             <button
               type="button"
               className="h-10 rounded-xl border border-neutral-900 bg-neutral-900 px-4 text-sm font-medium text-white hover:bg-neutral-800"
-              onClick={() => outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-              title="Çıktı zaten canlı güncelleniyor. Bu buton sadece AI Çıktı bölümüne götürür."
+              onClick={() => {
+                outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+              title="Çıktı zaten canlı güncelleniyor. Bu buton sadece sağ paneldeki AI Çıktı bölümüne götürür."
             >
               Çıktıya Git
             </button>
@@ -752,269 +783,361 @@ export default function LiverPage() {
             </button>
           </div>
 
-          <div className="text-center text-xs text-neutral-500">✅ Canlı çıktı: alanları değiştirdikçe rapor/ayırıcı tanı/öneriler otomatik güncellenir.</div>
+          <div className="text-center text-xs text-neutral-500">
+            ✅ Canlı çıktı: alanları değiştirdikçe rapor/ayırıcı tanı/öneriler otomatik güncellenir.
+          </div>
         </div>
 
-        <div className="grid gap-4">
-          <Section title="1) İnceleme & Klinik Zemin">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Field label="İnceleme tipi" hint="BT seçilirse MR alanları gizlenir; MR seçilirse BT alanları gizlenir.">
-                <Select value={examType} onChange={(v) => setExamType(v as any)} options={["BT", "MR", "BT+MR"]} />
-              </Field>
+        {/* LAYOUT: Left Form + Right Sticky Output */}
+        <div className="grid gap-4 lg:grid-cols-12">
+          {/* LEFT: FORM */}
+          <div className="lg:col-span-7 xl:col-span-8 grid gap-4">
+            <Section title="1) İnceleme & Klinik Zemin">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Field label="İnceleme tipi" hint="BT seçilirse MR alanları gizlenir; MR seçilirse BT alanları gizlenir.">
+                  <Select value={examType} onChange={(v) => setExamType(v as any)} options={["BT", "MR", "BT+MR"]} />
+                </Field>
 
-              <Field label="Malignite öyküsü">
-                <Select value={malignHx} onChange={(v) => setMalignHx(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-              </Field>
+                <Field label="Malignite öyküsü">
+                  <Select value={malignHx} onChange={(v) => setMalignHx(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
+                </Field>
+
+                {showCT && (
+                  <Field label="BT kontrast durumu" hint="Kontrastsız BT seçilirse kontrast patern soruları gizlenir.">
+                    <Select
+                      value={ctContrast}
+                      onChange={(v) => setCtContrast(v as any)}
+                      options={["Bilinmiyor", "Kontrastsız", "Kontrastlı (dinamik)"]}
+                    />
+                  </Field>
+                )}
+
+                {showMR && (
+                  <Field label="MR dinamik seri" hint="Dinamiksiz seçilirse dinamik patern soruları gizlenir.">
+                    <Select
+                      value={mrDynamic}
+                      onChange={(v) => setMrDynamic(v as any)}
+                      options={["Bilinmiyor", "Dinamiksiz", "Dinamik (arteryel/portal/geç)"]}
+                    />
+                  </Field>
+                )}
+
+                <Field label="Siroz / kronik KC">
+                  <Select value={cirrhosis} onChange={(v) => setCirrhosis(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
+                </Field>
+
+                <Field label="Ateş / enfeksiyon">
+                  <Select value={feverInf} onChange={(v) => setFeverInf(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
+                </Field>
+
+                <Field label="Sarılık / kolestaz">
+                  <Select value={jaundiceChol} onChange={(v) => setJaundiceChol(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
+                </Field>
+              </div>
+            </Section>
+
+            <Section title="2) Karaciğer (Parankim & Lezyon)">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Field label="Karaciğerde lezyon">
+                  <Select value={liverLesion} onChange={(v) => setLiverLesion(v as any)} options={["Yok", "Var"]} />
+                </Field>
+
+                <Field label="Yağlı karaciğer">
+                  <Select value={fattyLiver} onChange={(v) => setFattyLiver(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
+                </Field>
+
+                <Field label="Lezyon sayısı" disabled={liverLesion !== "Var"}>
+                  <Select
+                    value={lesionCount}
+                    onChange={(v) => setLesionCount(v as any)}
+                    options={["Tek", "Çok", "Bilinmiyor"]}
+                    disabled={liverLesion !== "Var"}
+                  />
+                </Field>
+
+                <Field label="Segment" disabled={liverLesion !== "Var"}>
+                  <Select
+                    value={segment}
+                    onChange={(v) => setSegment(v as any)}
+                    options={["Bilinmiyor", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"]}
+                    disabled={liverLesion !== "Var"}
+                  />
+                </Field>
+
+                <Field label="En büyük boyut (mm)" disabled={liverLesion !== "Var"}>
+                  <Input value={largestMm} onChange={setLargestMm} placeholder="örn: 18" disabled={liverLesion !== "Var"} />
+                </Field>
+
+                <Field label="Sınır" disabled={liverLesion !== "Var"}>
+                  <Select
+                    value={margin}
+                    onChange={(v) => setMargin(v as any)}
+                    options={["Düzgün", "Düzensiz", "Bilinmiyor"]}
+                    disabled={liverLesion !== "Var"}
+                  />
+                </Field>
+
+                <Field label="Vasküler invazyon" disabled={liverLesion !== "Var"}>
+                  <Select
+                    value={vascularInv}
+                    onChange={(v) => setVascularInv(v as any)}
+                    options={["Bilinmiyor", "Yok", "Var"]}
+                    disabled={liverLesion !== "Var"}
+                  />
+                </Field>
+              </div>
 
               {showCT && (
-                <Field label="BT kontrast durumu" hint="Kontrastsız BT seçilirse kontrast patern soruları gizlenir.">
-                  <Select value={ctContrast} onChange={(v) => setCtContrast(v as any)} options={["Bilinmiyor", "Kontrastsız", "Kontrastlı (dinamik)"]} />
-                </Field>
+                <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
+                  <div className="mb-3 text-sm font-semibold">BT (Karaciğer)</div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <Field label="Nonkontrast densite" disabled={liverLesion !== "Var"}>
+                      <Select
+                        value={ctDensity}
+                        onChange={(v) => setCtDensity(v as any)}
+                        options={["Hipodens", "İzodens", "Hiperdens", "Bilinmiyor"]}
+                        disabled={liverLesion !== "Var"}
+                      />
+                    </Field>
+
+                    <Field
+                      label="Kontrastlanma paterni"
+                      disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}
+                      hint={
+                        isCtNonContrast
+                          ? "Kontrastsız BT → patern soruları kapalı."
+                          : ctContrast === "Bilinmiyor"
+                          ? "Kontrast durumu bilinmiyor → patern sınırlı yorumlanır."
+                          : undefined
+                      }
+                    >
+                      <Select
+                        value={ctEnhPattern}
+                        onChange={(v) => setCtEnhPattern(v as any)}
+                        options={["Periferik nodüler", "Homojen", "Halka (rim)", "Heterojen", "Arteryel hiper", "Bilinmiyor"]}
+                        disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}
+                      />
+                    </Field>
+
+                    <Field label="Geç dolum (fill-in)" disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}>
+                      <Select
+                        value={ctFillIn}
+                        onChange={(v) => setCtFillIn(v as any)}
+                        options={["Bilinmiyor", "Yok", "Var"]}
+                        disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}
+                      />
+                    </Field>
+
+                    <Field label="Washout" disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}>
+                      <Select
+                        value={ctWashout}
+                        onChange={(v) => setCtWashout(v as any)}
+                        options={["Bilinmiyor", "Yok", "Var"]}
+                        disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}
+                      />
+                    </Field>
+                  </div>
+                </div>
               )}
 
               {showMR && (
-                <Field label="MR dinamik seri" hint="Dinamiksiz seçilirse dinamik patern soruları gizlenir.">
-                  <Select value={mrDynamic} onChange={(v) => setMrDynamic(v as any)} options={["Bilinmiyor", "Dinamiksiz", "Dinamik (arteryel/portal/geç)"]} />
-                </Field>
-              )}
+                <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
+                  <div className="mb-3 text-sm font-semibold">MR (Karaciğer)</div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <Field label="T1 sinyal" disabled={liverLesion !== "Var"}>
+                      <Select
+                        value={mrT1}
+                        onChange={(v) => setMrT1(v as any)}
+                        options={["Bilinmiyor", "Hipo", "İzo", "Hiper"]}
+                        disabled={liverLesion !== "Var"}
+                      />
+                    </Field>
 
-              <Field label="Siroz / kronik KC">
-                <Select value={cirrhosis} onChange={(v) => setCirrhosis(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-              </Field>
+                    <Field label="T2 sinyal" disabled={liverLesion !== "Var"}>
+                      <Select
+                        value={mrT2}
+                        onChange={(v) => setMrT2(v as any)}
+                        options={["Bilinmiyor", "Hipo", "İzo", "Hiper"]}
+                        disabled={liverLesion !== "Var"}
+                      />
+                    </Field>
 
-              <Field label="Ateş / enfeksiyon">
-                <Select value={feverInf} onChange={(v) => setFeverInf(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-              </Field>
+                    <Field label="DWI kısıtlılığı" disabled={liverLesion !== "Var"}>
+                      <Select
+                        value={dwiRestrict}
+                        onChange={(v) => setDwiRestrict(v as any)}
+                        options={["Bilinmiyor", "Yok", "Var"]}
+                        disabled={liverLesion !== "Var"}
+                      />
+                    </Field>
 
-              <Field label="Sarılık / kolestaz">
-                <Select value={jaundiceChol} onChange={(v) => setJaundiceChol(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-              </Field>
-            </div>
-          </Section>
-
-          <Section title="2) Karaciğer (Parankim & Lezyon)">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Field label="Karaciğerde lezyon">
-                <Select value={liverLesion} onChange={(v) => setLiverLesion(v as any)} options={["Yok", "Var"]} />
-              </Field>
-
-              <Field label="Yağlı karaciğer">
-                <Select value={fattyLiver} onChange={(v) => setFattyLiver(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-              </Field>
-
-              <Field label="Lezyon sayısı" disabled={liverLesion !== "Var"}>
-                <Select value={lesionCount} onChange={(v) => setLesionCount(v as any)} options={["Tek", "Çok", "Bilinmiyor"]} disabled={liverLesion !== "Var"} />
-              </Field>
-
-              <Field label="Segment" disabled={liverLesion !== "Var"}>
-                <Select value={segment} onChange={(v) => setSegment(v as any)} options={["Bilinmiyor", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"]} disabled={liverLesion !== "Var"} />
-              </Field>
-
-              <Field label="En büyük boyut (mm)" disabled={liverLesion !== "Var"}>
-                <Input value={largestMm} onChange={setLargestMm} placeholder="örn: 18" disabled={liverLesion !== "Var"} />
-              </Field>
-
-              <Field label="Sınır" disabled={liverLesion !== "Var"}>
-                <Select value={margin} onChange={(v) => setMargin(v as any)} options={["Düzgün", "Düzensiz", "Bilinmiyor"]} disabled={liverLesion !== "Var"} />
-              </Field>
-
-              <Field label="Vasküler invazyon" disabled={liverLesion !== "Var"}>
-                <Select value={vascularInv} onChange={(v) => setVascularInv(v as any)} options={["Bilinmiyor", "Yok", "Var"]} disabled={liverLesion !== "Var"} />
-              </Field>
-            </div>
-
-            {showCT && (
-              <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
-                <div className="mb-3 text-sm font-semibold">BT (Karaciğer)</div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <Field label="Nonkontrast densite" disabled={liverLesion !== "Var"}>
-                    <Select value={ctDensity} onChange={(v) => setCtDensity(v as any)} options={["Hipodens", "İzodens", "Hiperdens", "Bilinmiyor"]} disabled={liverLesion !== "Var"} />
-                  </Field>
-
-                  <Field
-                    label="Kontrastlanma paterni"
-                    disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}
-                    hint={isCtNonContrast ? "Kontrastsız BT → patern soruları kapalı." : ctContrast === "Bilinmiyor" ? "Kontrast durumu bilinmiyor → patern sınırlı yorumlanır." : undefined}
-                  >
-                    <Select
-                      value={ctEnhPattern}
-                      onChange={(v) => setCtEnhPattern(v as any)}
-                      options={["Periferik nodüler", "Homojen", "Halka (rim)", "Heterojen", "Arteryel hiper", "Bilinmiyor"]}
-                      disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}
-                    />
-                  </Field>
-
-                  <Field label="Geç dolum (fill-in)" disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}>
-                    <Select value={ctFillIn} onChange={(v) => setCtFillIn(v as any)} options={["Bilinmiyor", "Yok", "Var"]} disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"} />
-                  </Field>
-
-                  <Field label="Washout" disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}>
-                    <Select value={ctWashout} onChange={(v) => setCtWashout(v as any)} options={["Bilinmiyor", "Yok", "Var"]} disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"} />
-                  </Field>
-                </div>
-              </div>
-            )}
-
-            {showMR && (
-              <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
-                <div className="mb-3 text-sm font-semibold">MR (Karaciğer)</div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <Field label="T1 sinyal" disabled={liverLesion !== "Var"}>
-                    <Select value={mrT1} onChange={(v) => setMrT1(v as any)} options={["Bilinmiyor", "Hipo", "İzo", "Hiper"]} disabled={liverLesion !== "Var"} />
-                  </Field>
-
-                  <Field label="T2 sinyal" disabled={liverLesion !== "Var"}>
-                    <Select value={mrT2} onChange={(v) => setMrT2(v as any)} options={["Bilinmiyor", "Hipo", "İzo", "Hiper"]} disabled={liverLesion !== "Var"} />
-                  </Field>
-
-                  <Field label="DWI kısıtlılığı" disabled={liverLesion !== "Var"}>
-                    <Select value={dwiRestrict} onChange={(v) => setDwiRestrict(v as any)} options={["Bilinmiyor", "Yok", "Var"]} disabled={liverLesion !== "Var"} />
-                  </Field>
-
-                  <Field
-                    label="Dinamik kontrast paterni"
-                    disabled={liverLesion !== "Var" || isMrNoDynamic || mrDynamic === "Bilinmiyor"}
-                    hint={isMrNoDynamic ? "Dinamiksiz MR → patern soruları kapalı." : mrDynamic === "Bilinmiyor" ? "Dinamik durumu bilinmiyor → patern sınırlı yorumlanır." : undefined}
-                  >
-                    <Select
-                      value={mrEnhPattern}
-                      onChange={(v) => setMrEnhPattern(v as any)}
-                      options={["Bilinmiyor", "Arteryel hiper", "Periferik nodüler", "Halka (rim)", "Homojen", "Heterojen"]}
+                    <Field
+                      label="Dinamik kontrast paterni"
                       disabled={liverLesion !== "Var" || isMrNoDynamic || mrDynamic === "Bilinmiyor"}
+                      hint={
+                        isMrNoDynamic
+                          ? "Dinamiksiz MR → patern soruları kapalı."
+                          : mrDynamic === "Bilinmiyor"
+                          ? "Dinamik durumu bilinmiyor → patern sınırlı yorumlanır."
+                          : undefined
+                      }
+                    >
+                      <Select
+                        value={mrEnhPattern}
+                        onChange={(v) => setMrEnhPattern(v as any)}
+                        options={["Bilinmiyor", "Arteryel hiper", "Periferik nodüler", "Halka (rim)", "Homojen", "Heterojen"]}
+                        disabled={liverLesion !== "Var" || isMrNoDynamic || mrDynamic === "Bilinmiyor"}
+                      />
+                    </Field>
+
+                    <Field label="Washout" disabled={liverLesion !== "Var" || isMrNoDynamic || mrDynamic === "Bilinmiyor"}>
+                      <Select
+                        value={mrWashout}
+                        onChange={(v) => setMrWashout(v as any)}
+                        options={["Bilinmiyor", "Yok", "Var"]}
+                        disabled={liverLesion !== "Var" || isMrNoDynamic || mrDynamic === "Bilinmiyor"}
+                      />
+                    </Field>
+
+                    <Field label="Hepatobiliyer faz (HBP)" hint="Gadoxetic asit yoksa 'Yapılmadı' seç." disabled={liverLesion !== "Var"}>
+                      <Select
+                        value={hbPhase}
+                        onChange={(v) => setHbPhase(v as any)}
+                        options={["Bilinmiyor", "Yapılmadı", "Hipointens", "İzointens", "Hiperintens"]}
+                        disabled={liverLesion !== "Var"}
+                      />
+                    </Field>
+                  </div>
+                </div>
+              )}
+            </Section>
+
+            <Section title="3) Safra Kesesi (Var/Yok → Detay)">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Field label="Safra kesesinde patoloji">
+                  <Select value={gbPath} onChange={(v) => setGbPath(v as any)} options={["Yok", "Var"]} />
+                </Field>
+
+                {gbPath === "Var" && (
+                  <Field label="Ön tanı / sık patoloji">
+                    <Select
+                      value={gbDx}
+                      onChange={(v) => setGbDx(v as any)}
+                      options={[
+                        "Kolesistolitiazis (taş)",
+                        "Akut kolesistit",
+                        "Kronik kolesistit",
+                        "Polip",
+                        "Kitle (şüpheli)",
+                        "Bilier çamur",
+                        "Porcelain GB",
+                        "Adenomiyomatozis",
+                        "Bilinmiyor",
+                      ]}
                     />
                   </Field>
-
-                  <Field label="Washout" disabled={liverLesion !== "Var" || isMrNoDynamic || mrDynamic === "Bilinmiyor"}>
-                    <Select value={mrWashout} onChange={(v) => setMrWashout(v as any)} options={["Bilinmiyor", "Yok", "Var"]} disabled={liverLesion !== "Var" || isMrNoDynamic || mrDynamic === "Bilinmiyor"} />
-                  </Field>
-
-                  <Field label="Hepatobiliyer faz (HBP)" hint="Gadoxetic asit yoksa 'Yapılmadı' seç." disabled={liverLesion !== "Var"}>
-                    <Select value={hbPhase} onChange={(v) => setHbPhase(v as any)} options={["Bilinmiyor", "Yapılmadı", "Hipointens", "İzointens", "Hiperintens"]} disabled={liverLesion !== "Var"} />
-                  </Field>
-                </div>
+                )}
               </div>
-            )}
-          </Section>
-
-          <Section title="3) Safra Kesesi (Var/Yok → Detay)">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Field label="Safra kesesinde patoloji">
-                <Select value={gbPath} onChange={(v) => setGbPath(v as any)} options={["Yok", "Var"]} />
-              </Field>
 
               {gbPath === "Var" && (
-                <Field label="Ön tanı / sık patoloji">
-                  <Select
-                    value={gbDx}
-                    onChange={(v) => setGbDx(v as any)}
-                    options={[
-                      "Kolesistolitiazis (taş)",
-                      "Akut kolesistit",
-                      "Kronik kolesistit",
-                      "Polip",
-                      "Kitle (şüpheli)",
-                      "Bilier çamur",
-                      "Porcelain GB",
-                      "Adenomiyomatozis",
-                      "Bilinmiyor",
-                    ]}
-                  />
-                </Field>
-              )}
-            </div>
-
-            {gbPath === "Var" && (
-              <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
-                <div className="mb-3 text-sm font-semibold">Detay bulgular</div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                  <Field label="Duvar kalınlaşması">
-                    <Select value={gbWallThick} onChange={(v) => setGbWallThick(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-                  </Field>
-                  <Field label="Perikolesistik sıvı">
-                    <Select value={gbPeriFluid} onChange={(v) => setGbPeriFluid(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-                  </Field>
-                  <Field label="Distansiyon">
-                    <Select value={gbDistension} onChange={(v) => setGbDistension(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-                  </Field>
-                  <Field label="Murphy (klinik)">
-                    <Select value={murphy} onChange={(v) => setMurphy(v as any)} options={["Bilinmiyor", "Negatif", "Pozitif"]} />
-                  </Field>
-                  <Field label="Duvar/lümende gaz">
-                    <Select value={gbGas} onChange={(v) => setGbGas(v as any)} options={["Yok", "Var"]} />
-                  </Field>
-                  <Field label="Polip boyutu (mm)" disabled={gbDx !== "Polip"}>
-                    <Input value={polypMm} onChange={setPolypMm} disabled={gbDx !== "Polip"} />
-                  </Field>
-                  <Field label="Perforasyon/komplikasyon">
-                    <Select value={gbComp} onChange={(v) => setGbComp(v as any)} options={["Yok", "Perforasyon şüphesi", "Ampiyem", "Gangren", "Bilinmiyor"]} />
-                  </Field>
+                <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
+                  <div className="mb-3 text-sm font-semibold">Detay bulgular</div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <Field label="Duvar kalınlaşması">
+                      <Select value={gbWallThick} onChange={(v) => setGbWallThick(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
+                    </Field>
+                    <Field label="Perikolesistik sıvı">
+                      <Select value={gbPeriFluid} onChange={(v) => setGbPeriFluid(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
+                    </Field>
+                    <Field label="Distansiyon">
+                      <Select value={gbDistension} onChange={(v) => setGbDistension(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
+                    </Field>
+                    <Field label="Murphy (klinik)">
+                      <Select value={murphy} onChange={(v) => setMurphy(v as any)} options={["Bilinmiyor", "Negatif", "Pozitif"]} />
+                    </Field>
+                    <Field label="Duvar/lümende gaz">
+                      <Select value={gbGas} onChange={(v) => setGbGas(v as any)} options={["Yok", "Var"]} />
+                    </Field>
+                    <Field label="Polip boyutu (mm)" disabled={gbDx !== "Polip"}>
+                      <Input value={polypMm} onChange={setPolypMm} disabled={gbDx !== "Polip"} />
+                    </Field>
+                    <Field label="Perforasyon/komplikasyon">
+                      <Select value={gbComp} onChange={(v) => setGbComp(v as any)} options={["Yok", "Perforasyon şüphesi", "Ampiyem", "Gangren", "Bilinmiyor"]} />
+                    </Field>
+                  </div>
                 </div>
-              </div>
-            )}
-          </Section>
+              )}
+            </Section>
 
-          <Section title="4) Safra Yolları (Var/Yok → Detay)">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Field label="Safra yollarında patoloji">
-                <Select value={bdPath} onChange={(v) => setBdPath(v as any)} options={["Yok", "Var"]} />
-              </Field>
+            <Section title="4) Safra Yolları (Var/Yok → Detay)">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Field label="Safra yollarında patoloji">
+                  <Select value={bdPath} onChange={(v) => setBdPath(v as any)} options={["Yok", "Var"]} />
+                </Field>
+
+                {bdPath === "Var" && (
+                  <Field label="Olası neden">
+                    <Select
+                      value={bdCause}
+                      onChange={(v) => setBdCause(v as any)}
+                      options={["Belirsiz", "Koledok taşı", "Benign striktür", "Malign obstrüksiyon", "Kolanjit", "PSC (şüpheli)", "İatrojenik"]}
+                    />
+                  </Field>
+                )}
+              </div>
 
               {bdPath === "Var" && (
-                <Field label="Olası neden">
-                  <Select value={bdCause} onChange={(v) => setBdCause(v as any)} options={["Belirsiz", "Koledok taşı", "Benign striktür", "Malign obstrüksiyon", "Kolanjit", "PSC (şüpheli)", "İatrojenik"]} />
-                </Field>
-              )}
-            </div>
-
-            {bdPath === "Var" && (
-              <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
-                <div className="mb-3 text-sm font-semibold">Detay bulgular</div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                  <Field label="Dilatas­yon">
-                    <Select value={bdDil} onChange={(v) => setBdDil(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-                  </Field>
-                  <Field label="Seviye">
-                    <Select value={bdLevel} onChange={(v) => setBdLevel(v as any)} options={["Bilinmiyor", "İntrahepatik", "Ekstrahepatik", "Her ikisi"]} />
-                  </Field>
-                  <Field label="Kolanjit şüphesi">
-                    <Select value={cholangitis} onChange={(v) => setCholangitis(v as any)} options={["Yok", "Var"]} />
-                  </Field>
-                  <Field label="Koledok taşı">
-                    <Select value={bdStone} onChange={(v) => setBdStone(v as any)} options={["Yok", "Var"]} />
-                  </Field>
-                  <Field label="Striktür tipi">
-                    <Select value={bdStricture} onChange={(v) => setBdStricture(v as any)} options={["Bilinmiyor", "Yok", "Benign striktür", "Malign striktür"]} />
-                  </Field>
-                  <Field label="PSC patern">
-                    <Select value={pscPattern} onChange={(v) => setPscPattern(v as any)} options={["Yok", "Var"]} />
-                  </Field>
-                  <Field label="Kitle şüphesi">
-                    <Select value={bdMassSuspect} onChange={(v) => setBdMassSuspect(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-                  </Field>
+                <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
+                  <div className="mb-3 text-sm font-semibold">Detay bulgular</div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <Field label="Dilatas­yon">
+                      <Select value={bdDil} onChange={(v) => setBdDil(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
+                    </Field>
+                    <Field label="Seviye">
+                      <Select value={bdLevel} onChange={(v) => setBdLevel(v as any)} options={["Bilinmiyor", "İntrahepatik", "Ekstrahepatik", "Her ikisi"]} />
+                    </Field>
+                    <Field label="Kolanjit şüphesi">
+                      <Select value={cholangitis} onChange={(v) => setCholangitis(v as any)} options={["Yok", "Var"]} />
+                    </Field>
+                    <Field label="Koledok taşı">
+                      <Select value={bdStone} onChange={(v) => setBdStone(v as any)} options={["Yok", "Var"]} />
+                    </Field>
+                    <Field label="Striktür tipi">
+                      <Select value={bdStricture} onChange={(v) => setBdStricture(v as any)} options={["Bilinmiyor", "Yok", "Benign striktür", "Malign striktür"]} />
+                    </Field>
+                    <Field label="PSC patern">
+                      <Select value={pscPattern} onChange={(v) => setPscPattern(v as any)} options={["Yok", "Var"]} />
+                    </Field>
+                    <Field label="Kitle şüphesi">
+                      <Select value={bdMassSuspect} onChange={(v) => setBdMassSuspect(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
+                    </Field>
+                  </div>
                 </div>
+              )}
+            </Section>
+
+            <Section
+              title="Ek Bulgular / İnsidental / Kesit alanına giren diğer bulgular"
+              right={<div className="text-xs text-neutral-500">Serbest metin</div>}
+            >
+              <TextArea
+                value={extraFindings}
+                onChange={setExtraFindings}
+                placeholder="Örn: Sağ böbrek alt polde 6 mm nonobstrüktif taş. Dalakta 8 mm hipodens lezyon (kist lehine). Akciğer bazallerinde bant atelektazi..."
+              />
+              <div className="mt-2 text-xs text-neutral-500">
+                Buraya yazdığın metin, otomatik olarak <b>Rapor Dili</b> ve <b>Final</b> bölümüne uygun formatta eklenir.
               </div>
-            )}
-          </Section>
+            </Section>
+          </div>
 
-          {/* ✅ MANUEL EK BULGULAR */}
-          <Section
-            title="Ek Bulgular / İnsidental / Kesit alanına giren diğer bulgular"
-            right={<div className="text-xs text-neutral-500">Serbest metin</div>}
-          >
-            <TextArea
-              value={extraFindings}
-              onChange={setExtraFindings}
-              placeholder="Örn: Sağ böbrek alt polde 6 mm nonobstrüktif taş. Dalakta 8 mm hipodens lezyon (kist lehine). Akciğer bazallerinde bant atelektazi..."
-            />
-            <div className="mt-2 text-xs text-neutral-500">
-              Buraya yazdığın metin, otomatik olarak <b>Rapor Dili</b> ve <b>Final Tek Cümle</b> bölümüne uygun formatta eklenir.
-            </div>
-          </Section>
+          {/* RIGHT: STICKY OUTPUT */}
+          <div className="lg:col-span-5 xl:col-span-4">
+            <div className="lg:sticky lg:top-4 grid gap-4">
+              <div ref={outputRef} />
 
-          <div ref={outputRef}>
-            <Section title="AI Çıktı" right={<div className="text-xs text-neutral-500">(Canlı) Kural tabanlı</div>}>
-              <div className="grid gap-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Section title="AI Çıktı" right={<div className="text-xs text-neutral-500">(Canlı) Kural tabanlı</div>}>
+                <div className="grid gap-4">
                   <Card title="Rapor Dili">
                     <ul className="list-disc space-y-2 pl-5 text-sm">
                       {outputs.reportLines.map((l, i) => (
@@ -1027,7 +1150,7 @@ export default function LiverPage() {
                     <pre className="whitespace-pre-wrap text-sm leading-relaxed">{ddxText}</pre>
                   </Card>
 
-                  <Card title="Öneriler (Klinik / Radyoloji)">
+                  <Card title="Öneriler">
                     {outputs.rec.length ? (
                       <ul className="list-disc space-y-2 pl-5 text-sm">
                         {outputs.rec.map((x, i) => (
@@ -1037,19 +1160,18 @@ export default function LiverPage() {
                     ) : (
                       <div className="text-sm text-neutral-500">—</div>
                     )}
+                  </Card>
 
-                    <div className="mt-3 border-t pt-3">
-                      <div className="mb-2 text-sm font-semibold">İleri İnceleme (sekans dahil)</div>
-                      {outputs.advanced.length ? (
-                        <ul className="list-disc space-y-2 pl-5 text-sm">
-                          {outputs.advanced.map((x, i) => (
-                            <li key={i}>{x}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <div className="text-sm text-neutral-500">—</div>
-                      )}
-                    </div>
+                  <Card title="İleri İnceleme (sekans dahil)">
+                    {outputs.advanced.length ? (
+                      <ul className="list-disc space-y-2 pl-5 text-sm">
+                        {outputs.advanced.map((x, i) => (
+                          <li key={i}>{x}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="text-sm text-neutral-500">—</div>
+                    )}
                   </Card>
 
                   <Card title="Acil / Uyarı">
@@ -1063,54 +1185,37 @@ export default function LiverPage() {
                       <div className="text-sm text-neutral-500">—</div>
                     )}
                   </Card>
-                </div>
 
-                <div className="rounded-2xl border border-neutral-200 bg-white p-4">
-                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                    <div className="font-semibold">Final Rapor (Tek Cümle)</div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-xs text-neutral-600">Format</div>
-                      <select
-                        className="h-10 rounded-xl border border-neutral-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-neutral-200"
-                        value={finalFormat}
-                        onChange={(e) => setFinalFormat(e.target.value as any)}
-                      >
-                        <option>Olasılık dili</option>
-                        <option>Öneri dili</option>
-                        <option>Nötr</option>
-                      </select>
-                      <CopyButton text={outputs.finalSentence} />
+                  <div className="rounded-2xl border border-neutral-200 bg-white p-4">
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                      <div className="font-semibold">Final (Tek Cümle)</div>
+                      <div className="flex items-center gap-2">
+                        <select
+                          className="h-10 rounded-xl border border-neutral-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-neutral-200"
+                          value={finalFormat}
+                          onChange={(e) => setFinalFormat(e.target.value as any)}
+                        >
+                          <option>Olasılık dili</option>
+                          <option>Öneri dili</option>
+                          <option>Nötr</option>
+                        </select>
+                        <CopyButton text={outputs.finalSentence} />
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-neutral-300 bg-white p-3 text-sm">{outputs.finalSentence}</div>
+
+                    <div className="mt-2 text-xs text-neutral-500">
+                      ✅ Canlı çıktı: alanları değiştirdikçe rapor/ayırıcı tanı/öneriler otomatik güncellenir.
                     </div>
                   </div>
-                  <div className="rounded-xl border border-neutral-300 bg-white p-3 text-sm">{outputs.finalSentence}</div>
-
-                  <div className="mt-2 text-xs text-neutral-500">✅ Canlı çıktı: alanları değiştirdikçe rapor/ayırıcı tanı/öneriler otomatik güncellenir.</div>
                 </div>
+              </Section>
+
+              <div className="text-xs text-neutral-500">
+                ⚠️ Klinik karar destek amaçlıdır; klinik/laboratuvar ve önceki tetkiklerle korelasyon esastır.
               </div>
-            </Section>
+            </div>
           </div>
-
-          <div className="text-xs text-neutral-500">
-            ⚠️ Klinik karar destek amaçlıdır; klinik/laboratuvar ve önceki tetkiklerle korelasyon esastır.
-          </div>
-        </div>
-
-        {/* Üstteki butonları korumak için burada bırakıyorum */}
-        <div className="mt-4 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            className="h-10 rounded-xl border border-neutral-900 bg-neutral-900 px-4 text-sm font-medium text-white hover:bg-neutral-800"
-            onClick={() => outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-          >
-            Çıktıya Git
-          </button>
-          <button
-            type="button"
-            className="h-10 rounded-xl border border-neutral-300 bg-white px-4 text-sm font-medium text-neutral-800 hover:bg-neutral-50"
-            onClick={resetAll}
-          >
-            Sıfırla
-          </button>
         </div>
       </div>
     </div>
