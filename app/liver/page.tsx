@@ -151,7 +151,15 @@ function Pill({
   );
 }
 
-function CopyButton({ text }: { text: string }) {
+function CopyButton({
+  text,
+  label = "Kopyala",
+  copiedLabel = "Kopyalandı",
+}: {
+  text: string;
+  label?: string;
+  copiedLabel?: string;
+}) {
   const [ok, setOk] = useState(false);
 
   return (
@@ -172,8 +180,9 @@ function CopyButton({ text }: { text: string }) {
           // noop
         }
       }}
+      title="Panoya kopyalar"
     >
-      {ok ? "Kopyalandı" : "Kopyala"}
+      {ok ? copiedLabel : label}
     </button>
   );
 }
@@ -314,6 +323,7 @@ export default function LiverPage() {
 
     const sizeTxt = largestMm?.trim() ? `${largestMm.trim()} mm` : "ölçülemeyen";
     const segTxt = segment !== "Bilinmiyor" ? segment : "ilgili segment";
+    const marginAvoid = margin === "Bilinmiyor";
     const marginTxt =
       margin === "Düzgün"
         ? "düzgün sınırlı"
@@ -324,9 +334,9 @@ export default function LiverPage() {
 
     // ===== KARACİĞER =====
     if (hasLiver) {
-      report.push(
-        `Karaciğerde ${segTxt} düzeyinde ${sizeTxt} boyutlu ${marginTxt} lezyon izlenmektedir. ${multiTxt}`.trim()
-      );
+      const baseSentence = `Karaciğerde ${segTxt} düzeyinde ${sizeTxt} boyutlu ${marginAvoid ? "" : marginTxt} lezyon izlenmektedir.`;
+      report.push(baseSentence.replace(/\s+/g, " ").trim());
+      if (multiTxt) report.push(multiTxt);
       if (fattyLiver === "Var") report.push(`Hepatik steatoz ile uyumlu görünüm izlenmektedir.`);
 
       if (showCT) {
@@ -681,6 +691,50 @@ export default function LiverPage() {
     return chunks.length ? chunks.join("\n").trim() : "—";
   }, [outputs.ddx]);
 
+  // 1) Klinik kullanım için “rapor-only” kopyalama
+  const reportOnlyToCopy = useMemo(() => {
+    const lines: string[] = [];
+    lines.push("RAPOR:");
+    outputs.reportLines.forEach((l) => lines.push(`- ${l}`));
+    lines.push("");
+    lines.push("SONUÇ:");
+    lines.push(outputs.finalSentence);
+    return lines.join("\n");
+  }, [outputs.reportLines, outputs.finalSentence]);
+
+  // 2) Tam çıktı kopyalama
+  const allTextToCopy = useMemo(() => {
+    const lines: string[] = [];
+
+    lines.push("=== RAPOR DİLİ ===");
+    outputs.reportLines.forEach((l) => lines.push(`• ${l}`));
+    lines.push("");
+
+    lines.push("=== AYIRICI TANI (ORGAN BAZLI) ===");
+    lines.push(ddxText === "—" ? "—" : ddxText);
+    lines.push("");
+
+    lines.push("=== ÖNERİLER ===");
+    if (outputs.rec.length) outputs.rec.forEach((x) => lines.push(`• ${x}`));
+    else lines.push("—");
+    lines.push("");
+
+    lines.push("=== İLERİ İNCELEME (SEKANS DAHİL) ===");
+    if (outputs.advanced.length) outputs.advanced.forEach((x) => lines.push(`• ${x}`));
+    else lines.push("—");
+    lines.push("");
+
+    lines.push("=== ACİL / UYARI ===");
+    if (outputs.alerts.length) outputs.alerts.forEach((x) => lines.push(`• ${x}`));
+    else lines.push("—");
+    lines.push("");
+
+    lines.push("=== FINAL (TEK CÜMLE) ===");
+    lines.push(outputs.finalSentence);
+
+    return lines.join("\n");
+  }, [outputs.reportLines, outputs.rec, outputs.advanced, outputs.alerts, outputs.finalSentence, ddxText]);
+
   function resetAll() {
     setMode("Var/Yok → Detay");
     setExtraFindings("");
@@ -788,9 +842,9 @@ export default function LiverPage() {
           </div>
         </div>
 
-        {/* LAYOUT: Left Form + Right Sticky Output */}
+        {/* LAYOUT */}
         <div className="grid gap-4 lg:grid-cols-12">
-          {/* LEFT: FORM */}
+          {/* LEFT */}
           <div className="lg:col-span-7 xl:col-span-8 grid gap-4">
             <Section title="1) İnceleme & Klinik Zemin">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -945,30 +999,15 @@ export default function LiverPage() {
                   <div className="mb-3 text-sm font-semibold">MR (Karaciğer)</div>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <Field label="T1 sinyal" disabled={liverLesion !== "Var"}>
-                      <Select
-                        value={mrT1}
-                        onChange={(v) => setMrT1(v as any)}
-                        options={["Bilinmiyor", "Hipo", "İzo", "Hiper"]}
-                        disabled={liverLesion !== "Var"}
-                      />
+                      <Select value={mrT1} onChange={(v) => setMrT1(v as any)} options={["Bilinmiyor", "Hipo", "İzo", "Hiper"]} disabled={liverLesion !== "Var"} />
                     </Field>
 
                     <Field label="T2 sinyal" disabled={liverLesion !== "Var"}>
-                      <Select
-                        value={mrT2}
-                        onChange={(v) => setMrT2(v as any)}
-                        options={["Bilinmiyor", "Hipo", "İzo", "Hiper"]}
-                        disabled={liverLesion !== "Var"}
-                      />
+                      <Select value={mrT2} onChange={(v) => setMrT2(v as any)} options={["Bilinmiyor", "Hipo", "İzo", "Hiper"]} disabled={liverLesion !== "Var"} />
                     </Field>
 
                     <Field label="DWI kısıtlılığı" disabled={liverLesion !== "Var"}>
-                      <Select
-                        value={dwiRestrict}
-                        onChange={(v) => setDwiRestrict(v as any)}
-                        options={["Bilinmiyor", "Yok", "Var"]}
-                        disabled={liverLesion !== "Var"}
-                      />
+                      <Select value={dwiRestrict} onChange={(v) => setDwiRestrict(v as any)} options={["Bilinmiyor", "Yok", "Var"]} disabled={liverLesion !== "Var"} />
                     </Field>
 
                     <Field
@@ -991,21 +1030,11 @@ export default function LiverPage() {
                     </Field>
 
                     <Field label="Washout" disabled={liverLesion !== "Var" || isMrNoDynamic || mrDynamic === "Bilinmiyor"}>
-                      <Select
-                        value={mrWashout}
-                        onChange={(v) => setMrWashout(v as any)}
-                        options={["Bilinmiyor", "Yok", "Var"]}
-                        disabled={liverLesion !== "Var" || isMrNoDynamic || mrDynamic === "Bilinmiyor"}
-                      />
+                      <Select value={mrWashout} onChange={(v) => setMrWashout(v as any)} options={["Bilinmiyor", "Yok", "Var"]} disabled={liverLesion !== "Var" || isMrNoDynamic || mrDynamic === "Bilinmiyor"} />
                     </Field>
 
                     <Field label="Hepatobiliyer faz (HBP)" hint="Gadoxetic asit yoksa 'Yapılmadı' seç." disabled={liverLesion !== "Var"}>
-                      <Select
-                        value={hbPhase}
-                        onChange={(v) => setHbPhase(v as any)}
-                        options={["Bilinmiyor", "Yapılmadı", "Hipointens", "İzointens", "Hiperintens"]}
-                        disabled={liverLesion !== "Var"}
-                      />
+                      <Select value={hbPhase} onChange={(v) => setHbPhase(v as any)} options={["Bilinmiyor", "Yapılmadı", "Hipointens", "İzointens", "Hiperintens"]} disabled={liverLesion !== "Var"} />
                     </Field>
                   </div>
                 </div>
@@ -1116,10 +1145,7 @@ export default function LiverPage() {
               )}
             </Section>
 
-            <Section
-              title="Ek Bulgular / İnsidental / Kesit alanına giren diğer bulgular"
-              right={<div className="text-xs text-neutral-500">Serbest metin</div>}
-            >
+            <Section title="Ek Bulgular / İnsidental / Kesit alanına giren diğer bulgular" right={<div className="text-xs text-neutral-500">Serbest metin</div>}>
               <TextArea
                 value={extraFindings}
                 onChange={setExtraFindings}
@@ -1136,7 +1162,16 @@ export default function LiverPage() {
             <div className="lg:sticky lg:top-4 grid gap-4">
               <div ref={outputRef} />
 
-              <Section title="AI Çıktı" right={<div className="text-xs text-neutral-500">(Canlı) Kural tabanlı</div>}>
+              <Section
+                title="AI Çıktı"
+                right={
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <CopyButton text={reportOnlyToCopy} label="Raporu Kopyala" copiedLabel="Rapor Kopyalandı" />
+                    <CopyButton text={allTextToCopy} label="Tam Çıktıyı Kopyala" copiedLabel="Tam Çıktı Kopyalandı" />
+                    <div className="text-xs text-neutral-500">(Canlı)</div>
+                  </div>
+                }
+              >
                 <div className="grid gap-4">
                   <Card title="Rapor Dili">
                     <ul className="list-disc space-y-2 pl-5 text-sm">
@@ -1199,7 +1234,7 @@ export default function LiverPage() {
                           <option>Öneri dili</option>
                           <option>Nötr</option>
                         </select>
-                        <CopyButton text={outputs.finalSentence} />
+                        <CopyButton text={outputs.finalSentence} label="Finali Kopyala" copiedLabel="Final Kopyalandı" />
                       </div>
                     </div>
                     <div className="rounded-xl border border-neutral-300 bg-white p-3 text-sm">{outputs.finalSentence}</div>
