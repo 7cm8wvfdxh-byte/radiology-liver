@@ -51,9 +51,56 @@ function UrgencyBadge({ v }: { v: Suggestion["urgency"] }) {
   return <Badge variant={variant}>{v}</Badge>;
 }
 
+function toNum(v: string): number | null {
+  const t = v.trim();
+  if (!t) return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+}
+
+function formatMm(n: number | null, fallback = "—") {
+  if (n === null) return fallback;
+  const s = Number.isInteger(n) ? `${n}` : `${n}`;
+  return `${s} mm`;
+}
+
+function toggleInArray<T extends string>(arr: T[], v: T): T[] {
+  return arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
+}
+
+function joinHuman(list: string[]) {
+  if (list.length === 0) return "";
+  if (list.length === 1) return list[0]!;
+  if (list.length === 2) return `${list[0]} ve ${list[1]}`;
+  return `${list.slice(0, -1).join(", ")} ve ${list[list.length - 1]}`;
+}
+
+/** ---- Extra-axial "age" helpers ---- */
+type ExtraAxialAge = "Bilinmiyor" | "Akut" | "Subakut" | "Kronik" | "Akut üzerine kronik";
+type CtDensity = "Bilinmiyor" | "Hiperdens" | "İzodens" | "Hipodens" | "Miks";
+
+function inferExtraAxialAgeFromCT(d: CtDensity): { guess: ExtraAxialAge; note: string } {
+  // NOTE: This is an "assist" suggestion, not a diagnosis.
+  // Classic teaching: acute tends to be hyperdense; chronic hypodense; subacute can be iso; mixed suggests acute-on-chronic.
+  if (d === "Miks") return { guess: "Akut üzerine kronik", note: "Miks densite, akut üzerine kronik ile uyumlu olabilir." };
+  if (d === "Hiperdens") return { guess: "Akut", note: "Hiperdensite akut kanama lehine olabilir." };
+  if (d === "Hipodens") return { guess: "Kronik", note: "Hipodensite kronik koleksiyon lehine olabilir." };
+  if (d === "İzodens") return { guess: "Subakut", note: "İzodens koleksiyon subakut dönemde görülebilir." };
+  return { guess: "Bilinmiyor", note: "Densite seçilmedi; evre için otomatik öneri yok." };
+}
+
+function ageWordTR(age: ExtraAxialAge): string {
+  // how it will appear in sentence
+  if (age === "Bilinmiyor") return "ekstraaksiyel";
+  if (age === "Akut") return "akut";
+  if (age === "Subakut") return "subakut";
+  if (age === "Kronik") return "kronik";
+  return "akut üzerine kronik";
+}
+
 /** -----------------------------
- * Brain module (v1 skeleton)
- * Goal: Conditional UI by flow (Travma / Kanama / Kitle-Enfeksiyon)
+ * Brain module (v1.2)
+ * Added: SDH/EDH "age" (acute/subacute/chronic/acute-on-chronic) + CT density assisted suggestion
  * ----------------------------- */
 function BrainModule() {
   const [modality, setModality] = useState<Modality>("BT");
@@ -73,25 +120,42 @@ function BrainModule() {
   const [focalDeficit, setFocalDeficit] = useState(false);
   const [midlineShift, setMidlineShift] = useState<"yok" | "hafif" | "belirgin">("yok");
   const [cisternEffacement, setCisternEffacement] = useState<"yok" | "hafif" | "belirgin">("yok");
-  const [extraAxialHematoma, setExtraAxialHematoma] = useState<"yok" | "epidural" | "subdural" | "bilinmiyor">("yok");
+  const [extraAxialHematoma, setExtraAxialHematoma] = useState<"yok" | "epidural" | "subdural" | "bilinmiyor">(
+    "yok"
+  );
   const [contusion, setContusion] = useState(false);
   const [pneumocephalus, setPneumocephalus] = useState(false);
   const [skullFractureSuspect, setSkullFractureSuspect] = useState(false);
   const [daiSuspect, setDaiSuspect] = useState<"yok" | "var" | "bilinmiyor">("bilinmiyor");
 
   /** KANAMA fields */
-  const [bleedType, setBleedType] = useState<
-    "yok" | "SAH" | "IVH" | "ICH" | "SDH" | "EDH" | "bilinmiyor"
-  >("bilinmiyor");
-  const [bleedLocation, setBleedLocation] = useState<
-    "bilinmiyor" | "lobar" | "derin (BG/talamus)" | "pons" | "serebellum"
-  >("bilinmiyor");
+  const [bleedType, setBleedType] = useState<"yok" | "SAH" | "IVH" | "ICH" | "SDH" | "EDH" | "bilinmiyor">(
+    "bilinmiyor"
+  );
+  const [bleedLocation, setBleedLocation] = useState<"bilinmiyor" | "lobar" | "derin (BG/talamus)" | "pons" | "serebellum">(
+    "bilinmiyor"
+  );
   const [intraventricularExt, setIntraventricularExt] = useState(false);
   const [hydrocephalus, setHydrocephalus] = useState(false);
 
-  // MR signal shorthand (basic v1)
+  // MR adjunct (light)
   const [swiBlooming, setSwiBlooming] = useState<"bilinmiyor" | "var" | "yok">("bilinmiyor");
   const [dwiRestriction, setDwiRestriction] = useState<"bilinmiyor" | "var" | "yok">("bilinmiyor");
+
+  /** SDH/EDH detailed descriptors */
+  const [extraAxialSide, setExtraAxialSide] = useState<"Sağ" | "Sol" | "Bilateral" | "Orta hat" | "Bilinmiyor">(
+    "Bilinmiyor"
+  );
+  const [sdhRegions, setSdhRegions] = useState<
+    Array<"Frontal" | "Temporal" | "Parietal" | "Oksipital" | "Falx boyunca" | "Tentoryum boyunca" | "Interhemisferik">
+  >([]);
+  const [edhRegions, setEdhRegions] = useState<Array<"Frontal" | "Temporal" | "Parietal" | "Oksipital" | "Bilinmiyor">>([]);
+  const [extraAxialThicknessMm, setExtraAxialThicknessMm] = useState<string>("");
+  const [midlineShiftMm, setMidlineShiftMm] = useState<string>("");
+
+  // NEW: age + CT density (assist)
+  const [extraAxialAge, setExtraAxialAge] = useState<ExtraAxialAge>("Bilinmiyor");
+  const [ctDensity, setCtDensity] = useState<CtDensity>("Bilinmiyor");
 
   /** KİTLE/ENF fields */
   const [massPresent, setMassPresent] = useState(false);
@@ -100,20 +164,84 @@ function BrainModule() {
   const [multiLesion, setMultiLesion] = useState<"bilinmiyor" | "tek" | "coklu">("bilinmiyor");
   const [cbvHigh, setCbvHigh] = useState<"bilinmiyor" | "yuksek" | "dusuk">("bilinmiyor");
 
+  const copyText = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // ignore
+    }
+  };
+
+  const isExtraAxialDetail = flow === "kanama" && (bleedType === "SDH" || bleedType === "EDH");
+
+  const ageAssist = useMemo(() => {
+    if (!isExtraAxialDetail) return { guess: "Bilinmiyor" as ExtraAxialAge, note: "" };
+    if (modality !== "BT") return { guess: "Bilinmiyor" as ExtraAxialAge, note: "MR için v1.2'de otomatik evre önerisi kapalı (manuel seçebilirsin)." };
+    const { guess, note } = inferExtraAxialAgeFromCT(ctDensity);
+    return { guess, note };
+  }, [isExtraAxialDetail, modality, ctDensity]);
+
+  const resolvedAge: ExtraAxialAge = useMemo(() => {
+    // Manual override has priority
+    if (!isExtraAxialDetail) return "Bilinmiyor";
+    if (extraAxialAge !== "Bilinmiyor") return extraAxialAge;
+    // If manual unknown, try assist
+    if (ageAssist.guess !== "Bilinmiyor") return ageAssist.guess;
+    return "Bilinmiyor";
+  }, [isExtraAxialDetail, extraAxialAge, ageAssist.guess]);
+
+  const extraAxialSentence = useMemo(() => {
+    const t = toNum(extraAxialThicknessMm);
+    const mls = toNum(midlineShiftMm);
+
+    const isSDH = bleedType === "SDH";
+    const isEDH = bleedType === "EDH";
+    if (!isSDH && !isEDH) return "";
+
+    const typeText = isSDH ? "subdural hematom" : "epidural hematom";
+
+    const sideText =
+      extraAxialSide === "Bilinmiyor"
+        ? ""
+        : extraAxialSide === "Orta hat"
+          ? "orta hat boyunca"
+          : extraAxialSide.toLowerCase();
+
+    const regionList = isSDH ? sdhRegions : edhRegions;
+    const regionText = regionList.length ? joinHuman(regionList.map((x) => x.toLowerCase())) : "";
+
+    const locParts = [sideText, regionText].filter(Boolean);
+    const loc = locParts.length ? `${locParts.join(" ")} ` : "";
+
+    const thicknessPart = t !== null ? `maksimum ~${formatMm(t)} kalınlıkta ` : "";
+
+    const ageWord = ageWordTR(resolvedAge);
+    const prefix = ageWord === "ekstraaksiyel" ? "" : `${ageWord} `;
+
+    const mlsPart = mls !== null && mls > 0 ? ` Orta hat ~${formatMm(mls)} deviyedir.` : "";
+
+    return `${loc}${thicknessPart}${prefix}${typeText} izlenmektedir.${mlsPart}`.replace(/\s+/g, " ").trim();
+  }, [
+    bleedType,
+    extraAxialSide,
+    sdhRegions,
+    edhRegions,
+    extraAxialThicknessMm,
+    midlineShiftMm,
+    resolvedAge,
+  ]);
+
   const ddxAndSuggestions = useMemo(() => {
     let ddx: DdxItem[] = [];
     const suggestions: Suggestion[] = [];
 
-    // --- Context weights ---
     const ctxWhy: string[] = [];
     if (knownMalignancy) ctxWhy.push("Bilinen malignite öyküsü.");
     if (feverSepsis) ctxWhy.push("Ateş/sepsis kliniği.");
     if (traumaHx) ctxWhy.push("Travma öyküsü.");
     if (anticoagulant) ctxWhy.push("Antikoagülan/antiagregan kullanımı.");
 
-    // Flow specific
     if (flow === "travma") {
-      // Basic trauma triage + suggestions
       if (traumaHx) {
         suggestions.push({
           title: "Travma BT değerlendirmesi: kemik pencere + seri kontrol",
@@ -141,7 +269,6 @@ function BrainModule() {
         });
       }
 
-      // DDX (simple, explainable)
       if (extraAxialHematoma === "epidural") {
         ddx.push({
           name: "Epidural hematom",
@@ -152,7 +279,10 @@ function BrainModule() {
         ddx.push({
           name: "Subdural hematom",
           likelihood: "Yüksek",
-          why: ["Ekstraaksiyel kanama paterni subdural ile uyumlu olabilir.", anticoagulant ? "Antikoagülan öyküsü risk artırır." : "Klinik korelasyon."],
+          why: [
+            "Ekstraaksiyel kanama paterni subdural ile uyumlu olabilir.",
+            anticoagulant ? "Antikoagülan öyküsü risk artırır." : "Klinik korelasyon.",
+          ],
         });
       } else if (contusion) {
         ddx.push({
@@ -178,7 +308,6 @@ function BrainModule() {
         });
       }
 
-      // Always keep at least one
       if (ddx.length === 0) {
         ddx.push({
           name: "Travmaya bağlı akut patoloji açısından belirgin bulgu yok / minimal bulgu",
@@ -189,7 +318,6 @@ function BrainModule() {
     }
 
     if (flow === "kanama") {
-      // Suggestions
       if (bleedType === "SAH") {
         suggestions.push({
           title: "SAH şüphesinde CTA (anevrizma açısından) düşün",
@@ -208,8 +336,45 @@ function BrainModule() {
         });
       }
 
-      // DDX rough
-      if (bleedType !== "bilinmiyor" && bleedType !== "yok") {
+      // SDH/EDH DDX (with age + measurements)
+      if (bleedType === "SDH" || bleedType === "EDH") {
+        let l: Likelihood = traumaHx ? "Yüksek" : "Orta";
+        const why: string[] = [
+          ...ctxWhy,
+          extraAxialSentence ? `Rapor cümlesi: "${extraAxialSentence}"` : "Ekstraaksiyel kanama parametreleri seçildi.",
+        ];
+
+        if (anticoagulant && bleedType === "SDH") {
+          l = bumpLikelihood(l, "up");
+          why.push("Antikoagülan kullanımı SDH riskini artırır.");
+        }
+
+        if (modality === "BT" && ctDensity !== "Bilinmiyor") {
+          why.push(`BT densitesi: ${ctDensity}.`);
+          if (extraAxialAge === "Bilinmiyor" && ageAssist.guess !== "Bilinmiyor") {
+            why.push(`Evre için otomatik öneri: ${ageAssist.guess} (yardımcı).`);
+          }
+        }
+
+        const mls = toNum(midlineShiftMm);
+        if (mls !== null && mls >= 5) {
+          suggestions.push({
+            title: "Orta hat deviasyonu belirgin: acil klinik korelasyon / nöroşirürji",
+            urgency: "Acil",
+            details: ["Midline shift ≥ 5 mm eşlik ediyor olabilir.", "Kitle etkisi ve klinik durumla birlikte değerlendirilir."],
+          });
+          l = bumpLikelihood(l, "up");
+        }
+
+        ddx.push({
+          name: bleedType === "SDH" ? "Subdural hematom" : "Epidural hematom",
+          likelihood: l,
+          why,
+        });
+      }
+
+      // Other bleed types
+      if (bleedType !== "bilinmiyor" && bleedType !== "yok" && bleedType !== "SDH" && bleedType !== "EDH") {
         const baseWhy = [
           ...ctxWhy,
           modality === "MR" ? "MR parametreleriyle kanama özellikleri desteklenebilir." : "BT yoğunluk dağılımı ile korelasyon.",
@@ -247,23 +412,14 @@ function BrainModule() {
             why: [...baseWhy, "IVH; parankimal kanama uzanımı veya vasküler nedenlerle ilişkili olabilir."],
           });
         }
-
-        if (bleedType === "SDH" || bleedType === "EDH") {
-          ddx.push({
-            name: bleedType === "SDH" ? "Subdural hematom" : "Epidural hematom",
-            likelihood: traumaHx ? "Yüksek" : "Orta",
-            why: [...baseWhy, traumaHx ? "Travma bağlamı destekler." : "Klinik/öykü ile doğrulanmalıdır."],
-          });
-        }
-      } else {
+      } else if (bleedType === "bilinmiyor" || bleedType === "yok") {
         ddx.push({
           name: "Belirgin akut kanama lehine güçlü parametre seçilmedi",
           likelihood: "Düşük",
-          why: ["Kanama tipi/yerleşim seçimi net değil veya 'yok' seçildi."],
+          why: ["Kanama tipi seçimi net değil veya 'yok' seçildi."],
         });
       }
 
-      // MR adjunct hints (very lightweight v1)
       if (modality === "MR") {
         if (swiBlooming === "var") {
           ddx.unshift({
@@ -290,7 +446,6 @@ function BrainModule() {
           why: ["Kitle var seçilmedi."],
         });
       } else {
-        // Suggestions
         suggestions.push({
           title: "Kitle/enfeksiyon ayrımı için kontrastlı beyin MR önerilir",
           urgency: "Öncelikli",
@@ -300,7 +455,6 @@ function BrainModule() {
         let metaLike: Likelihood = knownMalignancy ? "Yüksek" : "Orta";
         let absLike: Likelihood = feverSepsis ? "Orta" : "Düşük";
 
-        // Ring patterns + diffusion etc.
         if (ringEnhancing === "var") {
           metaLike = bumpLikelihood(metaLike, "up");
           absLike = bumpLikelihood(absLike, "up");
@@ -346,17 +500,20 @@ function BrainModule() {
       }
     }
 
-    // Sort: Yüksek > Orta > Düşük
     const order: Record<Likelihood, number> = { Yüksek: 3, Orta: 2, Düşük: 1 };
     ddx = ddx.sort((a, b) => order[b.likelihood] - order[a.likelihood]).slice(0, 6);
 
-    // Final sentence (very safe, conditional)
-    const flowTitle =
-      flow === "travma" ? "Travma" : flow === "kanama" ? "Kanama" : "Kitle/Enfeksiyon";
-    const final =
-      ddx.length > 0
-        ? `${modality} incelemede ${flowTitle.toLowerCase()} açısından ön planda: ${ddx[0].name}. Klinik ve önceki tetkiklerle korelasyon önerilir.`
-        : `${modality} incelemede belirgin akut patoloji izlenmemektedir. Klinik korelasyon önerilir.`;
+    // Final sentence priority: SDH/EDH detailed sentence
+    let final: string;
+    if (flow === "kanama" && (bleedType === "SDH" || bleedType === "EDH") && extraAxialSentence) {
+      final = `${modality} incelemede ${extraAxialSentence} Klinik korelasyon önerilir.`.replace(/\s+/g, " ").trim();
+    } else {
+      const flowTitle = flow === "travma" ? "Travma" : flow === "kanama" ? "Kanama" : "Kitle/Enfeksiyon";
+      final =
+        ddx.length > 0
+          ? `${modality} incelemede ${flowTitle.toLowerCase()} açısından ön planda: ${ddx[0].name}. Klinik ve önceki tetkiklerle korelasyon önerilir.`
+          : `${modality} incelemede belirgin akut patoloji izlenmemektedir. Klinik korelasyon önerilir.`;
+    }
 
     return { ddx, suggestions, final };
   }, [
@@ -383,6 +540,18 @@ function BrainModule() {
     hydrocephalus,
     swiBlooming,
     dwiRestriction,
+    // extra-axial detailed
+    extraAxialSide,
+    sdhRegions,
+    edhRegions,
+    extraAxialThicknessMm,
+    midlineShiftMm,
+    extraAxialAge,
+    ctDensity,
+    resolvedAge,
+    ageAssist.guess,
+    ageAssist.note,
+    extraAxialSentence,
     // kitle
     massPresent,
     ringEnhancing,
@@ -393,44 +562,29 @@ function BrainModule() {
 
   const { ddx, suggestions, final } = ddxAndSuggestions;
 
-  const copyText = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      // ignore
-    }
-  };
-
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       {/* Left */}
       <div className="space-y-6">
         <Card className="rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-lg">Beyin AI Yardımcı Modül (v1) — Akış seçimi</CardTitle>
+            <CardTitle className="text-lg">Beyin AI Yardımcı Modül (v1.2) — Akış seçimi</CardTitle>
             <p className="text-sm text-muted-foreground">
               Travma / Kanama / Kitle-Enfeksiyon akışına göre form alanları koşullu açılır.
             </p>
           </CardHeader>
           <CardContent className="space-y-5">
-            {/* Modality */}
             <div className="space-y-2">
               <Label>İnceleme tipi</Label>
               <div className="flex flex-wrap gap-2">
                 {(["BT", "MR"] as Modality[]).map((v) => (
-                  <Button
-                    key={v}
-                    size="sm"
-                    variant={modality === v ? "default" : "outline"}
-                    onClick={() => setModality(v)}
-                  >
+                  <Button key={v} size="sm" variant={modality === v ? "default" : "outline"} onClick={() => setModality(v)}>
                     {v}
                   </Button>
                 ))}
               </div>
             </div>
 
-            {/* Flow toggle */}
             <div className="space-y-2">
               <Label>Akış</Label>
               <div className="flex flex-wrap gap-2">
@@ -439,24 +593,16 @@ function BrainModule() {
                   { key: "kanama", label: "Kanama" },
                   { key: "kitle", label: "Kitle / Enfeksiyon" },
                 ] as Array<{ key: BrainFlow; label: string }>).map((x) => (
-                  <Button
-                    key={x.key}
-                    size="sm"
-                    variant={flow === x.key ? "default" : "outline"}
-                    onClick={() => setFlow(x.key)}
-                  >
+                  <Button key={x.key} size="sm" variant={flow === x.key ? "default" : "outline"} onClick={() => setFlow(x.key)}>
                     {x.label}
                   </Button>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Seçtiğin akış, yalnız ilgili parametrelerin görünmesini sağlar.
-              </p>
+              <p className="text-xs text-muted-foreground">Seçtiğin akış, yalnız ilgili parametrelerin görünmesini sağlar.</p>
             </div>
 
             <Separator />
 
-            {/* Clinical context */}
             <div className="space-y-3">
               <div className="text-sm font-medium">Klinik zemin / bağlam</div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -493,125 +639,12 @@ function BrainModule() {
           </CardContent>
         </Card>
 
-        {/* Flow cards */}
-        {flow === "travma" && (
-          <Card className="rounded-2xl">
-            <CardHeader>
-              <CardTitle className="text-base">Travma</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Pratik triage için temel parametreler (v1 iskelet).
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex items-center justify-between rounded-xl border p-3">
-                  <div>
-                    <div className="text-sm font-medium">GKS düşük / bilinç bozukluğu</div>
-                    <div className="text-xs text-muted-foreground">DAI / ağır travma riski</div>
-                  </div>
-                  <Switch checked={gcsLow} onCheckedChange={setGcsLow} />
-                </div>
-                <div className="flex items-center justify-between rounded-xl border p-3">
-                  <div>
-                    <div className="text-sm font-medium">Fokal defisit</div>
-                    <div className="text-xs text-muted-foreground">Kitle etkisi/kanama</div>
-                  </div>
-                  <Switch checked={focalDeficit} onCheckedChange={setFocalDeficit} />
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-2 rounded-xl border p-3">
-                  <div className="text-sm font-medium">Midline shift</div>
-                  <div className="flex flex-wrap gap-2">
-                    {(["yok", "hafif", "belirgin"] as const).map((v) => (
-                      <Button
-                        key={v}
-                        size="sm"
-                        variant={midlineShift === v ? "default" : "outline"}
-                        onClick={() => setMidlineShift(v)}
-                      >
-                        {v}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-2 rounded-xl border p-3">
-                  <div className="text-sm font-medium">Sisternal effacement</div>
-                  <div className="flex flex-wrap gap-2">
-                    {(["yok", "hafif", "belirgin"] as const).map((v) => (
-                      <Button
-                        key={v}
-                        size="sm"
-                        variant={cisternEffacement === v ? "default" : "outline"}
-                        onClick={() => setCisternEffacement(v)}
-                      >
-                        {v}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-2 rounded-xl border p-3">
-                  <div className="text-sm font-medium">Ekstraaksiyel hematom</div>
-                  <div className="flex flex-wrap gap-2">
-                    {(["yok", "epidural", "subdural", "bilinmiyor"] as const).map((v) => (
-                      <Button
-                        key={v}
-                        size="sm"
-                        variant={extraAxialHematoma === v ? "default" : "outline"}
-                        onClick={() => setExtraAxialHematoma(v)}
-                      >
-                        {v}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2 rounded-xl border p-3">
-                  <div className="text-sm font-medium">DAI şüphesi</div>
-                  <div className="flex flex-wrap gap-2">
-                    {(["yok", "var", "bilinmiyor"] as const).map((v) => (
-                      <Button
-                        key={v}
-                        size="sm"
-                        variant={daiSuspect === v ? "default" : "outline"}
-                        onClick={() => setDaiSuspect(v)}
-                      >
-                        {v}
-                      </Button>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground">DAI için MR SWI/DWI kritik olabilir.</p>
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="flex items-center justify-between rounded-xl border p-3">
-                  <div className="text-sm font-medium">Kontüzyon</div>
-                  <Switch checked={contusion} onCheckedChange={setContusion} />
-                </div>
-                <div className="flex items-center justify-between rounded-xl border p-3">
-                  <div className="text-sm font-medium">Pnömosefali</div>
-                  <Switch checked={pneumocephalus} onCheckedChange={setPneumocephalus} />
-                </div>
-                <div className="flex items-center justify-between rounded-xl border p-3">
-                  <div className="text-sm font-medium">Fraktür şüphesi</div>
-                  <Switch checked={skullFractureSuspect} onCheckedChange={setSkullFractureSuspect} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {flow === "kanama" && (
           <Card className="rounded-2xl">
             <CardHeader>
               <CardTitle className="text-base">Kanama</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Kanama tipi + yerleşim + eşlik eden bulgular (v1 iskelet).
+                Kanama tipi + yerleşim + eşlik eden bulgular. (v1.2: SDH/EDH evre + BT densite asist)
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -619,34 +652,159 @@ function BrainModule() {
                 <div className="text-sm font-medium">Kanama tipi</div>
                 <div className="flex flex-wrap gap-2">
                   {(["bilinmiyor", "yok", "SAH", "IVH", "ICH", "SDH", "EDH"] as const).map((v) => (
-                    <Button
-                      key={v}
-                      size="sm"
-                      variant={bleedType === v ? "default" : "outline"}
-                      onClick={() => setBleedType(v)}
-                    >
+                    <Button key={v} size="sm" variant={bleedType === v ? "default" : "outline"} onClick={() => setBleedType(v)}>
                       {v}
                     </Button>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-2 rounded-xl border p-3">
+              {/* SDH/EDH Detail */}
+              {isExtraAxialDetail && (
+                <div className="space-y-3 rounded-2xl border p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold">Ekstraaksiyel hematom detayları</div>
+                      <div className="text-xs text-muted-foreground">Lateralite + dağılım + kalınlık + MLS + evre → rapora yansır</div>
+                    </div>
+                    <Badge variant="secondary">{bleedType}</Badge>
+                  </div>
+
+                  {/* Age */}
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Evre (manuel)</div>
+                    <div className="flex flex-wrap gap-2">
+                      {(["Bilinmiyor", "Akut", "Subakut", "Kronik", "Akut üzerine kronik"] as ExtraAxialAge[]).map((v) => (
+                        <Button
+                          key={v}
+                          size="sm"
+                          variant={extraAxialAge === v ? "default" : "outline"}
+                          onClick={() => setExtraAxialAge(v)}
+                        >
+                          {v}
+                        </Button>
+                      ))}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Not: “Bilinmiyor” bırakırsan, BT’de densite seçimine göre yardımcı öneri çıkabilir.
+                    </div>
+                  </div>
+
+                  {/* CT density assist */}
+                  {modality === "BT" && (
+                    <div className="space-y-2 rounded-xl border p-3">
+                      <div className="text-sm font-medium">BT densite (yardımcı)</div>
+                      <div className="flex flex-wrap gap-2">
+                        {(["Bilinmiyor", "Hiperdens", "İzodens", "Hipodens", "Miks"] as CtDensity[]).map((v) => (
+                          <Button key={v} size="sm" variant={ctDensity === v ? "default" : "outline"} onClick={() => setCtDensity(v)}>
+                            {v}
+                          </Button>
+                        ))}
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        {ageAssist.note || ""}
+                        {ageAssist.guess !== "Bilinmiyor" && extraAxialAge === "Bilinmiyor" && (
+                          <div className="mt-1">
+                            Önerilen evre: <span className="font-medium">{ageAssist.guess}</span> (manuel seçerek override edebilirsin)
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Laterality */}
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Lateralite</div>
+                    <div className="flex flex-wrap gap-2">
+                      {(["Sağ", "Sol", "Bilateral", "Orta hat", "Bilinmiyor"] as const).map((v) => (
+                        <Button key={v} size="sm" variant={extraAxialSide === v ? "default" : "outline"} onClick={() => setExtraAxialSide(v)}>
+                          {v}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Regions */}
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Dağılım / bölge</div>
+                    {bleedType === "SDH" ? (
+                      <div className="flex flex-wrap gap-2">
+                        {([
+                          "Frontal",
+                          "Temporal",
+                          "Parietal",
+                          "Oksipital",
+                          "Falx boyunca",
+                          "Tentoryum boyunca",
+                          "Interhemisferik",
+                        ] as const).map((r) => (
+                          <Button
+                            key={r}
+                            size="sm"
+                            variant={sdhRegions.includes(r) ? "default" : "outline"}
+                            onClick={() => setSdhRegions((prev) => toggleInArray(prev, r))}
+                          >
+                            {r}
+                          </Button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {(["Frontal", "Temporal", "Parietal", "Oksipital", "Bilinmiyor"] as const).map((r) => (
+                          <Button
+                            key={r}
+                            size="sm"
+                            variant={edhRegions.includes(r) ? "default" : "outline"}
+                            onClick={() => setEdhRegions((prev) => toggleInArray(prev, r))}
+                          >
+                            {r}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                    <div className="text-xs text-muted-foreground">Birden fazla bölge seçebilirsin (özellikle SDH için).</div>
+                  </div>
+
+                  {/* Thickness + MLS */}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-2 rounded-xl border p-3">
+                      <Label className="text-sm">Maksimum kalınlık (mm)</Label>
+                      <Input inputMode="decimal" placeholder="örn: 6" value={extraAxialThicknessMm} onChange={(e) => setExtraAxialThicknessMm(e.target.value)} />
+                      <div className="text-xs text-muted-foreground">Rapor: “maksimum ~X mm kalınlıkta”</div>
+                    </div>
+
+                    <div className="space-y-2 rounded-xl border p-3">
+                      <Label className="text-sm">Midline shift (mm)</Label>
+                      <Input inputMode="decimal" placeholder="örn: 4" value={midlineShiftMm} onChange={(e) => setMidlineShiftMm(e.target.value)} />
+                      <div className="text-xs text-muted-foreground">Rapor: “Orta hat ~X mm deviyedir”</div>
+                    </div>
+                  </div>
+
+                  {/* Auto sentence */}
+                  <div className="rounded-xl border p-3">
+                    <div className="text-xs text-muted-foreground mb-1">Otomatik rapor cümlesi</div>
+                    <div className="text-sm">{extraAxialSentence || "Seçimleri doldurdukça burada cümle oluşur."}</div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Button size="sm" variant="outline" onClick={() => copyText(extraAxialSentence || "")} disabled={!extraAxialSentence}>
+                        Cümleyi kopyala
+                      </Button>
+                      <Badge variant="outline">Evre: {resolvedAge}</Badge>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Other bleed fields */}
+              <div className={cn("space-y-2 rounded-xl border p-3", isExtraAxialDetail && "opacity-60")}>
                 <div className="text-sm font-medium">Yerleşim (özellikle ICH için)</div>
                 <div className="flex flex-wrap gap-2">
-                  {(["bilinmiyor", "lobar", "derin (BG/talamus)", "pons", "serebellum"] as const).map(
-                    (v) => (
-                      <Button
-                        key={v}
-                        size="sm"
-                        variant={bleedLocation === v ? "default" : "outline"}
-                        onClick={() => setBleedLocation(v)}
-                      >
-                        {v}
-                      </Button>
-                    )
-                  )}
+                  {(["bilinmiyor", "lobar", "derin (BG/talamus)", "pons", "serebellum"] as const).map((v) => (
+                    <Button key={v} size="sm" variant={bleedLocation === v ? "default" : "outline"} onClick={() => setBleedLocation(v)}>
+                      {v}
+                    </Button>
+                  ))}
                 </div>
+                <div className="text-xs text-muted-foreground">SDH/EDH’de yerleşim yerine yukarıdaki “dağılım” alanını kullanıyoruz.</div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
@@ -672,12 +830,7 @@ function BrainModule() {
                     <div className="text-sm font-medium">SWI blooming</div>
                     <div className="flex flex-wrap gap-2">
                       {(["bilinmiyor", "var", "yok"] as const).map((v) => (
-                        <Button
-                          key={v}
-                          size="sm"
-                          variant={swiBlooming === v ? "default" : "outline"}
-                          onClick={() => setSwiBlooming(v)}
-                        >
+                        <Button key={v} size="sm" variant={swiBlooming === v ? "default" : "outline"} onClick={() => setSwiBlooming(v)}>
                           {v}
                         </Button>
                       ))}
@@ -687,12 +840,7 @@ function BrainModule() {
                     <div className="text-sm font-medium">DWI restriksiyon</div>
                     <div className="flex flex-wrap gap-2">
                       {(["bilinmiyor", "var", "yok"] as const).map((v) => (
-                        <Button
-                          key={v}
-                          size="sm"
-                          variant={dwiRestriction === v ? "default" : "outline"}
-                          onClick={() => setDwiRestriction(v)}
-                        >
+                        <Button key={v} size="sm" variant={dwiRestriction === v ? "default" : "outline"} onClick={() => setDwiRestriction(v)}>
                           {v}
                         </Button>
                       ))}
@@ -704,127 +852,19 @@ function BrainModule() {
           </Card>
         )}
 
-        {flow === "kitle" && (
-          <Card className="rounded-2xl">
-            <CardHeader>
-              <CardTitle className="text-base">Kitle / Enfeksiyon</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Ring paterni + DWI + perfüzyon gibi ayrım parametreleri (v1 iskelet).
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between rounded-xl border p-3">
-                <div>
-                  <div className="text-sm font-medium">Kitle / lezyon var</div>
-                  <div className="text-xs text-muted-foreground">DDX üretmek için “var” seç</div>
-                </div>
-                <Switch checked={massPresent} onCheckedChange={setMassPresent} />
-              </div>
-
-              <div className={cn("grid gap-3 sm:grid-cols-2", !massPresent && "opacity-50 pointer-events-none")}>
-                <div className="space-y-2 rounded-xl border p-3">
-                  <div className="text-sm font-medium">Ring kontrastlanma</div>
-                  <div className="flex flex-wrap gap-2">
-                    {(["bilinmiyor", "var", "yok"] as const).map((v) => (
-                      <Button
-                        key={v}
-                        size="sm"
-                        variant={ringEnhancing === v ? "default" : "outline"}
-                        onClick={() => setRingEnhancing(v)}
-                      >
-                        {v}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2 rounded-xl border p-3">
-                  <div className="text-sm font-medium">Lezyon sayısı</div>
-                  <div className="flex flex-wrap gap-2">
-                    {(["bilinmiyor", "tek", "coklu"] as const).map((v) => (
-                      <Button
-                        key={v}
-                        size="sm"
-                        variant={multiLesion === v ? "default" : "outline"}
-                        onClick={() => setMultiLesion(v)}
-                      >
-                        {v}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2 rounded-xl border p-3">
-                  <div className="text-sm font-medium">Ödem</div>
-                  <div className="flex flex-wrap gap-2">
-                    {(["bilinmiyor", "yok", "hafif", "belirgin"] as const).map((v) => (
-                      <Button
-                        key={v}
-                        size="sm"
-                        variant={edema === v ? "default" : "outline"}
-                        onClick={() => setEdema(v)}
-                      >
-                        {v}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2 rounded-xl border p-3">
-                  <div className="text-sm font-medium">Perfüzyon (CBV)</div>
-                  <div className="flex flex-wrap gap-2">
-                    {(["bilinmiyor", "yuksek", "dusuk"] as const).map((v) => (
-                      <Button
-                        key={v}
-                        size="sm"
-                        variant={cbvHigh === v ? "default" : "outline"}
-                        onClick={() => setCbvHigh(v)}
-                      >
-                        {v}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2 rounded-xl border p-3 sm:col-span-2">
-                  <div className="text-sm font-medium">DWI restriksiyon</div>
-                  <div className="flex flex-wrap gap-2">
-                    {(["bilinmiyor", "var", "yok"] as const).map((v) => (
-                      <Button
-                        key={v}
-                        size="sm"
-                        variant={dwiRestriction === v ? "default" : "outline"}
-                        onClick={() => setDwiRestriction(v)}
-                      >
-                        {v}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Incidental */}
         <Card className="rounded-2xl">
           <CardHeader>
             <CardTitle className="text-base">Ek / İnsidental bulgular</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Textarea
-              value={incidental}
-              onChange={(e) => setIncidental(e.target.value)}
-              placeholder="Serbest metin ekle; final çıktıya eklenir."
-            />
-            <p className="text-xs text-muted-foreground">
-              Not: Bu modül karar destek amaçlıdır; kesin tanı/tedavi için klinik korelasyon gereklidir.
-            </p>
+            <Textarea value={incidental} onChange={(e) => setIncidental(e.target.value)} placeholder="Serbest metin ekle; final çıktıya eklenir." />
+            <p className="text-xs text-muted-foreground">Not: Bu modül karar destek amaçlıdır; kesin tanı/tedavi için klinik korelasyon gereklidir.</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Right panel */}
+      {/* Right */}
       <div className="lg:sticky lg:top-6 h-fit space-y-4">
         <Card className="rounded-2xl">
           <CardHeader className="flex flex-row items-start justify-between gap-3">
@@ -869,9 +909,7 @@ function BrainModule() {
             <div className="space-y-2">
               <div className="text-sm font-medium">Öneriler</div>
               {suggestions.length === 0 ? (
-                <div className="text-sm text-muted-foreground rounded-xl border p-3">
-                  Bu seçimlerle otomatik öneri oluşmadı.
-                </div>
+                <div className="text-sm text-muted-foreground rounded-xl border p-3">Bu seçimlerle otomatik öneri oluşmadı.</div>
               ) : (
                 <div className="space-y-2">
                   {suggestions.map((s) => (
@@ -892,9 +930,7 @@ function BrainModule() {
             </div>
 
             <Separator />
-            <div className="text-xs text-muted-foreground">
-              Bu sistem “kural tabanlı karar destek”tir; görüntüler ve klinik bilgilerle birlikte değerlendirilmelidir.
-            </div>
+            <div className="text-xs text-muted-foreground">Bu sistem “kural tabanlı karar destek”tir; görüntüler ve klinik bilgilerle birlikte değerlendirilmelidir.</div>
           </CardContent>
         </Card>
       </div>
@@ -938,9 +974,7 @@ export default function Page() {
         <Card className="rounded-2xl">
           <CardHeader>
             <CardTitle className="text-lg">Karaciğer modülü</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Karaciğer modülü ayrı sayfada çalışır. Aşağıdaki butonla açabilirsin.
-            </p>
+            <p className="text-sm text-muted-foreground">Karaciğer modülü ayrı sayfada çalışır. Aşağıdaki butonla açabilirsin.</p>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             <Button onClick={() => router.push("/liver")}>Karaciğer modülüne git</Button>
