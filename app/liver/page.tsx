@@ -17,6 +17,9 @@ type StudyModality = "BT" | "MR" | "BT+MR";
 type YesNo = "yok" | "var";
 type Likelihood = "Yüksek" | "Orta" | "Düşük";
 
+// NEW: Tri-state (bilinmiyor/yok/var) for capsule & capsular retraction
+type TriState = "bilinmiyor" | "yok" | "var";
+
 type DdxItem = {
   name: string;
   likelihood: Likelihood;
@@ -53,6 +56,10 @@ type LiverBTHypodenseFeatures = {
   feverOrSepsis?: boolean;
   trauma?: boolean;
   biliaryDilation?: boolean;
+
+  // NEW
+  capsuleAppearance?: TriState; // lesion capsule appearance
+  capsularRetraction?: TriState; // capsular retraction
 };
 
 function liverHypodenseBT_Ddx(f: LiverBTHypodenseFeatures): DdxItem[] {
@@ -152,6 +159,65 @@ function liverHypodenseBT_Ddx(f: LiverBTHypodenseFeatures): DdxItem[] {
     });
   }
 
+  /**
+   * ----------------------------
+   * NEW: Capsule / Capsular Retraction logic (BT)
+   * ----------------------------
+   */
+
+  // Capsule appearance -> HCC up (especially in cirrhosis)
+  if (f.capsuleAppearance === "var") {
+    ddx = ddx.map((d) =>
+      d.name.includes("HCC")
+        ? {
+            ...d,
+            likelihood: f.backgroundLiver === "siroz/kronik karaciğer" ? "Yüksek" : "Orta",
+            why: uniq([...(d.why ?? []), "Lezyon çevresinde kapsül görünümü HCC lehine bir bulgudur."]),
+          }
+        : d
+    );
+  }
+
+  // Capsular retraction -> ICC/Met/HEHE up; classic HCC down a notch
+  if (f.capsularRetraction === "var") {
+    ddx.unshift(
+      {
+        name: "İntrahepatik kolanjiokarsinom (ICC)",
+        likelihood: "Orta",
+        why: ["Kapsüler çekinti ICC’de görülebilen bir bulgudur (fibrotik stroma ile ilişkili)."],
+      },
+      {
+        name: "Epiteloid hemanjiyoendotelyoma (HEHE)",
+        likelihood: "Orta",
+        why: ["Subkapsüler yerleşim ve kapsüler çekinti ile ilişkilendirilebilir."],
+      },
+      {
+        name: "Sklerozan hemanjiyom",
+        likelihood: "Düşük",
+        why: ["Nadir benign neden; kapsüler çekinti ile raporlanabilir."],
+      }
+    );
+
+    ddx = ddx.map((d) => {
+      if (d.name === "Metastaz") {
+        return {
+          ...d,
+          likelihood: f.knownPrimary ? "Yüksek" : "Orta",
+          why: uniq([...(d.why ?? []), "Kapsüler çekinti (özellikle subkapsüler metastazlarda) görülebilir."]),
+        };
+      }
+      if (d.name.includes("HCC")) {
+        const down: Likelihood = d.likelihood === "Yüksek" ? "Orta" : d.likelihood === "Orta" ? "Düşük" : "Düşük";
+        return {
+          ...d,
+          likelihood: down,
+          why: uniq([...(d.why ?? []), "Klasik/tedavisiz HCC’de kapsüler çekinti tipik değildir (istisnalar olabilir)."]),
+        };
+      }
+      return d;
+    });
+  }
+
   const seen = new Set<string>();
   const out: DdxItem[] = [];
   for (const item of ddx) {
@@ -173,6 +239,10 @@ type LiverMRSignalCombo = {
   hemorrhageOrProtein?: boolean;
   backgroundLiver?: "normal" | "steatoz" | "siroz/kronik karaciğer";
   knownPrimary?: boolean;
+
+  // NEW
+  capsuleAppearance?: TriState;
+  capsularRetraction?: TriState;
 };
 
 function liverMR_BaselineDdx(s: LiverMRSignalCombo): DdxItem[] {
@@ -243,6 +313,51 @@ function liverMR_BaselineDdx(s: LiverMRSignalCombo): DdxItem[] {
       likelihood: "Orta",
       why: ["Siroz zemininde HCC olasılığı artar.", "Dinamik + hepatobiliyer faz (varsa) tanısal katkı sağlar."],
     });
+  }
+
+  /**
+   * ----------------------------
+   * NEW: Capsule / Capsular Retraction logic (MR)
+   * ----------------------------
+   */
+
+  if (s.capsuleAppearance === "var") {
+    ddx.unshift({
+      name: "HCC (kapsül görünümü lehine)",
+      likelihood: s.backgroundLiver === "siroz/kronik karaciğer" ? "Yüksek" : "Orta",
+      why: ["Lezyon çevresinde kapsül görünümü HCC lehine bir bulgudur."],
+    });
+    // also gently bump existing HCC row if present
+    for (let i = 0; i < ddx.length; i++) {
+      if (ddx[i].name === "HCC") {
+        ddx[i] = {
+          ...ddx[i],
+          likelihood: s.backgroundLiver === "siroz/kronik karaciğer" ? "Yüksek" : "Orta",
+          why: uniq([...(ddx[i].why ?? []), "Kapsül görünümü HCC lehine."]),
+        };
+      }
+    }
+  }
+
+  if (s.capsularRetraction === "var") {
+    ddx.unshift(
+      { name: "İntrahepatik kolanjiokarsinom (ICC)", likelihood: "Orta", why: ["Kapsüler çekinti ICC’de görülebilir."] },
+      { name: "Metastaz (özellikle subkapsüler)", likelihood: s.knownPrimary ? "Yüksek" : "Orta", why: ["Kapsüler çekinti metastazlarda görülebilir."] },
+      { name: "Epiteloid hemanjiyoendotelyoma (HEHE)", likelihood: "Orta", why: ["Subkapsüler yerleşim + çekinti kombinasyonu düşündürebilir."] },
+      { name: "Sklerozan hemanjiyom", likelihood: "Düşük", why: ["Nadir benign neden; çekinti ile raporlanabilir."] }
+    );
+
+    // downshift classic HCC a notch
+    for (let i = 0; i < ddx.length; i++) {
+      if (ddx[i].name === "HCC") {
+        const down: Likelihood = ddx[i].likelihood === "Yüksek" ? "Orta" : ddx[i].likelihood === "Orta" ? "Düşük" : "Düşük";
+        ddx[i] = {
+          ...ddx[i],
+          likelihood: down,
+          why: uniq([...(ddx[i].why ?? []), "Kapsüler çekinti klasik HCC’de tipik değildir (istisnalar olabilir)."]),
+        };
+      }
+    }
   }
 
   const seen = new Set<string>();
@@ -404,6 +519,10 @@ export default function Page() {
   const [liverPreset, setLiverPreset] = useState<LiverPresetId | "">("");
   const [autoFillSummary, setAutoFillSummary] = useState(true);
   const [liverSummaryTouched, setLiverSummaryTouched] = useState(false);
+
+  // NEW: Capsule & capsular retraction (global to liver lesion)
+  const [capsuleAppearance, setCapsuleAppearance] = useState<TriState>("bilinmiyor");
+  const [capsularRetraction, setCapsularRetraction] = useState<TriState>("bilinmiyor");
 
   // Liver BT features
   const [liverBtNumber, setLiverBtNumber] = useState<LiverBTHypodenseFeatures["number"]>("tek");
@@ -616,6 +735,10 @@ export default function Page() {
         hemorrhageOrProtein: mrHemProt,
         backgroundLiver: mrBg,
         knownPrimary: mrKnownPrimary,
+
+        // NEW
+        capsuleAppearance,
+        capsularRetraction,
       };
       return liverMR_BaselineDdx(combo);
     }
@@ -636,6 +759,10 @@ export default function Page() {
       feverOrSepsis: liverBtFever,
       trauma: liverBtTrauma,
       biliaryDilation: liverBtBileDil,
+
+      // NEW
+      capsuleAppearance,
+      capsularRetraction,
     };
     return liverHypodenseBT_Ddx(features);
   }, [
@@ -662,6 +789,10 @@ export default function Page() {
     liverBtFever,
     liverBtTrauma,
     liverBtBileDil,
+
+    // NEW deps
+    capsuleAppearance,
+    capsularRetraction,
   ]);
 
   // Recommendations auto
@@ -783,6 +914,16 @@ export default function Page() {
     );
   }, [organs]);
 
+  const triButtons = (value: TriState, onChange: (v: TriState) => void) => (
+    <div className="flex flex-wrap gap-2">
+      {(["bilinmiyor", "yok", "var"] as TriState[]).map((v) => (
+        <Button key={v} size="sm" variant={value === v ? "default" : "outline"} onClick={() => onChange(v)}>
+          {v}
+        </Button>
+      ))}
+    </div>
+  );
+
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
@@ -860,10 +1001,18 @@ export default function Page() {
                       <div className="flex items-center justify-between">
                         <Label>Karaciğer</Label>
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant={liverStatus === "yok" ? "default" : "outline"} onClick={() => setLiverStatus("yok")}>
+                          <Button
+                            size="sm"
+                            variant={liverStatus === "yok" ? "default" : "outline"}
+                            onClick={() => setLiverStatus("yok")}
+                          >
                             Yok
                           </Button>
-                          <Button size="sm" variant={liverStatus === "var" ? "default" : "outline"} onClick={() => setLiverStatus("var")}>
+                          <Button
+                            size="sm"
+                            variant={liverStatus === "var" ? "default" : "outline"}
+                            onClick={() => setLiverStatus("var")}
+                          >
                             Var
                           </Button>
                         </div>
@@ -949,11 +1098,7 @@ export default function Page() {
                             <div className="space-y-2">
                               <Label>Segment</Label>
                               <div className="flex flex-wrap gap-2">
-                                <Button
-                                  size="sm"
-                                  variant={liverSegment === "bilinmiyor" ? "default" : "outline"}
-                                  onClick={() => setLiverSegment("bilinmiyor")}
-                                >
+                                <Button size="sm" variant={liverSegment === "bilinmiyor" ? "default" : "outline"} onClick={() => setLiverSegment("bilinmiyor")}>
                                   bilinmiyor
                                 </Button>
                                 {liverSegments.map((s) => (
@@ -968,6 +1113,21 @@ export default function Page() {
                               <Label>Lezyon ölçümü (mm)</Label>
                               <Input value={liverSizeMm} onChange={(e) => setLiverSizeMm(e.target.value)} placeholder="örn: 18" />
                               <p className="text-xs text-muted-foreground">Ölçüm/segment değişince (özet dokunulmadıysa) otomatik güncellenir.</p>
+                            </div>
+                          </div>
+
+                          {/* NEW: capsule + capsular retraction */}
+                          <Separator className="my-2" />
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label>Lezyon çevresinde kapsül görünümü</Label>
+                              {triButtons(capsuleAppearance, setCapsuleAppearance)}
+                              <p className="text-xs text-muted-foreground">Özellikle siroz zemininde “kapsül” HCC lehine ağırlıklandırılır.</p>
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Kapsüler çekinti (capsular retraction)</Label>
+                              {triButtons(capsularRetraction, setCapsularRetraction)}
+                              <p className="text-xs text-muted-foreground">ICC / metastaz / HEHE gibi lezyonları öne çeker; klasik HCC’yi bir kademe düşürür.</p>
                             </div>
                           </div>
                         </CardContent>
@@ -1205,6 +1365,7 @@ export default function Page() {
                                     <li>Restriksiyon/ADC düşük → metastaz/apse gibi lezyonlar yükselir.</li>
                                     <li>T1 hiper + yağ drop → adenom lehine olabilir.</li>
                                     <li>Siroz → HCC ön olasılığı artar.</li>
+                                    <li>Kapsül görünümü → HCC lehine; kapsüler çekinti → ICC/metastaz/HEHE lehine.</li>
                                   </ul>
                                 </CardContent>
                               </Card>
