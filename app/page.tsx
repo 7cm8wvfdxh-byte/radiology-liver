@@ -1,1205 +1,1286 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+
 import LiverPage from "./liver/page";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
-/** -----------------------------
- *  Shared helpers
- *  ----------------------------- */
+type Organ = "liver" | "brain";
 
-type Likelihood = "yüksek" | "orta" | "düşük";
-type Urgency = "acil" | "önemli" | "rutin";
+// ---- Shared helpers ----
+type TriState = "bilinmiyor" | "var" | "yok";
+function triLabel(v: TriState) {
+  if (v === "var") return "Var";
+  if (v === "yok") return "Yok";
+  return "Bilinmiyor";
+}
 
+type Likelihood = "Yüksek" | "Orta" | "Düşük";
+type Urgency = "Acil" | "Öncelikli" | "Rutin";
 type DdxItem = {
   name: string;
   likelihood: Likelihood;
   why: string[];
-  urgency?: Urgency;
+};
+type Recommendation = {
+  title: string;
+  urgency: Urgency;
+  details: string[];
 };
 
-function bump(l: Likelihood, dir: "up" | "down"): Likelihood {
-  const order: Likelihood[] = ["düşük", "orta", "yüksek"];
-  const idx = order.indexOf(l);
-  const next = dir === "up" ? Math.min(2, idx + 1) : Math.max(0, idx - 1);
-  return order[next];
+function uniqPush(arr: string[], x: string) {
+  if (!arr.includes(x)) arr.push(x);
 }
 
-function uniq(arr: string[]) {
-  return Array.from(new Set(arr)).filter(Boolean);
-}
+// ---- Brain module types ----
+type BrainModality = "BT" | "MR" | "BT+MR";
 
-function fmtDdx(ddx: DdxItem[]) {
-  const sorted = [...ddx].sort((a, b) => {
-    const w = (x: Likelihood) => (x === "yüksek" ? 3 : x === "orta" ? 2 : 1);
-    return w(b.likelihood) - w(a.likelihood);
-  });
-  const high = sorted.filter((d) => d.likelihood === "yüksek");
-  const mid = sorted.filter((d) => d.likelihood === "orta");
-  const low = sorted.filter((d) => d.likelihood === "düşük");
-  return { high, mid, low, all: sorted };
-}
-
-function copyToClipboard(text: string) {
-  if (!text) return;
-  navigator.clipboard?.writeText(text);
-}
-
-/** -----------------------------
- *  Brain module (v1)
- *  Practical, rule-based
- *  ----------------------------- */
-
-type BrainModality = "BT" | "MR";
-
-type MildScale = "belirsiz" | "hipo" | "izo" | "hafif hiper" | "hiper" | "çok hiper";
-type YesNo = "bilinmiyor" | "var" | "yok";
-
-type ExtraAxialType = "epidural" | "subdural" | "subaraknoid";
-type DensityCT = "hiperdens" | "izodens" | "hipodens" | "mikst";
-type LocationGeneral =
-  | "frontal"
-  | "parietal"
-  | "temporal"
-  | "oksipital"
-  | "bazal ganglion"
-  | "talamus"
-  | "beyin sapı"
-  | "serebellum"
-  | "intraventriküler"
-  | "diffüz"
+type ExtraAxialType = "epidural" | "subdural" | "subaraknoid (SAH)" | "bilinmiyor";
+type IntraAxialType =
+  | "intraparenkimal hematom (IPH)"
+  | "kontüzyon"
+  | "hemorajik transformasyon"
   | "bilinmiyor";
 
-type MassCompartment = "intraaksiyel" | "ekstraaksiyel" | "bilinmiyor";
-type Enhance = "yok" | "hafif" | "belirgin" | "ring" | "dural tail" | "bilinmiyor";
-type DwiRestrict = "yok" | "var" | "bilinmiyor";
-type Edema = "yok" | "hafif" | "belirgin" | "bilinmiyor";
+type HemorrhageAge = "bilinmiyor" | "hiperakut" | "akut" | "erken subakut" | "geç subakut" | "kronik";
+
+type MassCompartment = "bilinmiyor" | "intraaksiyel" | "ekstraaksiyel";
+type EnhancementPattern = "bilinmiyor" | "yok" | "solid" | "halka (ring)" | "dural tail";
+type Edema = "bilinmiyor" | "yok/az" | "orta" | "belirgin";
+type NumberOfLesions = "bilinmiyor" | "tek" | "çoklu";
+
+// Mild/marked intensity set (for future extension; used now in hemorrhage age hints and mass patterns)
+type MRIntensity =
+  | "bilinmiyor"
+  | "belirgin hipo"
+  | "hafif hipo"
+  | "izo"
+  | "hafif hiper"
+  | "belirgin hiper";
 
 type BrainState = {
   modality: BrainModality;
 
-  // Clinical
+  // clinical context
+  age: string; // keep as string for UI simplicity
+  knownMalignancy: boolean;
+  feverSepsis: boolean;
   trauma: boolean;
-  anticoag: boolean;
-  ageGroup: "çocuk" | "erişkin" | "yaşlı" | "bilinmiyor";
-  symptoms: string;
+  anticoagulant: boolean;
+  htn: boolean;
+  immunosuppressed: boolean;
 
-  // Hemorrhage toggles
-  hemorrhage: boolean;
-
-  // Extra-axial
-  extraAxial: YesNo;
+  // hemorrhage branch
+  hemorrhagePresent: TriState; // var/yok/bilinmiyor
+  hemorrhageLocation: "bilinmiyor" | "ekstraaksiyel" | "intraaksiyel" | "SAH baskın" | "IVH";
   extraAxialType: ExtraAxialType;
-  extraAxialSide: "sağ" | "sol" | "bilateral" | "bilinmiyor";
-  extraAxialCTDensity: DensityCT;
-  extraAxialThicknessMm: string;
-  midlineShift: YesNo;
-  herniation: YesNo;
+  intraAxialType: IntraAxialType;
+  hemorrhageAge: HemorrhageAge;
 
-  // Intra-axial hemorrhage
-  intraAxialHem: YesNo;
-  intraAxialLoc: LocationGeneral;
-  intraAxialCTDensity: DensityCT;
-  ivh: YesNo;
-  sah: YesNo;
+  midlineShift: "bilinmiyor" | "yok" | "hafif" | "belirgin";
+  herniationSigns: TriState;
 
-  // Ischemia (basic)
-  ischemiaSus: YesNo;
-  earlyCTSigns: boolean; // insular ribbon, sulcal effacement etc.
-  restrictedDiff: YesNo;
+  // trauma CT features (optional but practical)
+  skullFracture: TriState;
+  pneumocephalus: TriState;
 
-  // Mass / lesion
-  mass: boolean;
-  massCompartment: MassCompartment;
-  massLoc: LocationGeneral;
-  enhance: Enhance;
-  dwi: DwiRestrict;
+  // mass branch
+  massPresent: TriState;
+  compartment: MassCompartment;
+  numberOfLesions: NumberOfLesions;
+  enhancement: EnhancementPattern;
+  diffusionRestriction: TriState; // abscess vs necrotic tumor
+  hemorrhagicComponent: TriState; // hemorrhagic mets / high-grade glioma
+  calcification: TriState; // oligodendroglioma / meningioma etc
   edema: Edema;
-  hemorrhagicComponent: YesNo;
-  calcification: YesNo;
+  duralBased: TriState; // extra-axial clue
 
-  // MRI signals (baseline)
-  t1: MildScale;
-  t2: MildScale;
-  flair: MildScale;
-  adcLow: YesNo; // simplified
-  perfHigh: YesNo;
+  // MR signal quick picks (optional)
+  t1: MRIntensity;
+  t2: MRIntensity;
 
-  // Output
+  // free text addendum
   incidental: string;
 };
 
-const brainDefault: BrainState = {
+const defaultBrainState: BrainState = {
   modality: "BT",
-  trauma: true,
-  anticoag: false,
-  ageGroup: "erişkin",
-  symptoms: "",
 
-  hemorrhage: true,
+  age: "",
+  knownMalignancy: false,
+  feverSepsis: false,
+  trauma: false,
+  anticoagulant: false,
+  htn: false,
+  immunosuppressed: false,
 
-  extraAxial: "bilinmiyor",
-  extraAxialType: "subdural",
-  extraAxialSide: "bilinmiyor",
-  extraAxialCTDensity: "hiperdens",
-  extraAxialThicknessMm: "",
+  hemorrhagePresent: "bilinmiyor",
+  hemorrhageLocation: "bilinmiyor",
+  extraAxialType: "bilinmiyor",
+  intraAxialType: "bilinmiyor",
+  hemorrhageAge: "bilinmiyor",
+
   midlineShift: "bilinmiyor",
-  herniation: "bilinmiyor",
+  herniationSigns: "bilinmiyor",
 
-  intraAxialHem: "bilinmiyor",
-  intraAxialLoc: "bilinmiyor",
-  intraAxialCTDensity: "hiperdens",
-  ivh: "bilinmiyor",
-  sah: "bilinmiyor",
+  skullFracture: "bilinmiyor",
+  pneumocephalus: "bilinmiyor",
 
-  ischemiaSus: "bilinmiyor",
-  earlyCTSigns: false,
-  restrictedDiff: "bilinmiyor",
-
-  mass: false,
-  massCompartment: "bilinmiyor",
-  massLoc: "bilinmiyor",
-  enhance: "bilinmiyor",
-  dwi: "bilinmiyor",
-  edema: "bilinmiyor",
+  massPresent: "bilinmiyor",
+  compartment: "bilinmiyor",
+  numberOfLesions: "bilinmiyor",
+  enhancement: "bilinmiyor",
+  diffusionRestriction: "bilinmiyor",
   hemorrhagicComponent: "bilinmiyor",
   calcification: "bilinmiyor",
+  edema: "bilinmiyor",
+  duralBased: "bilinmiyor",
 
-  t1: "belirsiz",
-  t2: "belirsiz",
-  flair: "belirsiz",
-  adcLow: "bilinmiyor",
-  perfHigh: "bilinmiyor",
+  t1: "bilinmiyor",
+  t2: "bilinmiyor",
 
   incidental: "",
 };
 
-function densityToStageHint(d: DensityCT) {
-  // CT density is only a proxy; keep language conditional.
-  // Acute SDH/EDH usually hyperdense; chronic often hypodense; subacute iso; mixed suggests rebleed/active.
-  if (d === "hiperdens") return "akut/subakut olasılığı";
-  if (d === "izodens") return "subakut olasılığı";
-  if (d === "hipodens") return "kronik olasılığı";
-  return "farklı yaşta kanama / yeniden kanama olasılığı";
+// ---- UI small components ----
+function ToggleButtons<T extends string>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: string }[];
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((o) => (
+        <Button key={o.value} size="sm" variant={value === o.value ? "default" : "outline"} onClick={() => onChange(o.value)}>
+          {o.label}
+        </Button>
+      ))}
+    </div>
+  );
 }
 
-function brainDdx(s: BrainState): { ddx: DdxItem[]; urgent: string[]; recs: string[]; report: string } {
+function TriButtons({ value, onChange }: { value: TriState; onChange: (v: TriState) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {(["var", "yok", "bilinmiyor"] as TriState[]).map((v) => (
+        <Button
+          key={v}
+          size="sm"
+          variant={value === v ? "default" : "outline"}
+          onClick={() => onChange(v)}
+          className="min-w-[86px]"
+        >
+          {triLabel(v)}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+function LikelihoodBadge({ v }: { v: Likelihood }) {
+  const base = "border";
+  if (v === "Yüksek") return <Badge className={base}>Yüksek</Badge>;
+  if (v === "Orta") return <Badge className={base}>Orta</Badge>;
+  return <Badge className={base}>Düşük</Badge>;
+}
+
+function UrgencyBadge({ v }: { v: Urgency }) {
+  const base = "border";
+  if (v === "Acil") return <Badge className={base}>Acil</Badge>;
+  if (v === "Öncelikli") return <Badge className={base}>Öncelikli</Badge>;
+  return <Badge className={base}>Rutin</Badge>;
+}
+
+// ---- Brain DDX engine (rule-based, explainable) ----
+function brainHemorrhageDdx(s: BrainState): { ddx: DdxItem[]; recs: Recommendation[]; final: string; warning: string } {
   let ddx: DdxItem[] = [];
-  const urgent: string[] = [];
-  const recs: string[] = [];
-  const reportLines: string[] = [];
+  let recs: Recommendation[] = [];
+  const warn: string[] = [];
 
-  // --- Hemorrhage domain
-  if (s.hemorrhage) {
-    if (s.extraAxial === "var") {
-      // baseline
-      const stageHint = densityToStageHint(s.extraAxialCTDensity);
-      if (s.extraAxialType === "epidural") {
-        ddx.push({
-          name: "Epidural hematom",
-          likelihood: "yüksek",
-          urgency: "acil",
-          why: uniq([
-            "Ekstraaksiyel kanama var",
-            "Epidural patern seçildi",
-            `BT densitesi: ${s.extraAxialCTDensity} (${stageHint})`,
-            s.trauma ? "Travma öyküsü ile uyumlu olabilir" : "",
-          ]),
-        });
-        reportLines.push(
-          `Ekstraaksiyel alanda epidural hematom ile uyumlu kanama izlenmektedir (BT densitesi ${s.extraAxialCTDensity}; ${stageHint}).`
-        );
-      } else if (s.extraAxialType === "subdural") {
-        ddx.push({
-          name: "Subdural hematom",
-          likelihood: "yüksek",
-          urgency: s.midlineShift === "var" || s.herniation === "var" ? "acil" : "önemli",
-          why: uniq([
-            "Ekstraaksiyel kanama var",
-            "Subdural patern seçildi",
-            `BT densitesi: ${s.extraAxialCTDensity} (${stageHint})`,
-            s.anticoag ? "Antikoagülan kullanımı/subdural risk artışı" : "",
-            s.ageGroup === "yaşlı" ? "Yaşlı hasta/atrofi zemininde subdural daha olası" : "",
-          ]),
-        });
-        reportLines.push(
-          `Ekstraaksiyel alanda subdural hematom ile uyumlu kanama izlenmektedir (BT densitesi ${s.extraAxialCTDensity}; ${stageHint}).`
-        );
-      } else if (s.extraAxialType === "subaraknoid") {
-        ddx.push({
-          name: "Subaraknoid kanama",
-          likelihood: "yüksek",
-          urgency: "acil",
-          why: uniq([
-            "SAH paterni seçildi",
-            s.trauma ? "Travmatik SAH ile uyumlu olabilir" : "Anevrizmal SAH dışlanamaz",
-          ]),
-        });
-        reportLines.push(`Subaraknoid kanama ile uyumlu görünüm mevcuttur.`);
-        urgent.push("Subaraknoid kanama: Klinik korelasyon + hızlı nöroşirürji/nöroloji değerlendirmesi.");
-        if (!s.trauma) recs.push("Anevrizmal SAH şüphesinde BT anjiyografi / DSA değerlendirmesi önerilir.");
-      }
-
-      if (s.extraAxialSide !== "bilinmiyor") reportLines.push(`Lateralizasyon: ${s.extraAxialSide}.`);
-      if (s.extraAxialThicknessMm?.trim()) reportLines.push(`Maksimum kalınlık yaklaşık ${s.extraAxialThicknessMm} mm.`);
-      if (s.midlineShift === "var") {
-        urgent.push("Orta hat şifti mevcut: acil nöroşirürji görüşü önerilir.");
-        reportLines.push("Orta hat şifti izlenmektedir.");
-      }
-      if (s.herniation === "var") {
-        urgent.push("Herniasyon bulgusu şüphesi: acil klinik değerlendirme ve yönetim.");
-        reportLines.push("Herniasyon lehine bulgular izlenmektedir/şüphelidir.");
-      }
-    }
-
-    if (s.intraAxialHem === "var") {
-      ddx.push({
-        name: "İntraparenkimal hematom / hemoraji",
-        likelihood: "yüksek",
-        urgency: "acil",
-        why: uniq([
-          "İntraaksiyel kanama var",
-          `Lokalizasyon: ${s.intraAxialLoc}`,
-          `BT densitesi: ${s.intraAxialCTDensity}`,
-          s.anticoag ? "Antikoagülasyon eşlik ediyor olabilir" : "",
-          s.trauma ? "Travma ilişkili kontüzyon/hematom olabilir" : "",
-        ]),
-      });
-      reportLines.push(
-        `İntraaksiyel alanda ${s.intraAxialLoc} düzeyinde intraparenkimal kanama/hematom ile uyumlu görünüm mevcuttur (BT densitesi ${s.intraAxialCTDensity}).`
-      );
-      urgent.push("İntraparenkimal kanama: kan basıncı/koagülasyon değerlendirmesi + nöroloji/nöroşirürji konsültasyonu.");
-      if (s.ivh === "var") {
-        reportLines.push("İntraventriküler kanama eşlik etmektedir.");
-        urgent.push("İntraventriküler kanama: akut hidrosefali açısından yakın takip.");
-      }
-      if (s.sah === "var") {
-        reportLines.push("Subaraknoid kanama eşlik etmektedir.");
-      }
-    }
-
-    if (s.sah === "var" && s.extraAxial !== "var") {
-      ddx.push({
-        name: "Subaraknoid kanama",
-        likelihood: "yüksek",
-        urgency: "acil",
-        why: uniq([s.trauma ? "Travma ile ilişkili olabilir" : "Anevrizmal SAH dışlanamaz"]),
-      });
-      reportLines.push("Subaraknoid kanama ile uyumlu görünüm mevcuttur.");
-      urgent.push("SAH: hızlı klinik değerlendirme ve uygun vasküler görüntüleme planı.");
-    }
+  const hasHemo = s.hemorrhagePresent === "var";
+  if (!hasHemo) {
+    return {
+      ddx: [],
+      recs: [],
+      final: `${s.modality} incelemede belirgin intrakraniyal kanama lehine bulgu izlenmemektedir.`,
+      warning: "",
+    };
   }
 
-  // --- Ischemia domain (basic triage)
-  if (s.ischemiaSus === "var") {
-    let l: Likelihood = "orta";
-    const why: string[] = ["İskemi şüphesi seçildi"];
-    if (s.earlyCTSigns) {
-      l = bump(l, "up");
-      why.push("Erken BT iskemi bulguları (örn. sulkus silinmesi/insular ribbon vb.) mevcut olabilir");
-    }
-    if (s.modality === "MR" && s.restrictedDiff === "var") {
-      l = bump(l, "up");
-      why.push("DWI kısıtlı diffüzyon (akut iskemi lehine)");
-    }
-    ddx.push({
-      name: "Akut iskemik inme",
-      likelihood: l,
-      urgency: "acil",
-      why,
+  // Common urgent recs
+  if (s.midlineShift === "belirgin" || s.herniationSigns === "var") {
+    recs.unshift({
+      title: "Kitle etkisi / herniasyon şüphesi",
+      urgency: "Acil",
+      details: [
+        "Acil klinik/nöroşirürji değerlendirmesi önerilir.",
+        "GCS, pupilla, vital bulgular ile korelasyon.",
+        "BT anjiyografi/venografi endikasyonu klinik şüpheye göre değerlendirilebilir.",
+      ],
     });
-    urgent.push("Akut iskemik inme: klinik zaman penceresine göre tromboliz/trombektomi uygunluğu açısından acil değerlendirme.");
-    recs.push("BT/BT-perfüzyon/BT anjiyografi veya MR-DWI/TOF MRA ile vasküler değerlendirme (klinik uygunlukla).");
-    reportLines.push("Akut iskemik olay açısından değerlendirme önerilir; klinik korelasyon önemlidir.");
+    warn.push("Belirgin kitle etkisi / herniasyon bulguları varsa acil yaklaşım gerekir.");
   }
 
-  // --- Mass/lesion domain (practical)
-  if (s.mass) {
-    if (s.massCompartment === "ekstraaksiyel") {
-      let lMen: Likelihood = "orta";
-      const whyMen: string[] = ["Ekstraaksiyel kompartman seçildi"];
-      if (s.enhance === "dural tail") {
-        lMen = "yüksek";
-        whyMen.push("Dural tail paterni");
-      }
-      if (s.calcification === "var") whyMen.push("Kalsifikasyon eşlik edebilir");
-      ddx.push({
-        name: "Menenjiyom",
-        likelihood: lMen,
-        urgency: "rutin",
-        why: uniq(whyMen),
+  // Extra-axial hemorrhage patterns
+  if (s.hemorrhageLocation === "ekstraaksiyel" || s.extraAxialType !== "bilinmiyor" || s.hemorrhageLocation === "SAH baskın") {
+    // Epidural
+    if (s.extraAxialType === "epidural") {
+      ddx.unshift({
+        name: "Epidural hematom (travma ile ilişkili)",
+        likelihood: s.trauma ? "Yüksek" : "Orta",
+        why: [
+          "Ekstraaksiyel kanama paterni epidural hematom ile uyumlu olabilir.",
+          s.skullFracture === "var" ? "Kafatası fraktürü eşliği epidural hematom lehine." : "Fraktür varlığı BT kemik pencerede değerlendirilmelidir.",
+        ],
       });
-
-      ddx.push({
-        name: "Dural metastaz",
-        likelihood: s.enhance === "dural tail" ? "düşük" : "orta",
-        urgency: "önemli",
-        why: uniq([
-          "Ekstraaksiyel kitle",
-          s.enhance === "belirgin" ? "Belirgin kontrastlanma" : "",
-          "Primer malignite öyküsü ile korelasyon",
-        ]),
+      recs.unshift({
+        title: "Travmatik epidural hematom için yönetim",
+        urgency: "Acil",
+        details: [
+          "BT kemik pencerede fraktür değerlendirmesi.",
+          "Klinik kötüleşme / midline shift varsa acil nöroşirürji.",
+          "Antikoagülan/antiagregan kullanımı varsa tersine çevirme protokolleri (klinikle).",
+        ],
       });
+    }
 
-      reportLines.push(
-        `Ekstraaksiyel yerleşimli kitle lezyonu izlenmektedir (${s.massLoc}). Kontrastlanma paterni: ${s.enhance}.`
-      );
-      recs.push("Kontrastlı beyin MR (gerekirse MRV/MRA) ile karakterizasyon önerilir.");
-    } else if (s.massCompartment === "intraaksiyel") {
-      // abscess vs GBM vs metastasis (simplified)
-      let lAbs: Likelihood = "düşük";
-      let lMet: Likelihood = "orta";
-      let lGbm: Likelihood = "orta";
-
-      const whyAbs: string[] = ["İntraaksiyel lezyon"];
-      const whyMet: string[] = ["İntraaksiyel lezyon"];
-      const whyGbm: string[] = ["İntraaksiyel lezyon"];
-
-      if (s.enhance === "ring") {
-        lMet = bump(lMet, "up");
-        lGbm = bump(lGbm, "up");
-        whyMet.push("Ring kontrastlanma");
-        whyGbm.push("Ring/heterojen kontrastlanma");
+    // Subdural
+    if (s.extraAxialType === "subdural") {
+      const high = s.trauma || s.anticoagulant;
+      ddx.unshift({
+        name: "Subdural hematom",
+        likelihood: high ? "Yüksek" : "Orta",
+        why: [
+          "Ekstraaksiyel kanama paterni subdural hematom ile uyumlu olabilir.",
+          s.anticoagulant ? "Antikoagülan kullanımı subdural hematom riskini artırır." : "Yaşlı/atrofi varlığında risk artar (klinikle).",
+        ],
+      });
+      // age note
+      if (s.hemorrhageAge !== "bilinmiyor") {
+        ddx[0].why.push(`Kanama evresi seçimi: ${s.hemorrhageAge}. (BT yoğunluk / MR T1-T2-SWI ile korele edilmelidir.)`);
       }
-      if (s.dwi === "var") {
-        lAbs = "yüksek";
-        whyAbs.push("DWI kısıtlı diffüzyon (apse lehine)");
-        lMet = bump(lMet, "down");
-        lGbm = bump(lGbm, "down");
-      }
-      if (s.edema === "belirgin") {
-        whyMet.push("Belirgin vazojenik ödem");
-        whyGbm.push("Belirgin ödem/komşu infiltrasyon olabilir");
-      }
-      if (s.hemorrhagicComponent === "var") {
-        lMet = bump(lMet, "up");
-        whyMet.push("Hemorajik komponent (metastaz/melanom/renal/tiroid vb. ile uyumlu olabilir)");
-      }
+      recs.push({
+        title: "Subdural hematom izlem / kontrol",
+        urgency: "Öncelikli",
+        details: ["Klinik stabil değilse erken kontrol BT.", "Midline shift / herniasyon bulguları varsa acil nöroşirürji.", "Antikoagülan varsa klinikle yönetim."],
+      });
+    }
 
-      ddx.push({ name: "Metastaz", likelihood: lMet, urgency: "önemli", why: uniq(whyMet) });
-      ddx.push({ name: "Yüksek dereceli glial tümör (GBM vb.)", likelihood: lGbm, urgency: "önemli", why: uniq(whyGbm) });
-      ddx.push({ name: "Beyin apsesi", likelihood: lAbs, urgency: lAbs === "yüksek" ? "acil" : "önemli", why: uniq(whyAbs) });
-
-      reportLines.push(
-        `İntraaksiyel yerleşimli kitle/lezyon izlenmektedir (${s.massLoc}). Kontrastlanma: ${s.enhance}, DWI: ${s.dwi}, ödem: ${s.edema}.`
-      );
-      recs.push("Kontrastlı beyin MR + DWI/ADC (gerekirse perfüzyon/spektroskopi) ile ileri karakterizasyon önerilir.");
-      recs.push("Sistemik malignite öyküsü varsa tüm vücut tarama/klinik korelasyon önerilir.");
-    } else {
-      reportLines.push("Kitle/lezyon seçildi ancak kompartman bilinmiyor: ileri karakterizasyon önerilir.");
-      recs.push("Kontrastlı beyin MR ile kompartman ve karakterizasyon önerilir.");
+    // SAH
+    if (s.extraAxialType === "subaraknoid (SAH)" || s.hemorrhageLocation === "SAH baskın") {
+      // Trauma vs aneurysm heuristic
+      const aneurysmSusp = !s.trauma; // simplistic; we later enrich with cisternal pattern etc.
+      ddx.unshift({
+        name: aneurysmSusp ? "Anevrizmal subaraknoid kanama olasılığı" : "Travmatik subaraknoid kanama",
+        likelihood: aneurysmSusp ? "Orta" : "Yüksek",
+        why: [
+          "Subaraknoid kanama paterni seçilmiştir.",
+          aneurysmSusp ? "Travma öyküsü yoksa anevrizmal SAH ayırıcı tanıda önem kazanır." : "Travma öyküsü travmatik SAH lehine.",
+        ],
+      });
+      recs.unshift({
+        title: "SAH için ileri inceleme",
+        urgency: aneurysmSusp ? "Acil" : "Öncelikli",
+        details: [
+          aneurysmSusp ? "BT anjiyografi (CTA) ile anevrizma araştırılması önerilir." : "Klinik şüpheye göre CTA/MRA değerlendirilebilir.",
+          "Hidrocefalus/IVH eşliği açısından değerlendirme.",
+          "Nöroloji/nöroşirürji ile klinik korelasyon.",
+        ],
+      });
     }
   }
 
-  // --- MRI signal baseline (optional, helps ddx language even if no dynamic)
-  if (s.modality === "MR") {
-    const anySignal =
-      s.t1 !== "belirsiz" || s.t2 !== "belirsiz" || s.flair !== "belirsiz" || s.adcLow !== "bilinmiyor";
-    if (anySignal) {
-      reportLines.push(
-        `MR sinyal özeti: T1 ${s.t1}, T2 ${s.t2}, FLAIR ${s.flair}${s.adcLow === "var" ? ", ADC düşük (diff kısıtlı)" : ""}.`
-      );
+  // Intra-axial hemorrhage patterns
+  if (s.hemorrhageLocation === "intraaksiyel" || s.intraAxialType !== "bilinmiyor") {
+    // Hypertensive hemorrhage vs tumor/met
+    if (s.htn && s.intraAxialType === "intraparenkimal hematom (IPH)") {
+      ddx.unshift({
+        name: "Hipertansif intraparenkimal kanama (tipik patern düşünülür)",
+        likelihood: "Orta",
+        why: [
+          "İntraparenkimal hematom + hipertansiyon öyküsü varsa hipertansif kanama ayırıcı tanıda öne çıkar.",
+          "Yerleşim (bazal ganglion/talamus/pontin/serebellar) ve BT paterni ile güçlenir.",
+        ],
+      });
+    }
+
+    // Contusion (trauma)
+    if (s.intraAxialType === "kontüzyon") {
+      ddx.unshift({
+        name: "Travmatik kontüzyon / hemorajik kontüzyon",
+        likelihood: s.trauma ? "Yüksek" : "Orta",
+        why: [
+          "Kontüzyon seçilmiştir; travma ile sık ilişkilidir.",
+          "Frontotemporal yerleşim ve karşı coup/coup paterni klinik/BT ile uyumlu olabilir.",
+        ],
+      });
+      recs.push({
+        title: "Travma BT kontrol stratejisi",
+        urgency: "Öncelikli",
+        details: ["Klinik kötüleşme veya antikoagülan varlığında erken kontrol BT düşünülebilir.", "DAI şüphesi varsa MR (DWI/SWI) önerilir."],
+      });
+    }
+
+    // Hemorrhagic transformation
+    if (s.intraAxialType === "hemorajik transformasyon") {
+      ddx.unshift({
+        name: "Enfarkt alanında hemorajik transformasyon olasılığı",
+        likelihood: "Orta",
+        why: [
+          "Hemorajik transformasyon seçilmiştir.",
+          "DWI/ADC ile iskemi-enfarkt korelasyonu ve klinik zamanlama önemlidir.",
+        ],
+      });
+      recs.push({
+        title: "İskemik olay korelasyonu",
+        urgency: "Öncelikli",
+        details: ["MR DWI/ADC ve FLAIR ile zamanlama ve yayılım değerlendirmesi.", "Antikoagülan/antiagregan öyküsü klinikle birlikte ele alınmalı."],
+      });
+    }
+
+    // Tumor bleed / hemorrhagic mets heuristic
+    if (s.knownMalignancy || s.hemorrhagicComponent === "var") {
+      ddx.push({
+        name: "Kanamalı metastaz / tümör kanaması",
+        likelihood: s.knownMalignancy ? "Orta" : "Düşük",
+        why: [
+          s.knownMalignancy ? "Bilinen malignite öyküsü metastaz olasılığını artırır." : "Kanamalı komponent tümör kanaması ile ilişkili olabilir.",
+          "Gadolinyum kontrastlı MR (T1+C) ve SWI ile değerlendirme ayırıcı tanıda önemlidir.",
+        ],
+      });
+      recs.push({
+        title: "Tümör / metastaz değerlendirmesi",
+        urgency: "Öncelikli",
+        details: ["Kontrastlı beyin MR (T1+C), DWI/ADC, SWI/GRE", "Sistemik malignite taraması klinikle birlikte", "Lezyon sayısı ve dağılımı (kortikomedüller bileşke vb.)"],
+      });
     }
   }
 
-  // --- Urgency rollup
-  const ddxFmt = fmtDdx(ddx);
+  // IVH
+  if (s.hemorrhageLocation === "IVH") {
+    ddx.unshift({
+      name: "İntraventriküler kanama (primer/sekonder)",
+      likelihood: "Orta",
+      why: [
+        "IVH seçilmiştir.",
+        "Parankimal kanamaya sekonder veya vasküler etiyoloji ile ilişkili olabilir; eşlik eden kaynak araştırılmalıdır.",
+      ],
+    });
+    recs.unshift({
+      title: "IVH – hidrocefalus ve kaynak araştırması",
+      urgency: "Acil",
+      details: ["Hidrocefalus bulguları açısından değerlendirme", "CTA/MRA/DSA endikasyonu klinik şüpheye göre", "Nöroşirürji ile klinik korelasyon"],
+    });
+  }
 
-  const report =
-    [
-      "BEYİN GÖRÜNTÜLEME – YAPILANDIRILMIŞ ÖZET",
-      s.symptoms?.trim() ? `Klinik: ${s.symptoms.trim()}` : "",
-      reportLines.length ? "Bulgular:" : "",
-      ...reportLines.map((x) => `• ${x}`),
-      s.incidental?.trim() ? "Ek/İnsidental:" : "",
-      s.incidental?.trim() ? `• ${s.incidental.trim()}` : "",
-      ddxFmt.all.length ? "Olası Tanılar (kural tabanlı):" : "",
-      ...ddxFmt.high.map((d) => `• [YÜKSEK] ${d.name} — ${uniq(d.why).join("; ")}`),
-      ...ddxFmt.mid.map((d) => `• [ORTA] ${d.name} — ${uniq(d.why).join("; ")}`),
-      ...ddxFmt.low.map((d) => `• [DÜŞÜK] ${d.name} — ${uniq(d.why).join("; ")}`),
-      urgent.length ? "Acil/Uyarı:" : "",
-      ...urgent.map((u) => `• ${u}`),
-      recs.length ? "Öneri / İleri İnceleme:" : "",
-      ...recs.map((r) => `• ${r}`),
-    ]
-      .filter(Boolean)
-      .join("\n") + "\n";
+  // Always suggest window/phase if modality mismatch
+  if (s.modality === "BT") {
+    recs.push({
+      title: "Kanama karakterizasyonu",
+      urgency: "Rutin",
+      details: ["BT yoğunluk ve seri kontrollerle evreleme yapılabilir.", "Klinik gereksinime göre MR (T1/T2/FLAIR, DWI/ADC, SWI) ek fayda sağlayabilir."],
+    });
+  } else {
+    recs.push({
+      title: "MR sekans seti",
+      urgency: "Rutin",
+      details: ["T1/T2/FLAIR", "DWI/ADC", "SWI/GRE (kanama/DAI)", "Gerekirse kontrastlı T1 (tümör/enfeksiyon ayrımı)"],
+    });
+  }
 
-  return { ddx: ddxFmt.all, urgent: uniq(urgent), recs: uniq(recs), report };
+  // Final sentence
+  const parts: string[] = [];
+  parts.push(`${s.modality} incelemede intrakraniyal kanama ile uyumlu bulgular mevcuttur.`);
+  if (s.hemorrhageLocation !== "bilinmiyor") parts.push(`Dağılım: ${s.hemorrhageLocation}.`);
+  if (s.extraAxialType !== "bilinmiyor") parts.push(`Ekstraaksiyel tip: ${s.extraAxialType}.`);
+  if (s.intraAxialType !== "bilinmiyor") parts.push(`İntraaksiyel tip: ${s.intraAxialType}.`);
+  if (s.hemorrhageAge !== "bilinmiyor") parts.push(`Kanama evresi: ${s.hemorrhageAge}.`);
+  if (s.midlineShift !== "bilinmiyor" && s.midlineShift !== "yok") parts.push(`Midline shift: ${s.midlineShift}.`);
+  if (s.herniationSigns === "var") parts.push("Herniasyon lehine bulgular izlenmektedir.");
+
+  const final = parts.join(" ");
+
+  return { ddx, recs, final, warning: warn.join(" ") };
+}
+
+function brainMassDdx(s: BrainState): { ddx: DdxItem[]; recs: Recommendation[]; final: string; warning: string } {
+  let ddx: DdxItem[] = [];
+  let recs: Recommendation[] = [];
+  const warn: string[] = [];
+
+  const hasMass = s.massPresent === "var";
+  if (!hasMass) {
+    return { ddx: [], recs: [], final: `${s.modality} incelemede belirgin kitle lezyonu lehine bulgu izlenmemektedir.`, warning: "" };
+  }
+
+  const isExtraAxial = s.compartment === "ekstraaksiyel" || s.duralBased === "var" || s.enhancement === "dural tail";
+  const isRing = s.enhancement === "halka (ring)";
+  const isSolid = s.enhancement === "solid";
+  const isMultiple = s.numberOfLesions === "çoklu";
+
+  // Abscess heuristic
+  if (isRing && s.diffusionRestriction === "var" && (s.feverSepsis || s.immunosuppressed)) {
+    ddx.unshift({
+      name: "Beyin apsesi",
+      likelihood: "Yüksek",
+      why: [
+        "Halka tarzı kontrastlanma + belirgin difüzyon kısıtlılığı apsede tipiktir.",
+        s.feverSepsis ? "Ateş/sepsis öyküsü enfeksiyöz etiyolojiyi destekler." : "İmmünsüpresyon enfeksiyon riskini artırır.",
+      ],
+    });
+    recs.unshift({
+      title: "Apseden şüphe – acil yaklaşım",
+      urgency: "Acil",
+      details: ["Acil klinik değerlendirme, enfeksiyon hastalıkları / nöroşirürji konsültasyonu", "Gerekirse kan kültürü/CRP", "MR DWI/ADC ve kontrastlı T1 ile doğrulama"],
+    });
+    warn.push("Apseden şüphe varsa klinik aciliyet yüksektir.");
+  }
+
+  // Metastasis
+  if (isMultiple && (s.knownMalignancy || s.enhancement === "halka (ring)" || s.edema === "belirgin")) {
+    ddx.push({
+      name: "Metastaz",
+      likelihood: s.knownMalignancy ? "Yüksek" : "Orta",
+      why: [
+        isMultiple ? "Çoklu lezyon metastaz lehine." : "Lezyon paterni metastaz ile uyumlu olabilir.",
+        s.knownMalignancy ? "Bilinen malignite öyküsü destekler." : "Primer malignite öyküsü yoksa sistemik tarama düşünülebilir.",
+        "Kortikomedüller bileşke, gri-beyaz cevher sınırı dağılımı ile korele edilmelidir.",
+      ],
+    });
+    recs.push({
+      title: "Metastaz değerlendirmesi",
+      urgency: "Öncelikli",
+      details: ["Kontrastlı beyin MR (T1+C), DWI/ADC, SWI", "Sistemik tarama (klinikle)", "Steroid endikasyonu klinik/nöroloji ile"],
+    });
+  }
+
+  // Primary glioma / high-grade
+  if (!isExtraAxial && (isSolid || isRing) && s.edema !== "yok/az") {
+    ddx.unshift({
+      name: "Yüksek dereceli glial tümör (glioblastom spektrumu)",
+      likelihood: "Orta",
+      why: [
+        "İntraaksiyel kitle + belirgin ödem ve heterojen/halka tarzı kontrastlanma yüksek dereceli tümörleri düşündürür.",
+        s.hemorrhagicComponent === "var" ? "Kanamalı komponent yüksek dereceli tümörde/metastazda görülebilir." : "Kanama varlığı SWI ile desteklenebilir.",
+      ],
+    });
+    recs.push({
+      title: "Tümör karakterizasyonu",
+      urgency: "Öncelikli",
+      details: ["Kontrastlı MR + DWI/ADC", "Gerekirse perfüzyon MR / MR spektroskopi (merkez pratiğine göre)", "Nöroşirürji ile planlama"],
+    });
+  }
+
+  // Extra-axial: meningioma / schwannoma
+  if (isExtraAxial) {
+    const menHigh = s.enhancement === "dural tail" || s.duralBased === "var";
+    ddx.unshift({
+      name: "Menenjiyom (ekstraaksiyel)",
+      likelihood: menHigh ? "Yüksek" : "Orta",
+      why: [
+        "Ekstraaksiyel yerleşim ve dural tabanlı görünüm menenjiyom lehinedir.",
+        s.calcification === "var" ? "Kalsifikasyon menenjiyomda görülebilir." : "Kalsifikasyon yokluğu dışlamaz.",
+      ],
+    });
+    recs.push({
+      title: "Ekstraaksiyel kitle değerlendirmesi",
+      urgency: "Rutin",
+      details: ["Kontrastlı MR (dural tail, komşu kemik değişiklikleri)", "Gerekirse BT ile kalsifikasyon/hiperostoz değerlendirmesi", "Klinik semptomlara göre nöroşirürji"],
+    });
+  }
+
+  // Calcification clue: oligodendroglioma vs meningioma
+  if (!isExtraAxial && s.calcification === "var") {
+    ddx.push({
+      name: "Oligodendroglial tümör olasılığı (kalsifikasyon ile)",
+      likelihood: "Düşük",
+      why: ["İntraaksiyel kalsifikasyon oligodendroglioma gibi glial tümörlerde görülebilir.", "Kesin ayrım için MR paternleri ve klinik korelasyon gerekir."],
+    });
+  }
+
+  // If ring without restriction -> necrotic tumor vs metastasis
+  if (isRing && s.diffusionRestriction !== "var") {
+    ddx.push({
+      name: "Nekrotik tümör / metastaz (ring-enhancing)",
+      likelihood: s.knownMalignancy ? "Orta" : "Düşük",
+      why: [
+        "Halka tarzı kontrastlanma; difüzyon kısıtlılığı yoksa apseden çok nekrotik tümör/metastaz düşünülür.",
+        s.knownMalignancy ? "Bilinen malignite öyküsü metastaz olasılığını artırır." : "Primer malignite açısından klinik tarama düşünülebilir.",
+      ],
+    });
+  }
+
+  // Urgency
+  if (s.midlineShift === "belirgin" || s.herniationSigns === "var") {
+    recs.unshift({
+      title: "Kitle etkisi / herniasyon şüphesi",
+      urgency: "Acil",
+      details: ["Acil klinik değerlendirme ve nöroşirürji konsültasyonu", "Steroid/ICP yönetimi klinikle", "Gerekirse acil dekompresyon planı"],
+    });
+    warn.push("Belirgin kitle etkisi varsa acil yaklaşım gerekir.");
+  }
+
+  // Final sentence
+  const parts: string[] = [];
+  parts.push(`${s.modality} incelemede kitle lezyonu ile uyumlu bulgular mevcuttur.`);
+  if (s.compartment !== "bilinmiyor") parts.push(`Kompartman: ${s.compartment}.`);
+  if (s.numberOfLesions !== "bilinmiyor") parts.push(`Lezyon sayısı: ${s.numberOfLesions}.`);
+  if (s.enhancement !== "bilinmiyor") parts.push(`Kontrastlanma paterni: ${s.enhancement}.`);
+  if (s.diffusionRestriction !== "bilinmiyor") parts.push(`DWI: restriksiyon ${triLabel(s.diffusionRestriction)}.`);
+  if (s.edema !== "bilinmiyor") parts.push(`Ödem: ${s.edema}.`);
+  if (s.midlineShift !== "bilinmiyor" && s.midlineShift !== "yok") parts.push(`Midline shift: ${s.midlineShift}.`);
+  if (s.herniationSigns === "var") parts.push("Herniasyon lehine bulgular izlenmektedir.");
+
+  const final = parts.join(" ");
+
+  return { ddx, recs, final, warning: warn.join(" ") };
+}
+
+function mergeDdx(a: DdxItem[], b: DdxItem[]): DdxItem[] {
+  // simple merge with de-dup by name; keep highest likelihood (Yüksek>Orta>Düşük)
+  const rank: Record<Likelihood, number> = { Yüksek: 3, Orta: 2, Düşük: 1 };
+  const map = new Map<string, DdxItem>();
+  for (const item of [...a, ...b]) {
+    const existing = map.get(item.name);
+    if (!existing) {
+      map.set(item.name, item);
+      continue;
+    }
+    const keep = rank[item.likelihood] > rank[existing.likelihood] ? item : existing;
+    // merge whys (unique)
+    const whys = [...existing.why];
+    for (const w of item.why) uniqPush(whys, w);
+    map.set(item.name, { ...keep, why: whys });
+  }
+  // sort by likelihood desc
+  return Array.from(map.values()).sort((x, y) => rank[y.likelihood] - rank[x.likelihood]);
+}
+
+function mergeRecs(a: Recommendation[], b: Recommendation[]): Recommendation[] {
+  // de-dup by title; keep more urgent
+  const rank: Record<Urgency, number> = { Acil: 3, Öncelikli: 2, Rutin: 1 };
+  const map = new Map<string, Recommendation>();
+  for (const r of [...a, ...b]) {
+    const ex = map.get(r.title);
+    if (!ex) {
+      map.set(r.title, r);
+      continue;
+    }
+    const keep = rank[r.urgency] > rank[ex.urgency] ? r : ex;
+    const details = [...ex.details];
+    for (const d of r.details) uniqPush(details, d);
+    map.set(r.title, { ...keep, details });
+  }
+  return Array.from(map.values()).sort((x, y) => rank[y.urgency] - rank[x.urgency]);
 }
 
 function BrainModule() {
-  const [s, setS] = useState<BrainState>(brainDefault);
+  const [s, setS] = useState<BrainState>(defaultBrainState);
+  const [reportStyleShort, setReportStyleShort] = useState(true);
+  const [useSuggestionLanguage, setUseSuggestionLanguage] = useState(true);
 
-  const out = useMemo(() => brainDdx(s), [s]);
+  const hemo = useMemo(() => brainHemorrhageDdx(s), [s]);
+  const mass = useMemo(() => brainMassDdx(s), [s]);
+
+  const ddx = useMemo(() => mergeDdx(hemo.ddx, mass.ddx), [hemo.ddx, mass.ddx]);
+  const recs = useMemo(() => mergeRecs(hemo.recs, mass.recs), [hemo.recs, mass.recs]);
+
+  const finalSentence = useMemo(() => {
+    const finals: string[] = [];
+    if (s.hemorrhagePresent === "var") finals.push(hemo.final);
+    if (s.massPresent === "var") finals.push(mass.final);
+
+    if (finals.length === 0) {
+      return `${s.modality} incelemede belirgin akut patoloji izlenmemektedir (klinik ile korele ediniz).`;
+    }
+
+    let text = finals.join(" ");
+
+    // add incidental
+    if (s.incidental.trim().length > 0) {
+      text += ` Ek/insidental: ${s.incidental.trim()}`;
+    }
+
+    // optional language tweaks
+    if (!useSuggestionLanguage) {
+      // remove some “önerilir” vibes by not appending; our recs will still show
+      text = text.replaceAll("önerilir", "düşünülebilir");
+    }
+
+    return text;
+  }, [s, hemo.final, mass.final, useSuggestionLanguage]);
+
+  const urgencyHeadline = useMemo(() => {
+    const rank: Record<Urgency, number> = { Acil: 3, Öncelikli: 2, Rutin: 1 };
+    let best: Urgency | null = null;
+    for (const r of recs) {
+      if (!best || rank[r.urgency] > rank[best]) best = r.urgency;
+    }
+    return best ? best : "Rutin";
+  }, [recs]);
+
+  const copyText = async (t: string) => {
+    try {
+      await navigator.clipboard.writeText(t);
+    } catch {
+      // ignore
+    }
+  };
+
+  const mrIntensityOptions: MRIntensity[] = ["bilinmiyor", "belirgin hipo", "hafif hipo", "izo", "hafif hiper", "belirgin hiper"];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      <div className="lg:col-span-8 space-y-4">
-        <Card className="rounded-2xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Beyin Modülü (v1)
-              <Badge variant="secondary">Kural tabanlı</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {/* 1) Modality & clinical */}
-            <div className="space-y-2">
-              <div className="text-sm font-semibold">1) İnceleme & Klinik</div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <Label>Modality</Label>
-                  <Select value={s.modality} onValueChange={(v) => setS((p) => ({ ...p, modality: v as BrainModality }))}>
-                    <SelectTrigger className="rounded-xl">
-                      <SelectValue placeholder="Seç" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="BT">BT</SelectItem>
-                      <SelectItem value="MR">MR</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+    <div className="w-full">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h1 className="text-xl font-semibold">Beyin AI Yardımcı Ajan (v1) — Travma / Kanama / Kitle</h1>
+          <p className="text-sm text-muted-foreground">
+            Kural tabanlı + açıklanabilir DDX. (Klinik bağlam + görüntü bulguları → olasılık/öneri/uyarı)
+          </p>
+        </div>
 
-                <div className="space-y-1">
-                  <Label>Yaş grubu</Label>
-                  <Select
-                    value={s.ageGroup}
-                    onValueChange={(v) => setS((p) => ({ ...p, ageGroup: v as BrainState["ageGroup"] }))}
-                  >
-                    <SelectTrigger className="rounded-xl">
-                      <SelectValue placeholder="Seç" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                      <SelectItem value="çocuk">Çocuk</SelectItem>
-                      <SelectItem value="erişkin">Erişkin</SelectItem>
-                      <SelectItem value="yaşlı">Yaşlı</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center justify-between rounded-xl border p-3">
-                  <div>
-                    <div className="text-sm font-medium">Travma</div>
-                    <div className="text-xs text-muted-foreground">Travma zemini var mı?</div>
-                  </div>
-                  <Switch checked={s.trauma} onCheckedChange={(v) => setS((p) => ({ ...p, trauma: v }))} />
-                </div>
-
-                <div className="flex items-center justify-between rounded-xl border p-3 md:col-span-2">
-                  <div>
-                    <div className="text-sm font-medium">Antikoagülan / Antitrombosit</div>
-                    <div className="text-xs text-muted-foreground">Kanama riski / şiddet artışı</div>
-                  </div>
-                  <Switch checked={s.anticoag} onCheckedChange={(v) => setS((p) => ({ ...p, anticoag: v }))} />
-                </div>
-
-                <div className="md:col-span-3 space-y-1">
-                  <Label>Klinik not</Label>
-                  <Input
-                    className="rounded-xl"
-                    value={s.symptoms}
-                    onChange={(e) => setS((p) => ({ ...p, symptoms: e.target.value }))}
-                    placeholder="Örn: Ani baş ağrısı, GKS düşüş, fokal defisit, nöbet..."
-                  />
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* 2) Hemorrhage */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold">2) Kanama / Travma</div>
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs text-muted-foreground">Kanama değerlendirmesi</Label>
-                  <Switch checked={s.hemorrhage} onCheckedChange={(v) => setS((p) => ({ ...p, hemorrhage: v }))} />
-                </div>
-              </div>
-
-              {s.hemorrhage && (
-                <div className="space-y-3">
-                  <Card className="rounded-2xl">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Ekstraaksiyel</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div className="space-y-1">
-                        <Label>Ekstraaksiyel kanama</Label>
-                        <Select
-                          value={s.extraAxial}
-                          onValueChange={(v) => setS((p) => ({ ...p, extraAxial: v as YesNo }))}
-                        >
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                            <SelectItem value="yok">Yok</SelectItem>
-                            <SelectItem value="var">Var</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label>Tip</Label>
-                        <Select
-                          value={s.extraAxialType}
-                          onValueChange={(v) => setS((p) => ({ ...p, extraAxialType: v as ExtraAxialType }))}
-                          disabled={s.extraAxial !== "var"}
-                        >
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="epidural">Epidural</SelectItem>
-                            <SelectItem value="subdural">Subdural</SelectItem>
-                            <SelectItem value="subaraknoid">Subaraknoid</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label>Lateralizasyon</Label>
-                        <Select
-                          value={s.extraAxialSide}
-                          onValueChange={(v) => setS((p) => ({ ...p, extraAxialSide: v as BrainState["extraAxialSide"] }))}
-                          disabled={s.extraAxial !== "var"}
-                        >
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                            <SelectItem value="sağ">Sağ</SelectItem>
-                            <SelectItem value="sol">Sol</SelectItem>
-                            <SelectItem value="bilateral">Bilateral</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label>BT densite (yaklaşık evre)</Label>
-                        <Select
-                          value={s.extraAxialCTDensity}
-                          onValueChange={(v) => setS((p) => ({ ...p, extraAxialCTDensity: v as DensityCT }))}
-                          disabled={s.extraAxial !== "var" || s.modality !== "BT"}
-                        >
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="hiperdens">Hiperdens</SelectItem>
-                            <SelectItem value="izodens">İzodens</SelectItem>
-                            <SelectItem value="hipodens">Hipodens</SelectItem>
-                            <SelectItem value="mikst">Mikst</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <div className="text-xs text-muted-foreground">
-                          Not: Densite yaş tayininde kaba göstergedir; klinik & seri görüntüleme ile yorumlanır.
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label>Maks. kalınlık (mm)</Label>
-                        <Input
-                          className="rounded-xl"
-                          value={s.extraAxialThicknessMm}
-                          onChange={(e) => setS((p) => ({ ...p, extraAxialThicknessMm: e.target.value }))}
-                          placeholder="örn: 6"
-                          disabled={s.extraAxial !== "var"}
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label>Orta hat şifti</Label>
-                        <Select
-                          value={s.midlineShift}
-                          onValueChange={(v) => setS((p) => ({ ...p, midlineShift: v as YesNo }))}
-                          disabled={s.extraAxial !== "var" && s.intraAxialHem !== "var"}
-                        >
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                            <SelectItem value="yok">Yok</SelectItem>
-                            <SelectItem value="var">Var</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1 md:col-span-3">
-                        <Label>Herniasyon şüphesi</Label>
-                        <Select value={s.herniation} onValueChange={(v) => setS((p) => ({ ...p, herniation: v as YesNo }))}>
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                            <SelectItem value="yok">Yok</SelectItem>
-                            <SelectItem value="var">Var</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="rounded-2xl">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">İntraaksiyel</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div className="space-y-1">
-                        <Label>İntraaksiyel kanama</Label>
-                        <Select
-                          value={s.intraAxialHem}
-                          onValueChange={(v) => setS((p) => ({ ...p, intraAxialHem: v as YesNo }))}
-                        >
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                            <SelectItem value="yok">Yok</SelectItem>
-                            <SelectItem value="var">Var</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label>Lokalizasyon</Label>
-                        <Select
-                          value={s.intraAxialLoc}
-                          onValueChange={(v) => setS((p) => ({ ...p, intraAxialLoc: v as LocationGeneral }))}
-                          disabled={s.intraAxialHem !== "var"}
-                        >
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {[
-                              "bilinmiyor",
-                              "frontal",
-                              "parietal",
-                              "temporal",
-                              "oksipital",
-                              "bazal ganglion",
-                              "talamus",
-                              "beyin sapı",
-                              "serebellum",
-                              "intraventriküler",
-                              "diffüz",
-                            ].map((x) => (
-                              <SelectItem key={x} value={x}>
-                                {x}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label>BT densite</Label>
-                        <Select
-                          value={s.intraAxialCTDensity}
-                          onValueChange={(v) => setS((p) => ({ ...p, intraAxialCTDensity: v as DensityCT }))}
-                          disabled={s.intraAxialHem !== "var" || s.modality !== "BT"}
-                        >
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="hiperdens">Hiperdens</SelectItem>
-                            <SelectItem value="izodens">İzodens</SelectItem>
-                            <SelectItem value="hipodens">Hipodens</SelectItem>
-                            <SelectItem value="mikst">Mikst</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label>IVH</Label>
-                        <Select value={s.ivh} onValueChange={(v) => setS((p) => ({ ...p, ivh: v as YesNo }))}>
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                            <SelectItem value="yok">Yok</SelectItem>
-                            <SelectItem value="var">Var</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label>SAH</Label>
-                        <Select value={s.sah} onValueChange={(v) => setS((p) => ({ ...p, sah: v as YesNo }))}>
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                            <SelectItem value="yok">Yok</SelectItem>
-                            <SelectItem value="var">Var</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label>Ekstraaksiyel (genel)</Label>
-                        <Select value={s.extraAxial} onValueChange={(v) => setS((p) => ({ ...p, extraAxial: v as YesNo }))}>
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                            <SelectItem value="yok">Yok</SelectItem>
-                            <SelectItem value="var">Var</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <div className="text-xs text-muted-foreground">IVH/SAH seçimleri DDX ve uyarıları etkiler.</div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-            </div>
-
-            <Separator />
-
-            {/* 3) Ischemia */}
-            <div className="space-y-2">
-              <div className="text-sm font-semibold">3) İskemi / DWI</div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <Label>Akut iskemi şüphesi</Label>
-                  <Select value={s.ischemiaSus} onValueChange={(v) => setS((p) => ({ ...p, ischemiaSus: v as YesNo }))}>
-                    <SelectTrigger className="rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                      <SelectItem value="yok">Yok</SelectItem>
-                      <SelectItem value="var">Var</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center justify-between rounded-xl border p-3">
-                  <div>
-                    <div className="text-sm font-medium">Erken BT bulguları</div>
-                    <div className="text-xs text-muted-foreground">insular ribbon/sulkus silinmesi vb.</div>
-                  </div>
-                  <Switch
-                    checked={s.earlyCTSigns}
-                    onCheckedChange={(v) => setS((p) => ({ ...p, earlyCTSigns: v }))}
-                    disabled={s.modality !== "BT"}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label>DWI kısıtlı diffüzyon</Label>
-                  <Select
-                    value={s.restrictedDiff}
-                    onValueChange={(v) => setS((p) => ({ ...p, restrictedDiff: v as YesNo }))}
-                    disabled={s.modality !== "MR"}
-                  >
-                    <SelectTrigger className="rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                      <SelectItem value="yok">Yok</SelectItem>
-                      <SelectItem value="var">Var</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* 4) Mass */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold">4) Kitle / Lezyon</div>
-                <Switch checked={s.mass} onCheckedChange={(v) => setS((p) => ({ ...p, mass: v }))} />
-              </div>
-
-              {s.mass && (
-                <Card className="rounded-2xl">
-                  <CardContent className="pt-5 grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="space-y-1">
-                      <Label>Kompartman</Label>
-                      <Select
-                        value={s.massCompartment}
-                        onValueChange={(v) => setS((p) => ({ ...p, massCompartment: v as MassCompartment }))}
-                      >
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                          <SelectItem value="intraaksiyel">İntraaksiyel</SelectItem>
-                          <SelectItem value="ekstraaksiyel">Ekstraaksiyel</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label>Lokalizasyon</Label>
-                      <Select
-                        value={s.massLoc}
-                        onValueChange={(v) => setS((p) => ({ ...p, massLoc: v as LocationGeneral }))}
-                      >
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[
-                            "bilinmiyor",
-                            "frontal",
-                            "parietal",
-                            "temporal",
-                            "oksipital",
-                            "bazal ganglion",
-                            "talamus",
-                            "beyin sapı",
-                            "serebellum",
-                            "intraventriküler",
-                            "diffüz",
-                          ].map((x) => (
-                            <SelectItem key={x} value={x}>
-                              {x}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label>Kontrastlanma paterni</Label>
-                      <Select
-                        value={s.enhance}
-                        onValueChange={(v) => setS((p) => ({ ...p, enhance: v as Enhance }))}
-                      >
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                          <SelectItem value="yok">Yok</SelectItem>
-                          <SelectItem value="hafif">Hafif</SelectItem>
-                          <SelectItem value="belirgin">Belirgin</SelectItem>
-                          <SelectItem value="ring">Ring</SelectItem>
-                          <SelectItem value="dural tail">Dural tail</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label>DWI</Label>
-                      <Select value={s.dwi} onValueChange={(v) => setS((p) => ({ ...p, dwi: v as DwiRestrict }))}>
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                          <SelectItem value="yok">Kısıt yok</SelectItem>
-                          <SelectItem value="var">Kısıt var</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label>Ödem</Label>
-                      <Select value={s.edema} onValueChange={(v) => setS((p) => ({ ...p, edema: v as Edema }))}>
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                          <SelectItem value="yok">Yok</SelectItem>
-                          <SelectItem value="hafif">Hafif</SelectItem>
-                          <SelectItem value="belirgin">Belirgin</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label>Hemorajik komponent</Label>
-                      <Select
-                        value={s.hemorrhagicComponent}
-                        onValueChange={(v) => setS((p) => ({ ...p, hemorrhagicComponent: v as YesNo }))}
-                      >
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                          <SelectItem value="yok">Yok</SelectItem>
-                          <SelectItem value="var">Var</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label>Kalsifikasyon</Label>
-                      <Select value={s.calcification} onValueChange={(v) => setS((p) => ({ ...p, calcification: v as YesNo }))}>
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                          <SelectItem value="yok">Yok</SelectItem>
-                          <SelectItem value="var">Var</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* MRI signal granular (mild/moderate/marked) */}
-                    {s.modality === "MR" && (
-                      <>
-                        <div className="md:col-span-3">
-                          <Separator />
-                        </div>
-
-                        {[
-                          ["T1", "t1"],
-                          ["T2", "t2"],
-                          ["FLAIR", "flair"],
-                        ].map(([label, key]) => (
-                          <div className="space-y-1" key={key}>
-                            <Label>{label} sinyal</Label>
-                            <Select
-                              value={(s as any)[key]}
-                              onValueChange={(v) => setS((p) => ({ ...p, [key]: v } as any))}
-                            >
-                              <SelectTrigger className="rounded-xl">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="belirsiz">Belirsiz</SelectItem>
-                                <SelectItem value="hipo">Hipo</SelectItem>
-                                <SelectItem value="izo">İzo</SelectItem>
-                                <SelectItem value="hafif hiper">Hafif hiper (mild)</SelectItem>
-                                <SelectItem value="hiper">Hiper</SelectItem>
-                                <SelectItem value="çok hiper">Çok hiper (marked)</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        ))}
-
-                        <div className="space-y-1">
-                          <Label>ADC düşük</Label>
-                          <Select value={s.adcLow} onValueChange={(v) => setS((p) => ({ ...p, adcLow: v as YesNo }))}>
-                            <SelectTrigger className="rounded-xl">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                              <SelectItem value="yok">Yok</SelectItem>
-                              <SelectItem value="var">Var</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-1">
-                          <Label>Perfüzyon yüksek</Label>
-                          <Select value={s.perfHigh} onValueChange={(v) => setS((p) => ({ ...p, perfHigh: v as YesNo }))}>
-                            <SelectTrigger className="rounded-xl">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="bilinmiyor">Bilinmiyor</SelectItem>
-                              <SelectItem value="yok">Yok</SelectItem>
-                              <SelectItem value="var">Var</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            <Separator />
-
-            {/* 5) Incidental */}
-            <div className="space-y-2">
-              <div className="text-sm font-semibold">5) Ek / İnsidental Bulgular</div>
-              <Textarea
-                className="rounded-2xl min-h-[90px]"
-                value={s.incidental}
-                onChange={(e) => setS((p) => ({ ...p, incidental: e.target.value }))}
-                placeholder="Örn: kronik mikroanjiyopatik değişiklikler, eski lakün, sinüzit, mastoid efüzyon..."
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="secondary"
-                className="rounded-xl"
-                onClick={() => setS(brainDefault)}
-              >
-                Sıfırla
-              </Button>
-              <Button
-                className="rounded-xl"
-                onClick={() => copyToClipboard(out.report)}
-              >
-                Raporu Kopyala
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setS(defaultBrainState)}>
+            Sıfırla
+          </Button>
+          <Button size="sm" onClick={() => copyText(finalSentence)}>
+            Finali Kopyala
+          </Button>
+        </div>
       </div>
 
-      {/* Sticky output */}
-      <div className="lg:col-span-4">
-        <div className="lg:sticky lg:top-4 space-y-4">
-          <Card className="rounded-2xl">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {/* Left: Form */}
+        <div className="lg:col-span-2 space-y-4">
+          <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                AI Çıktı
-                <Badge variant="secondary">Canlı</Badge>
-              </CardTitle>
+              <CardTitle className="text-base">1) İnceleme & Rapor Ayarları</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {out.urgent.length > 0 && (
-                <div className="rounded-2xl border p-3">
-                  <div className="text-sm font-semibold mb-2">Acil / Uyarı</div>
-                  <ul className="list-disc pl-5 space-y-1 text-sm">
-                    {out.urgent.map((u) => (
-                      <li key={u}>{u}</li>
-                    ))}
-                  </ul>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label>İnceleme tipi</Label>
+                  <ToggleButtons<BrainModality>
+                    value={s.modality}
+                    onChange={(v) => setS((p) => ({ ...p, modality: v }))}
+                    options={[
+                      { value: "BT", label: "BT" },
+                      { value: "MR", label: "MR" },
+                      { value: "BT+MR", label: "BT+MR" },
+                    ]}
+                  />
+                  <p className="text-xs text-muted-foreground">Travma/kanama → BT; karakterizasyon → MR (DWI/SWI + kontrast).</p>
                 </div>
-              )}
 
-              {out.ddx.length > 0 && (
-                <div className="rounded-2xl border p-3">
-                  <div className="text-sm font-semibold mb-2">Olası Tanılar</div>
-                  <div className="space-y-2">
-                    {out.ddx.slice(0, 8).map((d) => (
-                      <div key={d.name} className="rounded-xl border p-2">
-                        <div className="flex items-center justify-between">
-                          <div className="font-medium text-sm">{d.name}</div>
-                          <Badge
-                            variant={d.likelihood === "yüksek" ? "destructive" : d.likelihood === "orta" ? "secondary" : "outline"}
-                          >
-                            {d.likelihood}
-                          </Badge>
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {uniq(d.why).slice(0, 3).join(" · ")}
-                        </div>
-                      </div>
-                    ))}
+                <div className="space-y-2">
+                  <Label>Rapor stili</Label>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant={reportStyleShort ? "default" : "outline"} onClick={() => setReportStyleShort(true)}>
+                      Kısa
+                    </Button>
+                    <Button size="sm" variant={!reportStyleShort ? "default" : "outline"} onClick={() => setReportStyleShort(false)}>
+                      Detaylı
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-3 pt-1">
+                    <Switch checked={useSuggestionLanguage} onCheckedChange={(v) => setUseSuggestionLanguage(!!v)} />
+                    <span className="text-sm">Öneri dili</span>
                   </div>
                 </div>
-              )}
 
-              {out.recs.length > 0 && (
-                <div className="rounded-2xl border p-3">
-                  <div className="text-sm font-semibold mb-2">Öneri</div>
-                  <ul className="list-disc pl-5 space-y-1 text-sm">
-                    {out.recs.map((r) => (
-                      <li key={r}>{r}</li>
-                    ))}
-                  </ul>
+                <div className="space-y-2">
+                  <Label>Yaş (opsiyonel)</Label>
+                  <Input
+                    value={s.age}
+                    onChange={(e) => setS((p) => ({ ...p, age: e.target.value }))}
+                    placeholder="örn: 68"
+                    inputMode="numeric"
+                  />
+                  <p className="text-xs text-muted-foreground">Yaş/antikoagülan gibi klinik faktörler DDX ağırlığını etkiler.</p>
                 </div>
-              )}
-
-              <div className="rounded-2xl border p-3">
-                <div className="text-sm font-semibold mb-2">Rapor Metni</div>
-                <pre className="whitespace-pre-wrap text-xs leading-relaxed">{out.report}</pre>
-                <div className="flex gap-2 mt-2">
-                  <Button className="rounded-xl" onClick={() => copyToClipboard(out.report)}>
-                    Raporu Kopyala
-                  </Button>
-                </div>
-              </div>
-
-              <div className="text-xs text-muted-foreground">
-                Not: Çıktı kural tabanlıdır; klinik korelasyon ve kesin tanı için uygun ileri inceleme/seri takip gerekebilir.
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">2) Klinik zemin / bağlam</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <div className="text-sm font-medium">Travma</div>
+                  <div className="text-xs text-muted-foreground">Kontüzyon/EDH/SDH/DAI</div>
+                </div>
+                <Switch checked={s.trauma} onCheckedChange={(v) => setS((p) => ({ ...p, trauma: !!v }))} />
+              </div>
+
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <div className="text-sm font-medium">Antikoagülan/antiagregan</div>
+                  <div className="text-xs text-muted-foreground">SDH/ICH riski</div>
+                </div>
+                <Switch checked={s.anticoagulant} onCheckedChange={(v) => setS((p) => ({ ...p, anticoagulant: !!v }))} />
+              </div>
+
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <div className="text-sm font-medium">Bilinen malignite</div>
+                  <div className="text-xs text-muted-foreground">Metastaz olasılığı</div>
+                </div>
+                <Switch checked={s.knownMalignancy} onCheckedChange={(v) => setS((p) => ({ ...p, knownMalignancy: !!v }))} />
+              </div>
+
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <div className="text-sm font-medium">Ateş / sepsis</div>
+                  <div className="text-xs text-muted-foreground">Apsede önemli</div>
+                </div>
+                <Switch checked={s.feverSepsis} onCheckedChange={(v) => setS((p) => ({ ...p, feverSepsis: !!v }))} />
+              </div>
+
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <div className="text-sm font-medium">İmmünsüpresyon</div>
+                  <div className="text-xs text-muted-foreground">Enfeksiyon risk</div>
+                </div>
+                <Switch checked={s.immunosuppressed} onCheckedChange={(v) => setS((p) => ({ ...p, immunosuppressed: !!v }))} />
+              </div>
+
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <div className="text-sm font-medium">Hipertansiyon</div>
+                  <div className="text-xs text-muted-foreground">Hipertansif ICH</div>
+                </div>
+                <Switch checked={s.htn} onCheckedChange={(v) => setS((p) => ({ ...p, htn: !!v }))} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+            {/* Hemorrhage */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">3) Kanama (ekstraaksiyel / intraaksiyel / SAH / IVH)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Kanama var mı?</Label>
+                  <TriButtons value={s.hemorrhagePresent} onChange={(v) => setS((p) => ({ ...p, hemorrhagePresent: v }))} />
+                </div>
+
+                {s.hemorrhagePresent === "var" ? (
+                  <>
+                    <Separator />
+
+                    <div className="space-y-2">
+                      <Label>Dağılım</Label>
+                      <ToggleButtons<BrainState["hemorrhageLocation"]>
+                        value={s.hemorrhageLocation}
+                        onChange={(v) => setS((p) => ({ ...p, hemorrhageLocation: v }))}
+                        options={[
+                          { value: "bilinmiyor", label: "Bilinmiyor" },
+                          { value: "ekstraaksiyel", label: "Ekstraaksiyel" },
+                          { value: "intraaksiyel", label: "İntraaksiyel" },
+                          { value: "SAH baskın", label: "SAH baskın" },
+                          { value: "IVH", label: "IVH" },
+                        ]}
+                      />
+                      <p className="text-xs text-muted-foreground">SAH’de travma vs anevrizma ayrımı için paterni ileride detaylandıracağız.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Ekstraaksiyel alt tip</Label>
+                        <ToggleButtons<ExtraAxialType>
+                          value={s.extraAxialType}
+                          onChange={(v) => setS((p) => ({ ...p, extraAxialType: v }))}
+                          options={[
+                            { value: "bilinmiyor", label: "Bilinmiyor" },
+                            { value: "epidural", label: "Epidural" },
+                            { value: "subdural", label: "Subdural" },
+                            { value: "subaraknoid (SAH)", label: "SAH" },
+                          ]}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>İntraaksiyel alt tip</Label>
+                        <ToggleButtons<IntraAxialType>
+                          value={s.intraAxialType}
+                          onChange={(v) => setS((p) => ({ ...p, intraAxialType: v }))}
+                          options={[
+                            { value: "bilinmiyor", label: "Bilinmiyor" },
+                            { value: "intraparenkimal hematom (IPH)", label: "IPH" },
+                            { value: "kontüzyon", label: "Kontüzyon" },
+                            { value: "hemorajik transformasyon", label: "Hemorajik transf." },
+                          ]}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Kanama evresi (opsiyonel)</Label>
+                      <ToggleButtons<HemorrhageAge>
+                        value={s.hemorrhageAge}
+                        onChange={(v) => setS((p) => ({ ...p, hemorrhageAge: v }))}
+                        options={[
+                          { value: "bilinmiyor", label: "Bilinmiyor" },
+                          { value: "hiperakut", label: "Hiperakut" },
+                          { value: "akut", label: "Akut" },
+                          { value: "erken subakut", label: "Erken subakut" },
+                          { value: "geç subakut", label: "Geç subakut" },
+                          { value: "kronik", label: "Kronik" },
+                        ]}
+                      />
+                      <p className="text-xs text-muted-foreground">Evreleme BT yoğunluk + MR T1/T2/SWI ile daha güvenilir.</p>
+                    </div>
+
+                    <Separator />
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Midline shift</Label>
+                        <ToggleButtons<BrainState["midlineShift"]>
+                          value={s.midlineShift}
+                          onChange={(v) => setS((p) => ({ ...p, midlineShift: v }))}
+                          options={[
+                            { value: "bilinmiyor", label: "Bilinmiyor" },
+                            { value: "yok", label: "Yok" },
+                            { value: "hafif", label: "Hafif" },
+                            { value: "belirgin", label: "Belirgin" },
+                          ]}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Herniasyon bulgusu</Label>
+                        <TriButtons value={s.herniationSigns} onChange={(v) => setS((p) => ({ ...p, herniationSigns: v }))} />
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Skull fraktür</Label>
+                        <TriButtons value={s.skullFracture} onChange={(v) => setS((p) => ({ ...p, skullFracture: v }))} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Pnömosefali</Label>
+                        <TriButtons value={s.pneumocephalus} onChange={(v) => setS((p) => ({ ...p, pneumocephalus: v }))} />
+                      </div>
+                    </div>
+                  </>
+                ) : null}
+              </CardContent>
+            </Card>
+
+            {/* Mass */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">4) Kitle (ekstraaksiyel/intraaksiyel + patern)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Kitle var mı?</Label>
+                  <TriButtons value={s.massPresent} onChange={(v) => setS((p) => ({ ...p, massPresent: v }))} />
+                </div>
+
+                {s.massPresent === "var" ? (
+                  <>
+                    <Separator />
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Kompartman</Label>
+                        <ToggleButtons<MassCompartment>
+                          value={s.compartment}
+                          onChange={(v) => setS((p) => ({ ...p, compartment: v }))}
+                          options={[
+                            { value: "bilinmiyor", label: "Bilinmiyor" },
+                            { value: "intraaksiyel", label: "İntraaksiyel" },
+                            { value: "ekstraaksiyel", label: "Ekstraaksiyel" },
+                          ]}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Lezyon sayısı</Label>
+                        <ToggleButtons<NumberOfLesions>
+                          value={s.numberOfLesions}
+                          onChange={(v) => setS((p) => ({ ...p, numberOfLesions: v }))}
+                          options={[
+                            { value: "bilinmiyor", label: "Bilinmiyor" },
+                            { value: "tek", label: "Tek" },
+                            { value: "çoklu", label: "Çoklu" },
+                          ]}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Kontrastlanma paterni</Label>
+                      <ToggleButtons<EnhancementPattern>
+                        value={s.enhancement}
+                        onChange={(v) => setS((p) => ({ ...p, enhancement: v }))}
+                        options={[
+                          { value: "bilinmiyor", label: "Bilinmiyor" },
+                          { value: "yok", label: "Yok" },
+                          { value: "solid", label: "Solid" },
+                          { value: "halka (ring)", label: "Halka (ring)" },
+                          { value: "dural tail", label: "Dural tail" },
+                        ]}
+                      />
+                      <p className="text-xs text-muted-foreground">Ring + restriksiyon(+)+ateş → apse lehine; ring + restriksiyon(-) → nekrotik tümör/met.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>DWI restriksiyon</Label>
+                        <TriButtons value={s.diffusionRestriction} onChange={(v) => setS((p) => ({ ...p, diffusionRestriction: v }))} />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Kanamalı komponent</Label>
+                        <TriButtons value={s.hemorrhagicComponent} onChange={(v) => setS((p) => ({ ...p, hemorrhagicComponent: v }))} />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Kalsifikasyon</Label>
+                        <TriButtons value={s.calcification} onChange={(v) => setS((p) => ({ ...p, calcification: v }))} />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Dural tabanlı görünüm</Label>
+                        <TriButtons value={s.duralBased} onChange={(v) => setS((p) => ({ ...p, duralBased: v }))} />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Ödem</Label>
+                      <ToggleButtons<Edema>
+                        value={s.edema}
+                        onChange={(v) => setS((p) => ({ ...p, edema: v }))}
+                        options={[
+                          { value: "bilinmiyor", label: "Bilinmiyor" },
+                          { value: "yok/az", label: "Yok/Az" },
+                          { value: "orta", label: "Orta" },
+                          { value: "belirgin", label: "Belirgin" },
+                        ]}
+                      />
+                    </div>
+
+                    <Separator />
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>T1 sinyal (opsiyonel)</Label>
+                        <ToggleButtons<MRIntensity>
+                          value={s.t1}
+                          onChange={(v) => setS((p) => ({ ...p, t1: v }))}
+                          options={mrIntensityOptions.map((v) => ({ value: v, label: v }))}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>T2 sinyal (opsiyonel)</Label>
+                        <ToggleButtons<MRIntensity>
+                          value={s.t2}
+                          onChange={(v) => setS((p) => ({ ...p, t2: v }))}
+                          options={mrIntensityOptions.map((v) => ({ value: v, label: v }))}
+                        />
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-2">
+                      <Label>Midline shift</Label>
+                      <ToggleButtons<BrainState["midlineShift"]>
+                        value={s.midlineShift}
+                        onChange={(v) => setS((p) => ({ ...p, midlineShift: v }))}
+                        options={[
+                          { value: "bilinmiyor", label: "Bilinmiyor" },
+                          { value: "yok", label: "Yok" },
+                          { value: "hafif", label: "Hafif" },
+                          { value: "belirgin", label: "Belirgin" },
+                        ]}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Herniasyon bulgusu</Label>
+                      <TriButtons value={s.herniationSigns} onChange={(v) => setS((p) => ({ ...p, herniationSigns: v }))} />
+                    </div>
+                  </>
+                ) : null}
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">5) Ek / insidental bulgular</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Textarea
+                value={s.incidental}
+                onChange={(e) => setS((p) => ({ ...p, incidental: e.target.value }))}
+                placeholder="Buraya serbest metin ekle; final rapora entegre olur."
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right: Output */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-4 space-y-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">AI Çıktı</CardTitle>
+                <div className="text-sm text-muted-foreground">Kural tabanlı (açıklanabilir)</div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Badge className="border">Aciliyet: {urgencyHeadline}</Badge>
+                  <Button size="sm" variant="outline" onClick={() => copyText(finalSentence)}>
+                    Kopyala
+                  </Button>
+                </div>
+
+                <div className="rounded-md border p-3 text-sm leading-6">
+                  <div className="font-medium mb-1">Final (tek cümle)</div>
+                  <div>{finalSentence}</div>
+                </div>
+
+                {(hemo.warning || mass.warning) && (
+                  <div className="rounded-md border p-3 text-sm">
+                    <div className="font-medium mb-1">Uyarı</div>
+                    <div className="text-muted-foreground">{[hemo.warning, mass.warning].filter(Boolean).join(" ")}</div>
+                  </div>
+                )}
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <div className="font-medium">Ayırıcı Tanı (DDX)</div>
+                  {ddx.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">DDX için kanama veya kitle alanlarında “Var” seç.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-[320px] overflow-auto pr-1">
+                      {ddx.slice(0, reportStyleShort ? 6 : 12).map((d) => (
+                        <div key={d.name} className="rounded-md border p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="font-medium text-sm">{d.name}</div>
+                            <LikelihoodBadge v={d.likelihood} />
+                          </div>
+                          {!reportStyleShort && d.why.length > 0 && (
+                            <ul className="mt-2 list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                              {d.why.slice(0, 4).map((w, i) => (
+                                <li key={i}>{w}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <div className="font-medium">İleri inceleme / Öneriler</div>
+                  {recs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Öneri üretimi için kanama/kitle girdilerini tamamla.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-[280px] overflow-auto pr-1">
+                      {recs.slice(0, reportStyleShort ? 5 : 10).map((r) => (
+                        <div key={r.title} className="rounded-md border p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="font-medium text-sm">{r.title}</div>
+                            <UrgencyBadge v={r.urgency} />
+                          </div>
+                          {!reportStyleShort && (
+                            <ul className="mt-2 list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                              {r.details.slice(0, 4).map((d, i) => (
+                                <li key={i}>{d}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Kısayollar</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setS((p) => ({
+                        ...p,
+                        modality: "BT",
+                        trauma: true,
+                        hemorrhagePresent: "var",
+                        hemorrhageLocation: "ekstraaksiyel",
+                        extraAxialType: "epidural",
+                        skullFracture: "var",
+                        midlineShift: "hafif",
+                      }))
+                    }
+                  >
+                    Travma + EDH örnek
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setS((p) => ({
+                        ...p,
+                        modality: "MR",
+                        feverSepsis: true,
+                        massPresent: "var",
+                        compartment: "intraaksiyel",
+                        numberOfLesions: "tek",
+                        enhancement: "halka (ring)",
+                        diffusionRestriction: "var",
+                        edema: "orta",
+                      }))
+                    }
+                  >
+                    Ring + restriksiyon (apse)
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setS((p) => ({
+                        ...p,
+                        modality: "MR",
+                        knownMalignancy: true,
+                        massPresent: "var",
+                        compartment: "intraaksiyel",
+                        numberOfLesions: "çoklu",
+                        enhancement: "halka (ring)",
+                        diffusionRestriction: "yok",
+                        edema: "belirgin",
+                      }))
+                    }
+                  >
+                    Çoklu ring (met)
+                  </Button>
+                </div>
+
+                <Separator />
+
+                <p className="text-muted-foreground">
+                  v2 planı: SAH paterni (bazal sistern/sulkus), DAI (SWI), venöz tromboz ayrımı, menenjit/empiyem, MR perf/spek opsiyonları.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-/** -----------------------------
- *  Root page: organ selector
- *  ----------------------------- */
+// ---- Home (organ selector + module container) ----
+export default function HomePage() {
+  const [organ, setOrgan] = useState<Organ>("liver");
 
-type Organ = "karaciğer" | "beyin";
+  // Optional: remember selection
+  useEffect(() => {
+    try {
+      const v = window.localStorage.getItem("rc_organ");
+      if (v === "liver" || v === "brain") setOrgan(v);
+    } catch {
+      // ignore
+    }
+  }, []);
 
-export default function Page() {
-  const [organ, setOrgan] = useState<Organ>("karaciğer");
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("rc_organ", organ);
+    } catch {
+      // ignore
+    }
+  }, [organ]);
 
   return (
-    <div className="min-h-screen w-full bg-background">
-      <div className="mx-auto max-w-6xl p-4 md:p-6 space-y-4">
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex flex-wrap items-center gap-2">
-              Radiology-clean — Modül Seçimi
-              <Badge variant="secondary">v1</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col md:flex-row md:items-center gap-3 justify-between">
-            <div className="text-sm text-muted-foreground">
-              İlk ekranda organ seç: seçime göre ilgili modül açılır (Karaciğer / Beyin).
-            </div>
+    <div className="mx-auto w-full max-w-6xl px-4 py-6">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">radiology-clean</h1>
+          <p className="text-sm text-muted-foreground">
+            Organ seç → ilgili modül açılır. (Kural tabanlı, açıklanabilir DDX + öneri)
+          </p>
+        </div>
 
-            <div className="flex gap-2">
-              <Button
-                className="rounded-xl"
-                variant={organ === "karaciğer" ? "default" : "secondary"}
-                onClick={() => setOrgan("karaciğer")}
-              >
-                Karaciğer
-              </Button>
-              <Button
-                className="rounded-xl"
-                variant={organ === "beyin" ? "default" : "secondary"}
-                onClick={() => setOrgan("beyin")}
-              >
-                Beyin
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant={organ === "liver" ? "default" : "outline"} onClick={() => setOrgan("liver")}>
+            Karaciğer
+          </Button>
+          <Button size="sm" variant={organ === "brain" ? "default" : "outline"} onClick={() => setOrgan("brain")}>
+            Beyin
+          </Button>
 
-        {organ === "karaciğer" ? (
-          <LiverPage />
-        ) : (
-          <BrainModule />
-        )}
+          {/* Quick direct link too */}
+          <Button asChild size="sm" variant="outline">
+            <Link href="/liver">/liver’a git</Link>
+          </Button>
+        </div>
       </div>
+
+      <Separator className="mb-5" />
+
+      {organ === "liver" ? (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Karaciğer Modülü</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Bu ekran ana sayfa içinde karaciğer modülünü gösterir. Ayrı sayfadan da erişebilirsin:{" "}
+              <Link className="underline" href="/liver">
+                /liver
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Render existing liver module in-place */}
+          <LiverPage />
+        </div>
+      ) : (
+        <BrainModule />
+      )}
     </div>
   );
 }
