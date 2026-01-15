@@ -199,6 +199,11 @@ function normalizeSentence(s: string) {
   return endsWithPunct ? t : `${t}.`;
 }
 
+function headerLine(txt: string) {
+  // Kopyalanan metinde gözle ayrıştırmak için
+  return `${txt.toUpperCase()}:`;
+}
+
 export default function LiverPage() {
   const outputRef = useRef<HTMLDivElement | null>(null);
 
@@ -309,8 +314,15 @@ export default function LiverPage() {
     const hasGB = gbPath === "Var";
     const hasBD = bdPath === "Var";
 
-    const report: string[] = [];
-    const reportExtraBucket: string[] = []; // Ek bulgular burada ayrıca tutulacak
+    // Organ bazlı rapor cümleleri
+    const organReport = {
+      liver: [] as string[],
+      gb: [] as string[],
+      bd: [] as string[],
+      general: [] as string[], // hiçbiri yoksa
+    };
+
+    const reportExtraBucket: string[] = []; // Ek bulgular
 
     const ddx = {
       liver: { high: [] as string[], mid: [] as string[] },
@@ -336,30 +348,30 @@ export default function LiverPage() {
     // ===== KARACİĞER =====
     if (hasLiver) {
       const baseSentence = `Karaciğerde ${segTxt} düzeyinde ${sizeTxt} boyutlu ${marginAvoid ? "" : marginTxt} lezyon izlenmektedir.`;
-      report.push(baseSentence.replace(/\s+/g, " ").trim());
-      if (multiTxt) report.push(multiTxt);
-      if (fattyLiver === "Var") report.push(`Hepatik steatoz ile uyumlu görünüm izlenmektedir.`);
+      organReport.liver.push(baseSentence.replace(/\s+/g, " ").trim());
+      if (multiTxt) organReport.liver.push(multiTxt);
+      if (fattyLiver === "Var") organReport.liver.push(`Hepatik steatoz ile uyumlu görünüm izlenmektedir.`);
 
       if (showCT) {
         if (ctContrast === "Kontrastsız") {
-          report.push(`Kontrastsız BT'de lezyon densitesi: ${ctDensity.toLowerCase()}.`);
+          organReport.liver.push(`Kontrastsız BT'de lezyon densitesi: ${ctDensity.toLowerCase()}.`);
           addUnique(advanced, `Lezyon karakterizasyonu için kontrastlı multipazik KC BT veya dinamik KC MR önerilir.`);
         } else if (ctContrast === "Kontrastlı (dinamik)") {
-          report.push(
+          organReport.liver.push(
             `BT'de lezyon nonkontrast densitesi ${ctDensity.toLowerCase()}, kontrastlanma paterni ${ctEnhPattern.toLowerCase()} olarak izlenmektedir.`
           );
-          if (ctFillIn !== "Bilinmiyor") report.push(`Geç dolum (fill-in): ${ctFillIn.toLowerCase()}.`);
-          if (ctWashout !== "Bilinmiyor") report.push(`Washout: ${ctWashout.toLowerCase()}.`);
+          if (ctFillIn !== "Bilinmiyor") organReport.liver.push(`Geç dolum (fill-in): ${ctFillIn.toLowerCase()}.`);
+          if (ctWashout !== "Bilinmiyor") organReport.liver.push(`Washout: ${ctWashout.toLowerCase()}.`);
         }
       }
 
       if (showMR) {
         const base = `MR'da lezyon T1: ${mrT1}, T2: ${mrT2}, DWI kısıtlılığı: ${dwiRestrict}.`;
         if (mrDynamic === "Dinamiksiz") {
-          report.push(base + ` Dinamik seri izlenmemiştir.`);
+          organReport.liver.push(base + ` Dinamik seri izlenmemiştir.`);
           addUnique(advanced, `Dinamik karakterizasyon için arteriyel-portal-geç faz içeren dinamik KC MR önerilir.`);
         } else if (mrDynamic === "Dinamik (arteryel/portal/geç)") {
-          report.push(
+          organReport.liver.push(
             base + ` Dinamik kontrast paterni: ${mrEnhPattern}, washout: ${mrWashout}, HBP: ${hbPhase}.`
           );
         }
@@ -470,7 +482,7 @@ export default function LiverPage() {
       if (gbGas === "Var") parts.push(`Duvar/lümende gaz izlenmesi (emfizemli kolesistit?) açısından dikkat.`);
       if (gbDx === "Polip" && polypMm?.trim()) parts.push(`Polip boyutu ~${polypMm.trim()} mm.`);
       if (gbComp !== "Yok") parts.push(`Komplikasyon: ${gbComp}.`);
-      report.push(parts.join(" "));
+      organReport.gb.push(parts.join(" "));
 
       if (gbDx.includes("taş") || gbDx.includes("çamur")) {
         addUnique(ddx.gb.high, "Kolesistolitiazis / bilier çamur");
@@ -522,7 +534,7 @@ export default function LiverPage() {
       if (cholangitis === "Var") parts.push(`Kolanjit lehine bulgular olabilir.`);
       if (bdMassSuspect === "Var") parts.push(`Kitle/obstrüksiyon odağı açısından şüpheli bulgular mevcuttur.`);
       parts.push(`Olası neden: ${bdCause}.`);
-      report.push(parts.join(" "));
+      organReport.bd.push(parts.join(" "));
 
       if (bdStone === "Var" || bdCause === "Koledok taşı") {
         addUnique(ddx.bd.high, "Koledok taşı (koledokolitiazis)");
@@ -558,7 +570,7 @@ export default function LiverPage() {
     }
 
     if (!hasLiver && !hasGB && !hasBD) {
-      report.push(`Karaciğer, safra kesesi ve safra yollarında belirgin patoloji lehine bulgu izlenmemektedir.`);
+      organReport.general.push(`Karaciğer, safra kesesi ve safra yollarında belirgin patoloji lehine bulgu izlenmemektedir.`);
       addUnique(rec, `Klinik/laboratuvar ve önceki tetkiklerle korelasyon önerilir.`);
     }
 
@@ -574,9 +586,7 @@ export default function LiverPage() {
 
     // Ek bulgular ayrı başlık için
     const extra = normalizeSentence(extraFindings);
-    if (extra) {
-      reportExtraBucket.push(extra);
-    }
+    if (extra) reportExtraBucket.push(extra);
 
     // Final tek cümle
     const shortBits: string[] = [];
@@ -601,12 +611,21 @@ export default function LiverPage() {
         ? `Karaciğer, safra kesesi ve safra yollarında belirgin patoloji lehine bulgu izlenmemektedir.`
         : `${shortBits.join("; ")}.`;
 
-    if (extra) {
-      finalSentence = `${finalSentence} Ek bulgu: ${extra}`;
-    }
+    if (extra) finalSentence = `${finalSentence} Ek bulgu: ${extra}`;
+
+    // UI ve kopyalama için: başlıklı birleşik bulgular
+    const findingsBlocks: Array<{ title: string; lines: string[] }> = [];
+    if (organReport.liver.length) findingsBlocks.push({ title: "Karaciğer", lines: organReport.liver });
+    if (organReport.gb.length) findingsBlocks.push({ title: "Safra Kesesi", lines: organReport.gb });
+    if (organReport.bd.length) findingsBlocks.push({ title: "Safra Yolları", lines: organReport.bd });
+    if (!findingsBlocks.length && organReport.general.length)
+      findingsBlocks.push({ title: "Genel", lines: organReport.general });
 
     return {
-      reportLines: report,
+      hasLiver,
+      hasGB,
+      hasBD,
+      findingsBlocks,
       reportExtraBucket,
       ddx,
       rec: Array.from(new Set(rec)),
@@ -693,13 +712,42 @@ export default function LiverPage() {
     return chunks.length ? chunks.join("\n").trim() : "—";
   }, [outputs.ddx]);
 
-  // Hastane formatlı “Raporu Kopyala”
+  // --- KOPYALAMA FORMATLARI ---
+
+  // Bulgular metni (organ başlıklı)
+  const findingsText = useMemo(() => {
+    const lines: string[] = [];
+    outputs.findingsBlocks.forEach((b) => {
+      lines.push(headerLine(b.title));
+      b.lines.forEach((x) => lines.push(`- ${x}`));
+      lines.push("");
+    });
+    return lines.join("\n").trim();
+  }, [outputs.findingsBlocks]);
+
+  // 1) BULGULAR + SONUÇ (önerisiz)
+  const findingsAndConclusionToCopy = useMemo(() => {
+    const lines: string[] = [];
+    lines.push("BULGULAR:");
+    lines.push(findingsText || "- Belirgin patoloji lehine bulgu izlenmemektedir.");
+    lines.push("");
+
+    if (outputs.reportExtraBucket.length) {
+      lines.push("EK BULGULAR:");
+      outputs.reportExtraBucket.forEach((x) => lines.push(`- ${x}`));
+      lines.push("");
+    }
+
+    lines.push("SONUÇ:");
+    lines.push(outputs.finalSentence);
+    return lines.join("\n");
+  }, [findingsText, outputs.reportExtraBucket, outputs.finalSentence]);
+
+  // 2) Hastane formatlı “Raporu Kopyala” (Bulgular + Ek + Sonuç + Öneriler)
   const reportOnlyToCopy = useMemo(() => {
     const lines: string[] = [];
-
     lines.push("BULGULAR:");
-    if (outputs.reportLines.length) outputs.reportLines.forEach((l) => lines.push(`- ${l}`));
-    else lines.push("- Belirgin patoloji lehine bulgu izlenmemektedir.");
+    lines.push(findingsText || "- Belirgin patoloji lehine bulgu izlenmemektedir.");
     lines.push("");
 
     if (outputs.reportExtraBucket.length) {
@@ -717,15 +765,14 @@ export default function LiverPage() {
     else lines.push("- —");
 
     return lines.join("\n");
-  }, [outputs.reportLines, outputs.reportExtraBucket, outputs.finalSentence, outputs.rec]);
+  }, [findingsText, outputs.reportExtraBucket, outputs.finalSentence, outputs.rec]);
 
-  // Tam çıktı
+  // 3) Tam çıktı (her şey)
   const allTextToCopy = useMemo(() => {
     const lines: string[] = [];
 
-    lines.push("=== BULGULAR ===");
-    outputs.reportLines.forEach((l) => lines.push(`• ${l}`));
-    if (!outputs.reportLines.length) lines.push("• Belirgin patoloji lehine bulgu izlenmemektedir.");
+    lines.push("=== BULGULAR (ORGAN BAŞLIKLI) ===");
+    lines.push(findingsText || "—");
     lines.push("");
 
     if (outputs.reportExtraBucket.length) {
@@ -757,7 +804,7 @@ export default function LiverPage() {
     lines.push(outputs.finalSentence);
 
     return lines.join("\n");
-  }, [outputs.reportLines, outputs.reportExtraBucket, outputs.rec, outputs.advanced, outputs.alerts, outputs.finalSentence, ddxText]);
+  }, [findingsText, outputs.reportExtraBucket, outputs.rec, outputs.advanced, outputs.alerts, outputs.finalSentence, ddxText]);
 
   function resetAll() {
     setMode("Var/Yok → Detay");
@@ -1132,19 +1179,33 @@ export default function LiverPage() {
                 title="AI Çıktı"
                 right={
                   <div className="flex flex-wrap items-center justify-end gap-2">
+                    <CopyButton
+                      text={findingsAndConclusionToCopy}
+                      label="Bulgular+Sonuç"
+                      copiedLabel="Kopyalandı"
+                    />
                     <CopyButton text={reportOnlyToCopy} label="Raporu Kopyala" copiedLabel="Rapor Kopyalandı" />
-                    <CopyButton text={allTextToCopy} label="Tam Çıktıyı Kopyala" copiedLabel="Tam Çıktı Kopyalandı" />
+                    <CopyButton text={allTextToCopy} label="Tam Çıktı" copiedLabel="Tam Çıktı Kopyalandı" />
                     <div className="text-xs text-neutral-500">(Canlı)</div>
                   </div>
                 }
               >
                 <div className="grid gap-4">
-                  <Card title="Bulgular (Rapor Dili)">
-                    <ul className="list-disc space-y-2 pl-5 text-sm">
-                      {outputs.reportLines.map((l, i) => (
-                        <li key={i}>{l}</li>
+                  <Card title="Bulgular (Organ Başlıklı)">
+                    <div className="space-y-4 text-sm">
+                      {outputs.findingsBlocks.map((b) => (
+                        <div key={b.title}>
+                          <div className="mb-2 text-xs font-semibold tracking-wide text-neutral-700">
+                            {b.title.toUpperCase()}
+                          </div>
+                          <ul className="list-disc space-y-2 pl-5">
+                            {b.lines.map((l, i) => (
+                              <li key={i}>{l}</li>
+                            ))}
+                          </ul>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </Card>
 
                   {outputs.reportExtraBucket.length ? (
