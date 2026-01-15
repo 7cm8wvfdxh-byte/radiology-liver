@@ -26,6 +26,20 @@ type TriState = "bilinmiyor" | "yok" | "var";
 type BTContrastStatus = "kontrastsız" | "kontrastlı (tek faz)" | "dinamik (3 faz)";
 type MRContrastStatus = "kontrastsız" | "dinamik gadolinyum var" | "hepatobiliyer faz var";
 
+type MRIntensity =
+  | "bilinmiyor"
+  | "belirgin hipo"
+  | "hafif hipo"
+  | "izo"
+  | "hafif hiper"
+  | "belirgin hiper";
+
+type MRCoarse = "bilinmiyor" | "hipo" | "izo" | "hiper";
+type MRStrength = 0 | 1 | 2; // 0: bilinmiyor/izo, 1: hafif, 2: belirgin
+
+type MREnhSimple = "bilinmiyor" | "hipo" | "izo" | "hiper";
+type MRDelayedPattern = "bilinmiyor" | "progresif" | "persistan" | "washout";
+
 type DdxItem = {
   name: string;
   likelihood: Likelihood;
@@ -48,10 +62,27 @@ function bump(l: Likelihood, dir: "up" | "down"): Likelihood {
     if (l === "Orta") return "Yüksek";
     return "Yüksek";
   }
-  // down
   if (l === "Yüksek") return "Orta";
   if (l === "Orta") return "Düşük";
   return "Düşük";
+}
+
+function normIntensity(x: MRIntensity): { coarse: MRCoarse; strength: MRStrength } {
+  if (x === "bilinmiyor") return { coarse: "bilinmiyor", strength: 0 };
+  if (x === "izo") return { coarse: "izo", strength: 0 };
+  if (x === "hafif hipo") return { coarse: "hipo", strength: 1 };
+  if (x === "belirgin hipo") return { coarse: "hipo", strength: 2 };
+  if (x === "hafif hiper") return { coarse: "hiper", strength: 1 };
+  if (x === "belirgin hiper") return { coarse: "hiper", strength: 2 };
+  return { coarse: "bilinmiyor", strength: 0 };
+}
+
+function coarseToIntensity(coarse: MREnhSimple, mildDefault = true): MRIntensity {
+  if (coarse === "bilinmiyor") return "bilinmiyor";
+  if (coarse === "izo") return "izo";
+  if (coarse === "hipo") return mildDefault ? "hafif hipo" : "belirgin hipo";
+  if (coarse === "hiper") return mildDefault ? "hafif hiper" : "belirgin hiper";
+  return "bilinmiyor";
 }
 
 /** =============================
@@ -73,10 +104,10 @@ type LiverBTHypodenseFeatures = {
   trauma?: boolean;
   biliaryDilation?: boolean;
 
-  // NEW: capsule-related morphology
-  subcapsular?: boolean; // subcapsular location
-  capsuleAppearance?: boolean; // capsule appearance / capsule-like rim
-  capsularRetraction?: boolean; // capsular retraction
+  // capsule-related morphology
+  subcapsular?: boolean;
+  capsuleAppearance?: boolean;
+  capsularRetraction?: boolean;
 };
 
 function liverHypodenseBT_Ddx(f: LiverBTHypodenseFeatures): DdxItem[] {
@@ -93,7 +124,6 @@ function liverHypodenseBT_Ddx(f: LiverBTHypodenseFeatures): DdxItem[] {
 
   let ddx = [...base];
 
-  // Trauma
   if (f.trauma) {
     ddx.unshift({
       name: "Kontüzyon / laserasyon",
@@ -102,7 +132,6 @@ function liverHypodenseBT_Ddx(f: LiverBTHypodenseFeatures): DdxItem[] {
     });
   }
 
-  // Fever / sepsis
   if (f.feverOrSepsis) {
     ddx = ddx.map((d) =>
       d.name.toLowerCase().includes("apse")
@@ -116,7 +145,6 @@ function liverHypodenseBT_Ddx(f: LiverBTHypodenseFeatures): DdxItem[] {
     });
   }
 
-  // Multiplicity
   if (f.number === "çok") {
     ddx = ddx.map((d) => {
       if (d.name === "Metastaz") return { ...d, likelihood: "Yüksek", why: uniq([...(d.why ?? []), "Çoklu lezyon metastaz lehine."]) };
@@ -126,28 +154,28 @@ function liverHypodenseBT_Ddx(f: LiverBTHypodenseFeatures): DdxItem[] {
     });
   }
 
-  // Known primary
   if (f.knownPrimary) {
     ddx = ddx.map((d) =>
       d.name === "Metastaz" ? { ...d, likelihood: "Yüksek", why: uniq([...(d.why ?? []), "Bilinen primer malignite varlığı."]) } : d
     );
   }
 
-  // Cirrhosis
   if (f.backgroundLiver === "siroz/kronik karaciğer") {
     ddx = ddx.map((d) =>
       d.name.includes("HCC") ? { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Siroz zemininde HCC olasılığı artar."]) } : d
     );
   }
 
-  // Cyst-like
-  if (f.attenuation === "saf sıvı densiteye yakın" && f.margins === "düzgün" && (f.enhancement === "yok/çok az" || f.enhancement === "değerlendirilemedi")) {
+  if (
+    f.attenuation === "saf sıvı densiteye yakın" &&
+    f.margins === "düzgün" &&
+    (f.enhancement === "yok/çok az" || f.enhancement === "değerlendirilemedi")
+  ) {
     ddx = ddx.map((d) =>
       d.name === "Basit kist" ? { ...d, likelihood: "Yüksek", why: uniq([...(d.why ?? []), "Sıvı densitesi + düzgün kontur kist lehine."]) } : d
     );
   }
 
-  // Enhancement patterns
   if (f.enhancement === "periferik nodüler") {
     ddx = ddx.map((d) =>
       d.name === "Hemanjiyom" ? { ...d, likelihood: "Yüksek", why: uniq([...(d.why ?? []), "Periferik nodüler kontrastlanma hemanjiyom için tipik."]) } : d
@@ -194,31 +222,27 @@ function liverHypodenseBT_Ddx(f: LiverBTHypodenseFeatures): DdxItem[] {
     });
   }
 
-  /** ===== NEW: Capsule-related morphology logic =====
-   * Bu üç değişken özellikle fibrotik komponentli lezyonlarda ve subkapsüler dağılımda yardımcı olur.
-   * - subkapsüler + kapsüler çekinti: HEHE / ICC / metastaz (fibrotik) lehine
-   * - kapsül görünümü (capsule appearance): HCC (özellikle sirozda), ICC ve bazı metastazlarda görülebilir
-   */
+  // Capsule-related morphology
   const sub = !!f.subcapsular;
   const cap = !!f.capsuleAppearance;
   const retr = !!f.capsularRetraction;
 
   if (sub) {
     ddx = ddx.map((d) => {
-      if (d.name.includes("HEHE")) return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Subkapsüler yerleşim HEHE’de sık bildirilen bir patern olabilir."]) };
-      if (d.name.includes("ICC")) return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Subkapsüler yerleşimli fibrotik lezyonlarda ICC düşünülür."]) };
-      if (d.name === "Metastaz") return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Subkapsüler yerleşim metastatik odaklarda da görülebilir."]) };
+      if (d.name.includes("HEHE")) return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Subkapsüler yerleşim HEHE’de tarif edilebilir."]) };
+      if (d.name.includes("ICC")) return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Subkapsüler/fibrotik lezyonlarda ICC düşünülür."]) };
+      if (d.name === "Metastaz") return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Subkapsüler yerleşim metastazlarda da görülebilir."]) };
       return d;
     });
   }
 
   if (retr) {
     ddx = ddx.map((d) => {
-      if (d.name.includes("HEHE")) return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Kapsüler çekinti HEHE’de tarif edilebilir."]) };
-      if (d.name.includes("ICC")) return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Kapsüler çekinti ICC lehine fibrotik stroma ile ilişkili olabilir."]) };
-      if (d.name === "Metastaz") return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Bazı metastazlarda fibrozis ile kapsüler çekinti görülebilir."]) };
+      if (d.name.includes("HEHE")) return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Kapsüler çekinti HEHE’de bildirilebilir."]) };
+      if (d.name.includes("ICC")) return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Kapsüler çekinti ICC lehine olabilir (fibrotik stroma)."]) };
+      if (d.name === "Metastaz") return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Fibrotik metastazlarda kapsüler çekinti görülebilir."]) };
       if (d.name.includes("Hemanjiyom") || d.name.includes("Basit kist"))
-        return { ...d, likelihood: bump(d.likelihood, "down"), why: uniq([...(d.why ?? []), "Kapsüler çekinti basit kist/hemanjiyom için tipik değildir."]) };
+        return { ...d, likelihood: bump(d.likelihood, "down"), why: uniq([...(d.why ?? []), "Kapsüler çekinti kist/hemanjiyom için tipik değildir."]) };
       return d;
     });
   }
@@ -229,16 +253,15 @@ function liverHypodenseBT_Ddx(f: LiverBTHypodenseFeatures): DdxItem[] {
         return {
           ...d,
           likelihood: bump(d.likelihood, "up"),
-          why: uniq([...(d.why ?? []), "Kapsül görünümü (pseudo-kapsül) HCC’de görülebilir (özellikle siroz zemininde)."]),
+          why: uniq([...(d.why ?? []), "Pseudo-kapsül görünümü HCC’de görülebilir (özellikle sirozda)."]),
         };
       }
-      if (d.name.includes("ICC")) return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Kapsül benzeri rim/fibrotik komponent ICC’de görülebilir."]) };
+      if (d.name.includes("ICC")) return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Kapsül benzeri rim/fibrozis ICC’de görülebilir."]) };
       if (d.name === "Metastaz") return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Bazı metastazlarda periferik rim/kapsül benzeri görünüm olabilir."]) };
       return d;
     });
   }
 
-  // De-duplicate
   const seen = new Set<string>();
   const out: DdxItem[] = [];
   for (const item of ddx) {
@@ -251,8 +274,8 @@ function liverHypodenseBT_Ddx(f: LiverBTHypodenseFeatures): DdxItem[] {
 }
 
 type LiverMRSignalCombo = {
-  t1: "hipo" | "izo" | "hiper" | "bilinmiyor";
-  t2: "hipo" | "izo" | "hiper" | "bilinmiyor";
+  t1: MRIntensity;
+  t2: MRIntensity;
   dwi: "restriksiyon var" | "restriksiyon yok" | "bilinmiyor";
   adc: "düşük" | "normal/yüksek" | "bilinmiyor";
   inOut: "yağ var (signal drop)" | "yağ yok" | "bilinmiyor";
@@ -260,8 +283,14 @@ type LiverMRSignalCombo = {
   backgroundLiver?: "normal" | "steatoz" | "siroz/kronik karaciğer";
   knownPrimary?: boolean;
 
-  // NEW: MR contrast availability (baseline ddx + recommendation gating)
   mrContrastStatus?: MRContrastStatus;
+
+  // Dynamic / HBP patterns (when contrast available)
+  arterial?: MREnhSimple; // hyper/iso/hypo
+  washout?: TriState;
+  delayed?: MRDelayedPattern; // progressive / persistent / washout
+  capsuleEnh?: TriState; // enhancing capsule (dynamic)
+  hbp?: MREnhSimple; // hepatobiliary phase intensity
 
   // Optional morphology
   subcapsular?: boolean;
@@ -274,29 +303,44 @@ function liverMR_BaselineDdx(s: LiverMRSignalCombo): DdxItem[] {
 
   ddx.push(
     { name: "Basit kist", likelihood: "Orta", why: ["T2 hiper ve DWI restriksiyon yoksa kist lehine güçlenir."] },
-    { name: "Hemanjiyom", likelihood: "Orta", why: ["Genellikle T2 belirgin hiperintens; restriksiyon tipik değil."] },
+    { name: "Hemanjiyom", likelihood: "Orta", why: ["Genellikle T2 hiperintens; restriksiyon tipik değil."] },
     { name: "Metastaz", likelihood: "Orta", why: ["DWI/ADC ve klinik bağlamla değerlendirilir; çoklu olabilir."] },
     { name: "HCC", likelihood: "Düşük", why: ["Siroz zemininde öncelik kazanır; dinamik patern değerlidir."] },
     { name: "ICC", likelihood: "Düşük", why: ["Fibrotik lezyonlarda düşünülebilir; dinamik/hepatobiliyer faz yardımcıdır."] },
-    { name: "FNH / Adenom", likelihood: "Düşük", why: ["T1/T2 + yağ/hemoraji bulguları ile ayrım; dinamik yoksa sınırlı."] }
+    { name: "FNH", likelihood: "Düşük", why: ["HBP’de hiper/izo olabilir; dinamikte tipik patern değerlidir."] },
+    { name: "Adenom", likelihood: "Düşük", why: ["Yağ/hemoraji bulguları ve HBP davranışı ile ayrım; dinamik yoksa sınırlı."] }
   );
+
+  const t1 = normIntensity(s.t1);
+  const t2 = normIntensity(s.t2);
 
   const hasRestriction = s.dwi === "restriksiyon var" || s.adc === "düşük";
   const noRestriction = s.dwi === "restriksiyon yok" || s.adc === "normal/yüksek";
 
-  if (s.t2 === "hiper" && noRestriction) {
+  // T2 hyper + no restriction → cyst/hem
+  if (t2.coarse === "hiper" && noRestriction) {
     ddx.unshift({
       name: "Basit kist / kistik lezyon",
-      likelihood: "Yüksek",
-      why: ["T2 hiper + restriksiyon yok → kistik içerik lehine.", s.t1 === "hipo" ? "T1 hipointensite kisti destekler." : "T1 bulgusu ile korele."],
+      likelihood: t2.strength === 2 ? "Yüksek" : "Orta",
+      why: [
+        "T2 hiper + restriksiyon yok → kistik içerik lehine.",
+        t1.coarse === "hipo" ? "T1 hipointensite kistik içerik lehine." : "T1 ile korele ediniz.",
+      ],
     });
+
     ddx.unshift({
       name: "Hemanjiyom (özellikle T2 belirgin hiperintens)",
-      likelihood: "Orta",
-      why: ["T2 belirgin hiperintensite hemanjiyomda sık.", "Dinamik kontrast paterni tanısaldır (varsa)."],
+      likelihood: t2.strength === 2 ? "Yüksek" : "Orta",
+      why: [
+        t2.strength === 2
+          ? "T2 belirgin hiperintensite hemanjiyom lehine güçlü."
+          : "T2 hafif hiperintensite hemanjiyom ile uyumlu olabilir.",
+        "Dinamik kontrast paterni tanısaldır (varsa).",
+      ],
     });
   }
 
+  // Restriction → metastasis/abscess
   if (hasRestriction) {
     ddx.unshift({
       name: "Metastaz (restriksiyon gösterebilir)",
@@ -310,7 +354,8 @@ function liverMR_BaselineDdx(s: LiverMRSignalCombo): DdxItem[] {
     });
   }
 
-  if (s.t1 === "hiper") {
+  // T1 hyper → hemorrhage/protein or fat
+  if (t1.coarse === "hiper") {
     if (s.inOut === "yağ var (signal drop)") {
       ddx.unshift({
         name: "Adenom (intralezyonel yağ olası)",
@@ -321,36 +366,88 @@ function liverMR_BaselineDdx(s: LiverMRSignalCombo): DdxItem[] {
     if (s.hemorrhageOrProtein) {
       ddx.unshift({
         name: "Hemorajik / proteinöz içerikli lezyon",
-        likelihood: "Orta",
-        why: ["T1 hiperintensite hemoraji/proteinöz içerikte görülebilir."],
+        likelihood: t1.strength === 2 ? "Yüksek" : "Orta",
+        why: [t1.strength === 2 ? "Belirgin T1 hiperintensite hemoraji/proteinöz içerik lehine güçlü." : "T1 hiperintensite hemoraji/protein ile uyumlu olabilir."],
       });
     }
   }
 
+  // Background cirrhosis
   if (s.backgroundLiver === "siroz/kronik karaciğer") {
+    ddx = ddx.map((d) => (d.name === "HCC" ? { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Siroz zemininde HCC olasılığı artar."]) } : d));
+  }
+
+  // Morphology: subcapsular / retraction / capsule appearance
+  if (s.subcapsular) {
     ddx.unshift({
-      name: "HCC (siroz zemininde)",
+      name: "HEHE (subkapsüler dağılım)",
       likelihood: "Orta",
-      why: ["Siroz zemininde HCC olasılığı artar.", "Dinamik + hepatobiliyer faz (varsa) tanısal katkı sağlar."],
+      why: ["Subkapsüler/multifokal dağılım HEHE’de tarif edilebilir.", "Dinamik + DWI ile korele."],
     });
   }
 
-  // NEW: MR morphology (subcapsular/capsular retraction/capsule appearance)
-  if (s.subcapsular) {
-    ddx.unshift({ name: "HEHE (subkapsüler dağılım)", likelihood: "Orta", why: ["Subkapsüler yerleşim/multifokal dağılım HEHE’de tarif edilebilir.", "Dinamik + DWI ile korele."] });
-  }
   if (s.capsularRetraction) {
     ddx = ddx.map((d) => {
-      if (d.name.includes("ICC")) return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Kapsüler çekinti ICC lehine olabilir (fibrotik komponent)."]) };
-      if (d.name.includes("HCC")) return { ...d, likelihood: bump(d.likelihood, "down"), why: uniq([...(d.why ?? []), "Kapsüler çekinti HCC için daha az tipik; diğer fibrotik lezyonlar düşünülür."]) };
+      if (d.name === "ICC") return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Kapsüler çekinti ICC lehine olabilir (fibrotik komponent)."]) };
+      if (d.name === "HCC") return { ...d, likelihood: bump(d.likelihood, "down"), why: uniq([...(d.why ?? []), "Kapsüler çekinti HCC için daha az tipik; fibrotik lezyonlar düşünülür."]) };
       return d;
     });
   }
+
   if (s.capsuleAppearance) {
     ddx = ddx.map((d) => {
-      if (d.name.includes("HCC")) return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Pseudo-kapsül görünümü HCC’de görülebilir."]) };
+      if (d.name === "HCC") return { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Pseudo-kapsül görünümü HCC’de görülebilir."]) };
       return d;
     });
+  }
+
+  /** ===== Dynamic/HBP logic (when contrast available) ===== */
+  const hasDyn = s.mrContrastStatus && s.mrContrastStatus !== "kontrastsız";
+
+  if (hasDyn) {
+    const arterialHyper = s.arterial === "hiper";
+    const washoutYes = s.washout === "var";
+    const capsuleYes = s.capsuleEnh === "var";
+    const delayedProg = s.delayed === "progresif";
+    const hbpHypo = s.hbp === "hipo";
+    const hbpHyper = s.hbp === "hiper";
+
+    // Classic HCC heuristic (NOT LI-RADS, just pattern-based support)
+    if (arterialHyper && washoutYes) {
+      ddx = ddx.map((d) => (d.name === "HCC" ? { ...d, likelihood: "Yüksek", why: uniq([...(d.why ?? []), "Arteriyel hipervaskülarite + washout paterni HCC lehine güçlü."]) } : d));
+      if (capsuleYes) {
+        ddx = ddx.map((d) => (d.name === "HCC" ? { ...d, why: uniq([...(d.why ?? []), "Enhancing kapsül görünümü HCC lehine destekleyici olabilir."]) } : d));
+      }
+    } else if (arterialHyper && capsuleYes) {
+      ddx = ddx.map((d) => (d.name === "HCC" ? { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Arteriyel hipervaskülarite ve kapsül destekleyici."]) } : d));
+    }
+
+    // ICC / fibrotic lesions: progressive delayed enhancement + retraction
+    if (delayedProg) {
+      ddx = ddx.map((d) => (d.name === "ICC" ? { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Gecikmiş fazda progresif kontrastlanma fibrotik lezyonlarda (ICC vb.) görülebilir."]) } : d));
+    }
+    if (delayedProg && s.capsularRetraction) {
+      ddx = ddx.map((d) => (d.name === "ICC" ? { ...d, likelihood: "Yüksek" } : d));
+    }
+
+    // HBP logic (when hepatobiliary phase available)
+    if (s.mrContrastStatus === "hepatobiliyer faz var") {
+      if (hbpHyper) {
+        ddx = ddx.map((d) =>
+          d.name === "FNH"
+            ? { ...d, likelihood: "Orta", why: uniq([...(d.why ?? []), "Hepatobiliyer fazda hiper/izo sinyal FNH lehine olabilir."]) }
+            : d
+        );
+        ddx = ddx.map((d) => (d.name === "HCC" ? { ...d, likelihood: bump(d.likelihood, "down") } : d));
+      }
+      if (hbpHypo) {
+        ddx = ddx.map((d) =>
+          d.name === "HCC" ? { ...d, likelihood: bump(d.likelihood, "up"), why: uniq([...(d.why ?? []), "Hepatobiliyer fazda hipointensite malignite lehine olabilir (HCC/metastaz/ICC)."]) } : d
+        );
+        ddx = ddx.map((d) => (d.name === "Metastaz" ? { ...d, likelihood: bump(d.likelihood, "up") } : d));
+        ddx = ddx.map((d) => (d.name === "ICC" ? { ...d, likelihood: bump(d.likelihood, "up") } : d));
+      }
+    }
   }
 
   // De-duplicate
@@ -451,18 +548,26 @@ type LiverPresetId =
   | "MR_T2BRIGHT_NORES"
   | "MR_RESTRICT"
   | "MR_T1BRIGHT_FATDROP"
-  | "MR_T1BRIGHT_PROTEIN";
+  | "MR_T1BRIGHT_PROTEIN"
+  | "MR_HCC_CLASSIC"
+  | "MR_ICC_FIBROTIC"
+  | "MR_FNH_HBP";
 
 const liverPresets: Array<{ id: LiverPresetId; title: string; hint: string }> = [
-  { id: "BT_HYPO_BASE", title: "BT • Hipodens (nonspesifik)", hint: "Baz hipodens preset (DDX boş kalmaz)." },
+  { id: "BT_HYPO_BASE", title: "BT • Hipodens (baz)", hint: "Baz hipodens preset (DDX boş kalmaz)." },
   { id: "BT_CYST_LIKE", title: "BT • Kist-benzeri", hint: "Sıvı densitesi + düzgün kontur + minimal/yok tutulum." },
   { id: "BT_PERIPH_NOD_HEM", title: "BT • Hemanjiyom paterni", hint: "Periferik nodüler tutulum." },
   { id: "BT_RING_ENH", title: "BT • Halka tutulum", hint: "Nekrotik metastaz/apse ddx’i yükseltir." },
   { id: "BT_HYPERVASC", title: "BT • Arteriyel hipervasküler", hint: "HCC/hipervasküler metastaz ddx’i yükseltir." },
+
   { id: "MR_T2BRIGHT_NORES", title: "MR • T2 parlak + restriksiyon yok", hint: "Kist/hemanjiyom ağırlıklı baz ddx." },
   { id: "MR_RESTRICT", title: "MR • Restriksiyon/ADC düşük", hint: "Metastaz/apse ddx’i yükseltir." },
   { id: "MR_T1BRIGHT_FATDROP", title: "MR • T1 hiper + yağ drop", hint: "Adenom/yağ içeren lezyon ddx." },
   { id: "MR_T1BRIGHT_PROTEIN", title: "MR • T1 hiper (protein/hemoraji)", hint: "Proteinöz/hemorajik içerik ddx." },
+
+  { id: "MR_HCC_CLASSIC", title: "MR • HCC paterni", hint: "Arteriyel hiper + washout (+/- kapsül). (Heuristik)" },
+  { id: "MR_ICC_FIBROTIC", title: "MR • Fibrotik/ICC paterni", hint: "Gecikmiş progresif kontrastlanma (+ çekinti). (Heuristik)" },
+  { id: "MR_FNH_HBP", title: "MR • FNH (HBP)", hint: "HBP’de hiper/izo + belirgin washout olmaması. (Heuristik)" },
 ];
 
 const liverSegments = ["I", "II", "III", "IVa", "IVb", "V", "VI", "VII", "VIII"] as const;
@@ -474,7 +579,6 @@ function numOrUndef(s: string) {
 }
 
 function makeLiverSummary(opts: {
-  modality: StudyModality;
   segment?: LiverSegment;
   sizeMm?: number;
   lesionLabel?: string;
@@ -508,6 +612,28 @@ function triButtons(value: TriState, setValue: (v: TriState) => void) {
   );
 }
 
+function simpleButtons<T extends string>(value: T, setValue: (v: T) => void, items: Array<{ v: T; t: string }>) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {items.map((x) => (
+        <Button key={x.v} size="sm" variant={value === x.v ? "default" : "outline"} onClick={() => setValue(x.v)}>
+          {x.t}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+function intensityLabel(x: MRIntensity) {
+  if (x === "bilinmiyor") return "Bilinmiyor";
+  if (x === "izo") return "İzo";
+  if (x === "hafif hipo") return "Hafif hipo";
+  if (x === "belirgin hipo") return "Belirgin hipo";
+  if (x === "hafif hiper") return "Hafif hiper";
+  if (x === "belirgin hiper") return "Belirgin hiper";
+  return x;
+}
+
 export default function Page() {
   const [modality, setModality] = useState<StudyModality>("BT");
 
@@ -521,16 +647,16 @@ export default function Page() {
   const [includeProbLang, setIncludeProbLang] = useState(true);
   const [includeRecLang, setIncludeRecLang] = useState(true);
 
-  // Segment + unified size
+  // Segment + size
   const [liverSegment, setLiverSegment] = useState<LiverSegment | "bilinmiyor">("bilinmiyor");
   const [liverSizeMm, setLiverSizeMm] = useState<string>("");
 
-  // Presets + auto-summary behavior
+  // Presets + auto summary
   const [liverPreset, setLiverPreset] = useState<LiverPresetId | "">("");
   const [autoFillSummary, setAutoFillSummary] = useState(true);
   const [liverSummaryTouched, setLiverSummaryTouched] = useState(false);
 
-  // NEW: Contrast status
+  // Contrast status
   const [btContrastStatus, setBtContrastStatus] = useState<BTContrastStatus>("kontrastsız");
   const [mrContrastStatus, setMrContrastStatus] = useState<MRContrastStatus>("kontrastsız");
 
@@ -548,14 +674,16 @@ export default function Page() {
   const [liverBtTrauma, setLiverBtTrauma] = useState(false);
   const [liverBtBileDil, setLiverBtBileDil] = useState(false);
 
-  // NEW: capsule related toggles (used by BOTH BT+MR ddx)
+  // Capsule morphology (shared)
   const [subcapsular, setSubcapsular] = useState<TriState>("bilinmiyor");
   const [capsuleAppearance, setCapsuleAppearance] = useState<TriState>("bilinmiyor");
   const [capsularRetraction, setCapsularRetraction] = useState<TriState>("bilinmiyor");
 
-  // Liver MR combos
-  const [mrT1, setMrT1] = useState<LiverMRSignalCombo["t1"]>("bilinmiyor");
-  const [mrT2, setMrT2] = useState<LiverMRSignalCombo["t2"]>("bilinmiyor");
+  // MR signals
+  const [mrIntensityDetail, setMrIntensityDetail] = useState(false); // UX: coarse vs mild/marked
+
+  const [mrT1, setMrT1] = useState<MRIntensity>("bilinmiyor");
+  const [mrT2, setMrT2] = useState<MRIntensity>("bilinmiyor");
   const [mrDwi, setMrDwi] = useState<LiverMRSignalCombo["dwi"]>("bilinmiyor");
   const [mrAdc, setMrAdc] = useState<LiverMRSignalCombo["adc"]>("bilinmiyor");
   const [mrInOut, setMrInOut] = useState<LiverMRSignalCombo["inOut"]>("bilinmiyor");
@@ -563,7 +691,14 @@ export default function Page() {
   const [mrBg, setMrBg] = useState<LiverMRSignalCombo["backgroundLiver"]>("normal");
   const [mrKnownPrimary, setMrKnownPrimary] = useState(false);
 
-  // Free-text summaries
+  // MR dynamic/HBP patterns
+  const [mrArterial, setMrArterial] = useState<MREnhSimple>("bilinmiyor");
+  const [mrWashout, setMrWashout] = useState<TriState>("bilinmiyor");
+  const [mrDelayed, setMrDelayed] = useState<MRDelayedPattern>("bilinmiyor");
+  const [mrCapsuleEnh, setMrCapsuleEnh] = useState<TriState>("bilinmiyor");
+  const [mrHBP, setMrHBP] = useState<MREnhSimple>("bilinmiyor");
+
+  // Summaries
   const [liverSummary, setLiverSummary] = useState<string>("");
   const [gbSummary, setGbSummary] = useState<string>("");
   const [bileDuctSummary, setBileDuctSummary] = useState<string>("");
@@ -573,17 +708,20 @@ export default function Page() {
   const showBT = modality === "BT" || modality === "BT+MR";
   const showMR = modality === "MR" || modality === "BT+MR";
 
-  /** If BT is contrastless → enhancement pattern is not meaningful */
+  /** BT contrastless => enhancement not meaningful */
   useEffect(() => {
-    if (btContrastStatus === "kontrastsız") {
-      setLiverBtEnh("değerlendirilemedi");
-    }
+    if (btContrastStatus === "kontrastsız") setLiverBtEnh("değerlendirilemedi");
   }, [btContrastStatus]);
 
-  /** Keep modality consistent with tabs */
+  /** If switching modality, keep contrast states sane */
   useEffect(() => {
     if (modality === "BT") {
       setMrContrastStatus("kontrastsız");
+      setMrArterial("bilinmiyor");
+      setMrWashout("bilinmiyor");
+      setMrDelayed("bilinmiyor");
+      setMrCapsuleEnh("bilinmiyor");
+      setMrHBP("bilinmiyor");
     }
     if (modality === "MR") {
       setBtContrastStatus("kontrastsız");
@@ -591,21 +729,29 @@ export default function Page() {
     }
   }, [modality]);
 
-  /** =============================
-   * Preset apply
-   * ============================= */
+  /** If MR contrastless, reset dynamic fields */
+  useEffect(() => {
+    if (mrContrastStatus === "kontrastsız") {
+      setMrArterial("bilinmiyor");
+      setMrWashout("bilinmiyor");
+      setMrDelayed("bilinmiyor");
+      setMrCapsuleEnh("bilinmiyor");
+      setMrHBP("bilinmiyor");
+    }
+    if (mrContrastStatus === "dinamik gadolinyum var") {
+      setMrHBP("bilinmiyor");
+    }
+  }, [mrContrastStatus]);
+
   function applyPreset(id: LiverPresetId) {
     setLiverPreset(id);
-
     if (autoFillSummary) setLiverSummaryTouched(false);
-
-    // ensure liver is on
     setLiverStatus("var");
 
     // BT presets
     if (id.startsWith("BT_")) {
       if (modality === "MR") setModality("BT+MR");
-      setBtContrastStatus("kontrastsız"); // default; user can set later
+      setBtContrastStatus("kontrastsız");
       setLiverBtNumber("tek");
       setLiverBtMargins("düzgün");
       setLiverBtCalc(false);
@@ -643,8 +789,8 @@ export default function Page() {
     // MR presets
     if (id.startsWith("MR_")) {
       if (modality === "BT") setModality("BT+MR");
-      setMrContrastStatus("kontrastsız");
 
+      // baseline defaults
       setMrT1("bilinmiyor");
       setMrT2("bilinmiyor");
       setMrDwi("bilinmiyor");
@@ -652,29 +798,61 @@ export default function Page() {
       setMrInOut("bilinmiyor");
       setMrHemProt(false);
 
+      // reset dynamic
+      setMrArterial("bilinmiyor");
+      setMrWashout("bilinmiyor");
+      setMrDelayed("bilinmiyor");
+      setMrCapsuleEnh("bilinmiyor");
+      setMrHBP("bilinmiyor");
+
       if (id === "MR_T2BRIGHT_NORES") {
-        setMrT2("hiper");
-        setMrT1("hipo");
+        setMrContrastStatus("kontrastsız");
+        setMrT2("belirgin hiper");
+        setMrT1("hafif hipo");
         setMrDwi("restriksiyon yok");
         setMrAdc("normal/yüksek");
       }
       if (id === "MR_RESTRICT") {
+        setMrContrastStatus("kontrastsız");
         setMrDwi("restriksiyon var");
         setMrAdc("düşük");
       }
       if (id === "MR_T1BRIGHT_FATDROP") {
-        setMrT1("hiper");
+        setMrContrastStatus("kontrastsız");
+        setMrT1("belirgin hiper");
         setMrInOut("yağ var (signal drop)");
         setMrT2("izo");
       }
       if (id === "MR_T1BRIGHT_PROTEIN") {
-        setMrT1("hiper");
+        setMrContrastStatus("kontrastsız");
+        setMrT1("belirgin hiper");
         setMrHemProt(true);
         setMrT2("izo");
       }
+      if (id === "MR_HCC_CLASSIC") {
+        setMrContrastStatus("dinamik gadolinyum var");
+        setMrArterial("hiper");
+        setMrWashout("var");
+        setMrCapsuleEnh("var");
+        setMrDelayed("washout");
+      }
+      if (id === "MR_ICC_FIBROTIC") {
+        setMrContrastStatus("dinamik gadolinyum var");
+        setMrArterial("hipo");
+        setMrWashout("yok");
+        setMrCapsuleEnh("bilinmiyor");
+        setMrDelayed("progresif");
+        setCapsularRetraction("var");
+      }
+      if (id === "MR_FNH_HBP") {
+        setMrContrastStatus("hepatobiliyer faz var");
+        setMrArterial("hiper");
+        setMrWashout("yok");
+        setMrDelayed("persistan");
+        setMrHBP("hiper");
+      }
     }
 
-    // Auto summary
     if (autoFillSummary) {
       const size = numOrUndef(liverSizeMm);
       const seg = liverSegment === "bilinmiyor" ? undefined : liverSegment;
@@ -692,23 +870,18 @@ export default function Page() {
       if (id === "MR_RESTRICT") label = "DWI restriksiyon gösteren lezyon";
       if (id === "MR_T1BRIGHT_FATDROP") label = "T1 hiperintens ve yağ içeriği gösteren lezyon";
       if (id === "MR_T1BRIGHT_PROTEIN") label = "T1 hiperintens (protein/hemoraji olası) lezyon";
+      if (id === "MR_HCC_CLASSIC") label = "dinamik patern (arteriyel hiper + washout) gösteren lezyon";
+      if (id === "MR_ICC_FIBROTIC") label = "gecikmiş fazda progresif kontrastlanan (fibrotik) lezyon";
+      if (id === "MR_FNH_HBP") label = "hepatobiliyer fazda hiperintens (FNH lehine) lezyon";
 
       if (liverBtKnownPrimary || mrKnownPrimary) extra = "Bilinen malignite öyküsü ile korelasyon önerilir.";
       if (liverBtFever) extra = "Klinik enfeksiyon bulguları ile korele ediniz.";
 
-      setLiverSummary(
-        makeLiverSummary({
-          modality,
-          segment: seg,
-          sizeMm: size,
-          lesionLabel: label,
-          extra,
-        })
-      );
+      setLiverSummary(makeLiverSummary({ segment: seg, sizeMm: size, lesionLabel: label, extra }));
     }
   }
 
-  /** Auto-update summary */
+  /** Auto-update summary (if user not touched it) */
   useEffect(() => {
     if (liverStatus !== "var") return;
     if (!autoFillSummary) return;
@@ -717,7 +890,8 @@ export default function Page() {
     const size = numOrUndef(liverSizeMm);
     const seg = liverSegment === "bilinmiyor" ? undefined : liverSegment;
 
-    let label = "fokal lezyon";
+    let label = showMR ? "MR’de izlenen fokal lezyon" : "hipodens fokal lezyon";
+
     if (liverPreset) {
       const id = liverPreset;
       if (id === "BT_HYPO_BASE") label = "hipodens fokal lezyon";
@@ -725,24 +899,17 @@ export default function Page() {
       if (id === "BT_PERIPH_NOD_HEM") label = "hemanjiyom lehine lezyon";
       if (id === "BT_RING_ENH") label = "halka tarzı kontrastlanan lezyon";
       if (id === "BT_HYPERVASC") label = "arteriyel hipervasküler lezyon";
-      if (id === "MR_T2BRIGHT_NORES") label = "T2 belirgin hiperintens (kistik/hemanjiyom lehine) lezyon";
+      if (id === "MR_T2BRIGHT_NORES") label = "T2 belirgin hiperintens lezyon";
       if (id === "MR_RESTRICT") label = "DWI restriksiyon gösteren lezyon";
-      if (id === "MR_T1BRIGHT_FATDROP") label = "T1 hiperintens ve yağ içeriği gösteren lezyon";
+      if (id === "MR_T1BRIGHT_FATDROP") label = "T1 hiperintens + yağ içeriği gösteren lezyon";
       if (id === "MR_T1BRIGHT_PROTEIN") label = "T1 hiperintens (protein/hemoraji olası) lezyon";
-    } else {
-      if (showMR) label = "MR’de izlenen fokal lezyon";
-      else label = "hipodens fokal lezyon";
+      if (id === "MR_HCC_CLASSIC") label = "arteriyel hiper + washout paterni gösteren lezyon";
+      if (id === "MR_ICC_FIBROTIC") label = "gecikmiş fazda progresif kontrastlanan lezyon";
+      if (id === "MR_FNH_HBP") label = "hepatobiliyer fazda hiperintens lezyon";
     }
 
-    setLiverSummary(
-      makeLiverSummary({
-        modality,
-        segment: seg,
-        sizeMm: size,
-        lesionLabel: label,
-      })
-    );
-  }, [liverSegment, liverSizeMm, autoFillSummary, liverSummaryTouched, liverStatus, liverPreset, modality, showMR]);
+    setLiverSummary(makeLiverSummary({ segment: seg, sizeMm: size, lesionLabel: label }));
+  }, [liverSegment, liverSizeMm, autoFillSummary, liverSummaryTouched, liverStatus, liverPreset, showMR]);
 
   /** DDX */
   const liverDdx = useMemo(() => {
@@ -752,7 +919,6 @@ export default function Page() {
     const cap = capsuleAppearance === "var";
     const retr = capsularRetraction === "var";
 
-    // Prefer MR ddx if MR is selected
     if (showMR) {
       const combo: LiverMRSignalCombo = {
         t1: mrT1,
@@ -764,6 +930,11 @@ export default function Page() {
         backgroundLiver: mrBg,
         knownPrimary: mrKnownPrimary,
         mrContrastStatus,
+        arterial: mrArterial,
+        washout: mrWashout,
+        delayed: mrDelayed,
+        capsuleEnh: mrCapsuleEnh,
+        hbp: mrHBP,
         subcapsular: sub,
         capsuleAppearance: cap,
         capsularRetraction: retr,
@@ -771,7 +942,6 @@ export default function Page() {
       return liverMR_BaselineDdx(combo);
     }
 
-    // Otherwise BT ddx
     const sizeNum = numOrUndef(liverSizeMm);
     const features: LiverBTHypodenseFeatures = {
       sizeMm: sizeNum,
@@ -796,6 +966,11 @@ export default function Page() {
     liverStatus,
     showMR,
     liverSizeMm,
+    subcapsular,
+    capsuleAppearance,
+    capsularRetraction,
+
+    // MR deps
     mrT1,
     mrT2,
     mrDwi,
@@ -805,6 +980,13 @@ export default function Page() {
     mrBg,
     mrKnownPrimary,
     mrContrastStatus,
+    mrArterial,
+    mrWashout,
+    mrDelayed,
+    mrCapsuleEnh,
+    mrHBP,
+
+    // BT deps
     liverBtNumber,
     liverBtMargins,
     liverBtAtt,
@@ -817,26 +999,39 @@ export default function Page() {
     liverBtFever,
     liverBtTrauma,
     liverBtBileDil,
-    subcapsular,
-    capsuleAppearance,
-    capsularRetraction,
   ]);
 
   /** Recommendations */
   useEffect(() => {
     const next: Recommendation[] = [];
 
-    const mrHasDynamic = mrContrastStatus !== "kontrastsız";
+    const mrHasContrast = mrContrastStatus !== "kontrastsız";
+    const mrHasHBP = mrContrastStatus === "hepatobiliyer faz var";
     const btHasDynamic = btContrastStatus === "dinamik (3 faz)";
 
     if (liverStatus === "var") {
       if (showMR) {
-        if (!mrHasDynamic) {
+        if (!mrHasContrast) {
           next.push({
             title: "Karaciğer lezyonu karakterizasyonu için dinamik kontrastlı karaciğer MR önerilir",
             urgency: "Öncelikli",
             details: ["DWI/ADC + in/out-phase", "Gadolinyum dinamik fazlar", "Uygunsa hepatobiliyer faz (gadoxetate)"],
           });
+        } else if (!mrHasHBP) {
+          // If dynamic exists but HBP not, suggest if indeterminate patterns
+          const indeterminate =
+            mrArterial === "bilinmiyor" ||
+            mrWashout === "bilinmiyor" ||
+            mrDelayed === "bilinmiyor" ||
+            (capsularRetraction === "var" && mrDelayed !== "progresif");
+
+          if (indeterminate) {
+            next.push({
+              title: "Gerektiğinde hepatobiliyer faz (gadoxetate) eklenmesi ayırıcı tanıyı güçlendirebilir",
+              urgency: "Rutin",
+              details: ["FNH/adenom ayrımı", "HCC/ICC/metastaz ayrımı", "Lezyon karakterizasyonu"],
+            });
+          }
         }
       } else if (showBT) {
         if (!btHasDynamic) {
@@ -872,7 +1067,6 @@ export default function Page() {
         });
       }
 
-      // capsule-related: add suggestion
       if (capsularRetraction === "var" || subcapsular === "var") {
         next.push({
           title: "Subkapsüler yerleşim/kapsüler çekinti varsa fibrotik lezyonlar (ICC/HEHE vb.) açısından dinamik + hepatobiliyer fazlı MR ile değerlendirme",
@@ -889,40 +1083,24 @@ export default function Page() {
     showMR,
     btContrastStatus,
     mrContrastStatus,
+    mrArterial,
+    mrWashout,
+    mrDelayed,
+    capsularRetraction,
+    subcapsular,
     liverBtBileDil,
     bileDuctStatus,
     liverBtFever,
     liverBtKnownPrimary,
     mrKnownPrimary,
-    subcapsular,
-    capsularRetraction,
   ]);
 
   const organs: OrganFinding[] = useMemo(() => {
-    const arr: OrganFinding[] = [];
-
-    arr.push({
-      organ: "Karaciğer",
-      status: liverStatus,
-      summary: liverSummary,
-      ddx: liverStatus === "var" ? liverDdx : [],
-    });
-
-    arr.push({
-      organ: "Safra kesesi",
-      status: gbStatus,
-      summary: gbSummary,
-      ddx: [],
-    });
-
-    arr.push({
-      organ: "Safra yolları",
-      status: bileDuctStatus,
-      summary: bileDuctSummary,
-      ddx: [],
-    });
-
-    return arr;
+    return [
+      { organ: "Karaciğer", status: liverStatus, summary: liverSummary, ddx: liverStatus === "var" ? liverDdx : [] },
+      { organ: "Safra kesesi", status: gbStatus, summary: gbSummary, ddx: [] },
+      { organ: "Safra yolları", status: bileDuctStatus, summary: bileDuctSummary, ddx: [] },
+    ];
   }, [liverStatus, liverSummary, liverDdx, gbStatus, gbSummary, bileDuctStatus, bileDuctSummary]);
 
   const finalSentence = useMemo(() => {
@@ -950,14 +1128,12 @@ export default function Page() {
           <span className="text-xs text-muted-foreground">Canlı (kural tabanlı)</span>
         </div>
         <div className="grid gap-2">
-          {liver.ddx.slice(0, 10).map((d) => (
+          {liver.ddx.slice(0, 12).map((d) => (
             <Card key={d.name} className="border">
               <CardContent className="p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="font-medium">{d.name}</div>
-                  <Badge variant={d.likelihood === "Yüksek" ? "default" : d.likelihood === "Orta" ? "secondary" : "outline"}>
-                    {d.likelihood}
-                  </Badge>
+                  <Badge variant={d.likelihood === "Yüksek" ? "default" : d.likelihood === "Orta" ? "secondary" : "outline"}>{d.likelihood}</Badge>
                 </div>
                 {d.why?.length ? (
                   <ul className="mt-2 list-disc pl-5 text-sm text-muted-foreground">
@@ -1010,6 +1186,7 @@ export default function Page() {
     setCapsuleAppearance("bilinmiyor");
     setCapsularRetraction("bilinmiyor");
 
+    setMrIntensityDetail(false);
     setMrT1("bilinmiyor");
     setMrT2("bilinmiyor");
     setMrDwi("bilinmiyor");
@@ -1019,11 +1196,19 @@ export default function Page() {
     setMrBg("normal");
     setMrKnownPrimary(false);
 
+    setMrArterial("bilinmiyor");
+    setMrWashout("bilinmiyor");
+    setMrDelayed("bilinmiyor");
+    setMrCapsuleEnh("bilinmiyor");
+    setMrHBP("bilinmiyor");
+
     setLiverSummary("");
     setGbSummary("");
     setBileDuctSummary("");
     setRecs([]);
   }
+
+  const intensityDetailOptions: MRIntensity[] = ["bilinmiyor", "belirgin hipo", "hafif hipo", "izo", "hafif hiper", "belirgin hiper"];
 
   return (
     <TooltipProvider>
@@ -1034,7 +1219,7 @@ export default function Page() {
               <div>
                 <h1 className="text-2xl font-semibold">radiology-clean</h1>
                 <p className="text-sm text-muted-foreground">
-                  Abdomen odaklı • BT/MR uyumlu • Canlı çıktı • Patoloji-odaklı rapor filtresi • <span className="font-medium">Preset + Segment/Ölçüm otomasyonu</span>
+                  Abdomen odaklı • BT/MR uyumlu • Canlı çıktı • Preset + Klinik bağlam • <span className="font-medium">MR dinamik/HBP paternleri</span>
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -1085,10 +1270,10 @@ export default function Page() {
                   <div className="space-y-2">
                     <Label>Preset</Label>
                     <p className="text-sm text-muted-foreground">
-                      <span className="font-medium">Preset</span> seçince (1 tık) ilgili BT/MR alanları dolar.
+                      <span className="font-medium">Preset</span> seçince ilgili BT/MR alanları dolar.
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {liverPresets.slice(0, 4).map((p) => (
+                      {liverPresets.slice(0, 6).map((p) => (
                         <Tooltip key={p.id}>
                           <TooltipTrigger asChild>
                             <Button size="sm" variant={liverPreset === p.id ? "default" : "outline"} onClick={() => applyPreset(p.id)}>
@@ -1104,7 +1289,7 @@ export default function Page() {
               </CardContent>
             </Card>
 
-            {/* Clinical Context (geri geldi) */}
+            {/* Clinical Context */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Klinik zemin / bağlam</CardTitle>
@@ -1151,7 +1336,7 @@ export default function Page() {
               </CardContent>
             </Card>
 
-            {/* Main grid: left form, right output */}
+            {/* Main grid */}
             <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
               {/* LEFT */}
               <div className="space-y-4">
@@ -1242,24 +1427,24 @@ export default function Page() {
 
                       <Separator className="my-4" />
 
-                      {/* NEW: Capsule morphology block */}
+                      {/* Capsule morphology */}
                       <div className="grid gap-4 md:grid-cols-3">
                         <div className="space-y-2">
                           <Label>Subkapsüler yerleşim</Label>
                           {triButtons(subcapsular, setSubcapsular)}
-                          <p className="text-xs text-muted-foreground">Subkapsüler + çekinti birlikteliği fibrotik lezyonlarda (ICC/HEHE vb.) ayırıcıya katkı sağlar.</p>
+                          <p className="text-xs text-muted-foreground">Subkapsüler + çekinti fibrotik lezyonlarda (ICC/HEHE vb.) ayırıcıya katkı sağlar.</p>
                         </div>
 
                         <div className="space-y-2">
                           <Label>Kapsül görünümü (pseudo-kapsül)</Label>
                           {triButtons(capsuleAppearance, setCapsuleAppearance)}
-                          <p className="text-xs text-muted-foreground">Pseudo-kapsül HCC’de (özellikle sirozda) görülebilir; bazı fibrotik lezyonlarda da olabilir.</p>
+                          <p className="text-xs text-muted-foreground">Pseudo-kapsül HCC’de (özellikle sirozda) görülebilir.</p>
                         </div>
 
                         <div className="space-y-2">
                           <Label>Kapsüler çekinti</Label>
                           {triButtons(capsularRetraction, setCapsularRetraction)}
-                          <p className="text-xs text-muted-foreground">Kapsüler çekinti ICC/HEHE ve fibrotik metastazlarda daha olası; kist/hemanjiyom için tipik değildir.</p>
+                          <p className="text-xs text-muted-foreground">Kapsüler çekinti ICC/HEHE ve fibrotik metastazlarda daha olası.</p>
                         </div>
                       </div>
 
@@ -1296,39 +1481,30 @@ export default function Page() {
                               <div className="grid gap-4 md:grid-cols-3">
                                 <div className="space-y-2">
                                   <Label>Lezyon sayısı</Label>
-                                  <div className="flex flex-wrap gap-2">
-                                    {(["tek", "çok"] as const).map((v) => (
-                                      <Button key={v} size="sm" variant={liverBtNumber === v ? "default" : "outline"} onClick={() => setLiverBtNumber(v)}>
-                                        {v === "tek" ? "Tek" : "Çoklu"}
-                                      </Button>
-                                    ))}
-                                  </div>
+                                  {simpleButtons(liverBtNumber!, setLiverBtNumber as any, [
+                                    { v: "tek", t: "Tek" },
+                                    { v: "çok", t: "Çoklu" },
+                                  ])}
                                 </div>
 
                                 <div className="space-y-2">
                                   <Label>Sınır</Label>
-                                  <div className="flex flex-wrap gap-2">
-                                    {(["düzgün", "düzensiz"] as const).map((v) => (
-                                      <Button key={v} size="sm" variant={liverBtMargins === v ? "default" : "outline"} onClick={() => setLiverBtMargins(v)}>
-                                        {v}
-                                      </Button>
-                                    ))}
-                                  </div>
+                                  {simpleButtons(liverBtMargins!, setLiverBtMargins as any, [
+                                    { v: "düzgün", t: "Düzgün" },
+                                    { v: "düzensiz", t: "Düzensiz" },
+                                  ])}
                                 </div>
 
                                 <div className="space-y-2">
                                   <Label>Nonkontrast densite</Label>
-                                  <div className="flex flex-wrap gap-2">
-                                    {(["saf sıvı densiteye yakın", "hipodens (nonspesifik)", "heterojen"] as const).map((v) => (
-                                      <Button key={v} size="sm" variant={liverBtAtt === v ? "default" : "outline"} onClick={() => setLiverBtAtt(v)}>
-                                        {v}
-                                      </Button>
-                                    ))}
-                                  </div>
+                                  {simpleButtons(liverBtAtt!, setLiverBtAtt as any, [
+                                    { v: "saf sıvı densiteye yakın", t: "Sıvı densite" },
+                                    { v: "hipodens (nonspesifik)", t: "Hipodens" },
+                                    { v: "heterojen", t: "Heterojen" },
+                                  ])}
                                 </div>
                               </div>
 
-                              {/* Enhancement pattern (only if contrast present) */}
                               {btContrastStatus === "kontrastsız" ? (
                                 <div className="rounded-md border p-3 text-sm text-muted-foreground">
                                   Kontrastsız BT seçili → kontrastlanma paterni <span className="font-medium">değerlendirilemedi</span>.
@@ -1381,63 +1557,94 @@ export default function Page() {
                                     </Button>
                                   ))}
                                 </div>
-                                <p className="text-xs text-muted-foreground">Kontrastsız MR’da T1/T2/DWI/ADC + In/Out ile baz DDX üretiriz; dinamik/hepatobiliyer varsa ayrım güçlenir.</p>
+                                <p className="text-xs text-muted-foreground">Kontrastsız MR’da T1/T2/DWI/ADC + In/Out ile baz DDX; dinamik/HBP varsa ayrım güçlenir.</p>
                               </div>
 
-                              <div className="grid gap-4 md:grid-cols-3">
+                              <div className="flex items-center gap-2">
+                                <Switch checked={mrIntensityDetail} onCheckedChange={(v) => setMrIntensityDetail(!!v)} />
+                                <span className="text-sm">T1/T2 “mild/marked” detay modu</span>
+                              </div>
+
+                              <div className="grid gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                   <Label>T1</Label>
-                                  <div className="flex flex-wrap gap-2">
-                                    {(["bilinmiyor", "hipo", "izo", "hiper"] as const).map((v) => (
-                                      <Button key={v} size="sm" variant={mrT1 === v ? "default" : "outline"} onClick={() => setMrT1(v)}>
-                                        {v}
-                                      </Button>
-                                    ))}
-                                  </div>
+                                  {!mrIntensityDetail ? (
+                                    <div className="flex flex-wrap gap-2">
+                                      {(["bilinmiyor", "hipo", "izo", "hiper"] as MREnhSimple[]).map((v) => (
+                                        <Button
+                                          key={v}
+                                          size="sm"
+                                          variant={normIntensity(mrT1).coarse === v || (v === "bilinmiyor" && mrT1 === "bilinmiyor") ? "default" : "outline"}
+                                          onClick={() => setMrT1(coarseToIntensity(v, true))}
+                                        >
+                                          {v === "bilinmiyor" ? "Bilinmiyor" : v === "hipo" ? "Hipo" : v === "izo" ? "İzo" : "Hiper"}
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-wrap gap-2">
+                                      {intensityDetailOptions.map((v) => (
+                                        <Button key={v} size="sm" variant={mrT1 === v ? "default" : "outline"} onClick={() => setMrT1(v)}>
+                                          {intensityLabel(v)}
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
 
                                 <div className="space-y-2">
                                   <Label>T2</Label>
-                                  <div className="flex flex-wrap gap-2">
-                                    {(["bilinmiyor", "hipo", "izo", "hiper"] as const).map((v) => (
-                                      <Button key={v} size="sm" variant={mrT2 === v ? "default" : "outline"} onClick={() => setMrT2(v)}>
-                                        {v}
-                                      </Button>
-                                    ))}
-                                  </div>
+                                  {!mrIntensityDetail ? (
+                                    <div className="flex flex-wrap gap-2">
+                                      {(["bilinmiyor", "hipo", "izo", "hiper"] as MREnhSimple[]).map((v) => (
+                                        <Button
+                                          key={v}
+                                          size="sm"
+                                          variant={normIntensity(mrT2).coarse === v || (v === "bilinmiyor" && mrT2 === "bilinmiyor") ? "default" : "outline"}
+                                          onClick={() => setMrT2(coarseToIntensity(v, true))}
+                                        >
+                                          {v === "bilinmiyor" ? "Bilinmiyor" : v === "hipo" ? "Hipo" : v === "izo" ? "İzo" : "Hiper"}
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-wrap gap-2">
+                                      {intensityDetailOptions.map((v) => (
+                                        <Button key={v} size="sm" variant={mrT2 === v ? "default" : "outline"} onClick={() => setMrT2(v)}>
+                                          {intensityLabel(v)}
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
+                              </div>
 
+                              <div className="grid gap-4 md:grid-cols-3">
                                 <div className="space-y-2">
                                   <Label>DWI</Label>
-                                  <div className="flex flex-wrap gap-2">
-                                    {(["bilinmiyor", "restriksiyon var", "restriksiyon yok"] as const).map((v) => (
-                                      <Button key={v} size="sm" variant={mrDwi === v ? "default" : "outline"} onClick={() => setMrDwi(v)}>
-                                        {v}
-                                      </Button>
-                                    ))}
-                                  </div>
+                                  {simpleButtons(mrDwi, setMrDwi, [
+                                    { v: "bilinmiyor", t: "Bilinmiyor" },
+                                    { v: "restriksiyon var", t: "Restriksiyon var" },
+                                    { v: "restriksiyon yok", t: "Restriksiyon yok" },
+                                  ])}
                                 </div>
 
                                 <div className="space-y-2">
                                   <Label>ADC</Label>
-                                  <div className="flex flex-wrap gap-2">
-                                    {(["bilinmiyor", "düşük", "normal/yüksek"] as const).map((v) => (
-                                      <Button key={v} size="sm" variant={mrAdc === v ? "default" : "outline"} onClick={() => setMrAdc(v)}>
-                                        {v}
-                                      </Button>
-                                    ))}
-                                  </div>
+                                  {simpleButtons(mrAdc, setMrAdc, [
+                                    { v: "bilinmiyor", t: "Bilinmiyor" },
+                                    { v: "düşük", t: "Düşük" },
+                                    { v: "normal/yüksek", t: "Normal/Yüksek" },
+                                  ])}
                                 </div>
 
                                 <div className="space-y-2">
                                   <Label>In/Out phase</Label>
-                                  <div className="flex flex-wrap gap-2">
-                                    {(["bilinmiyor", "yağ var (signal drop)", "yağ yok"] as const).map((v) => (
-                                      <Button key={v} size="sm" variant={mrInOut === v ? "default" : "outline"} onClick={() => setMrInOut(v)}>
-                                        {v}
-                                      </Button>
-                                    ))}
-                                  </div>
+                                  {simpleButtons(mrInOut, setMrInOut, [
+                                    { v: "bilinmiyor", t: "Bilinmiyor" },
+                                    { v: "yağ var (signal drop)", t: "Yağ var" },
+                                    { v: "yağ yok", t: "Yağ yok" },
+                                  ])}
                                 </div>
 
                                 <div className="flex items-center gap-2">
@@ -1445,6 +1652,66 @@ export default function Page() {
                                   <span className="text-sm">Hemoraji/Protein (T1 hiper)</span>
                                 </div>
                               </div>
+
+                              {/* Dynamic / HBP patterns (conditional) */}
+                              {mrContrastStatus === "kontrastsız" ? null : (
+                                <>
+                                  <Separator className="my-2" />
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <Label>Kontrast paternleri (MR)</Label>
+                                      <Badge variant="secondary">{mrContrastStatus === "hepatobiliyer faz var" ? "Dinamik + HBP" : "Dinamik"}</Badge>
+                                    </div>
+
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                      <div className="space-y-2">
+                                        <Label>Arteriyel faz</Label>
+                                        {simpleButtons(mrArterial, setMrArterial, [
+                                          { v: "bilinmiyor", t: "Bilinmiyor" },
+                                          { v: "hipo", t: "Hipo" },
+                                          { v: "izo", t: "İzo" },
+                                          { v: "hiper", t: "Hiper" },
+                                        ])}
+                                      </div>
+
+                                      <div className="space-y-2">
+                                        <Label>Washout</Label>
+                                        {triButtons(mrWashout, setMrWashout)}
+                                      </div>
+
+                                      <div className="space-y-2">
+                                        <Label>Gecikmiş faz paterni</Label>
+                                        {simpleButtons(mrDelayed, setMrDelayed, [
+                                          { v: "bilinmiyor", t: "Bilinmiyor" },
+                                          { v: "persistan", t: "Persistan" },
+                                          { v: "progresif", t: "Progresif" },
+                                          { v: "washout", t: "Washout" },
+                                        ])}
+                                      </div>
+
+                                      <div className="space-y-2">
+                                        <Label>Enhancing kapsül (dinamik)</Label>
+                                        {triButtons(mrCapsuleEnh, setMrCapsuleEnh)}
+                                      </div>
+
+                                      {mrContrastStatus === "hepatobiliyer faz var" ? (
+                                        <div className="space-y-2 md:col-span-2">
+                                          <Label>Hepatobiliyer faz (HBP) sinyali</Label>
+                                          {simpleButtons(mrHBP, setMrHBP, [
+                                            { v: "bilinmiyor", t: "Bilinmiyor" },
+                                            { v: "hipo", t: "Hipo" },
+                                            { v: "izo", t: "İzo" },
+                                            { v: "hiper", t: "Hiper" },
+                                          ])}
+                                          <p className="text-xs text-muted-foreground">
+                                            HBP hiper/izo → FNH lehine olabilir. HBP hipo → malignite (HCC/ICC/metastaz) lehine olabilir (klinik+diğer fazlarla birlikte).
+                                          </p>
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
                             </div>
                           )}
                         </TabsContent>
@@ -1556,7 +1823,7 @@ export default function Page() {
                     <Separator />
 
                     <div className="text-xs text-muted-foreground">
-                      Not: DDX önerileri “kılavuz” amaçlıdır; kesin tanı için dinamik kontrast paterni/sekanslar ve klinik korelasyon gerekir.
+                      Not: Bu modül kural tabanlıdır; kesin tanı için dinamik paternler/sekanslar ve klinik korelasyon gerekir.
                     </div>
                   </CardContent>
                 </Card>
@@ -1564,7 +1831,7 @@ export default function Page() {
             </div>
 
             <div className="mt-8 text-xs text-muted-foreground">
-              radiology-clean • preset tabanlı • segment/ölçüm otomasyonu • var/yok → koşullu derinleşme • patoloji-odaklı rapor filtresi • canlı çıktı paneli
+              radiology-clean • preset tabanlı • var/yok → koşullu derinleşme • MR: mild/marked intensite + dinamik/HBP paternleri • patoloji-odaklı rapor filtresi • canlı çıktı paneli
             </div>
           </div>
         </div>
