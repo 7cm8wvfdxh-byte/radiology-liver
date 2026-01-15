@@ -138,10 +138,9 @@ function massEffectUrgency(
 }
 
 /** ---- MRI intensity scale with intermediate options ---- */
-type Intensity5 = "Belirsiz" | "Hipointens" | "Hafif hiperintens" | "Hiperintens" | "Belirgin hiperintens";
 type T2Scale = "Belirsiz" | "Hipointens" | "İzo" | "Hafif hiperintens" | "Hiperintens" | "Belirgin hiperintens";
 
-/** ---- Protocol selections (new) ---- */
+/** ---- Protocol selections ---- */
 type CTPackage = "Non-kontrast BT" | "CTA" | "CTV" | "CTP";
 type MRPackage = "Non-kontrast MR" | "Kontrastlı MR" | "MRA" | "MRV" | "Perfüzyon (DSC/ASL)";
 
@@ -154,10 +153,23 @@ type EnhancementPattern =
   | "Dural tail / ekstraaksiyel"
   | "Leptomeningeal/pial";
 
+/** ---- Location model for masses ---- */
+type LesionCompartment = "Belirsiz" | "İntraaksiyel" | "Ekstraaksiyel" | "İntraventriküler";
+type ExtraAxialSite =
+  | "Belirsiz"
+  | "Konveksite"
+  | "Parasagittal / Falx"
+  | "Tentoryum"
+  | "Sfenoid kanat / olfaktör oluk"
+  | "CPA (serebellopontin açı)"
+  | "Kavernöz sinüs komşuluğu";
+type IntraAxialSite = "Belirsiz" | "Lobar kortikal-subkortikal" | "Derin/periventriküler" | "Beyin sapı" | "Serebellum";
+type VentricularSite = "Belirsiz" | "Lateral ventrikül" | "3. ventrikül" | "4. ventrikül";
+
+type EnhancementHomogeneity = "Belirsiz" | "Homojen" | "Heterojen";
+
 /** -----------------------------
- * Brain module (v1.5)
- * Added: Robust TRAVMA + KITLE protocols (CT/MR package selection + contrast/angiography/perfusion)
- * Keeps SDH/EDH mass-effect engine intact.
+ * Brain module
  * ----------------------------- */
 function BrainModule() {
   const [modality, setModality] = useState<Modality>("BT");
@@ -168,6 +180,7 @@ function BrainModule() {
   const [feverSepsis, setFeverSepsis] = useState(false);
   const [traumaHx, setTraumaHx] = useState(true);
   const [anticoagulant, setAnticoagulant] = useState(false);
+  const [immunosuppressed, setImmunosuppressed] = useState(false); // NEW (lymphoma/infection context)
 
   const [incidental, setIncidental] = useState("");
 
@@ -185,7 +198,7 @@ function BrainModule() {
   const [daiSuspect, setDaiSuspect] = useState<"yok" | "var" | "bilinmiyor">("bilinmiyor");
 
   // Vascular injury suspicion in trauma
-  const [vascularInjurySuspect, setVascularInjurySuspect] = useState(false); // dissection/active bleeding risk
+  const [vascularInjurySuspect, setVascularInjurySuspect] = useState(false);
   const [venousSinusInjurySuspect, setVenousSinusInjurySuspect] = useState(false);
 
   /** ---------- KANAMA fields ---------- */
@@ -194,7 +207,7 @@ function BrainModule() {
   const [intraventricularExt, setIntraventricularExt] = useState(false);
   const [hydrocephalus, setHydrocephalus] = useState(false);
 
-  // MR adjunct for bleed (light)
+  // MR adjunct for bleed
   const [swiBlooming, setSwiBlooming] = useState<"bilinmiyor" | "var" | "yok">("bilinmiyor");
   const [dwiRestriction, setDwiRestriction] = useState<"bilinmiyor" | "var" | "yok">("bilinmiyor");
 
@@ -217,7 +230,16 @@ function BrainModule() {
 
   /** ---------- KİTLE/ENF fields (stronger) ---------- */
   const [massPresent, setMassPresent] = useState(false);
+
+  // NEW: compartment + sites
+  const [compartment, setCompartment] = useState<LesionCompartment>("Belirsiz");
+  const [extraSite, setExtraSite] = useState<ExtraAxialSite>("Belirsiz");
+  const [intraSite, setIntraSite] = useState<IntraAxialSite>("Belirsiz");
+  const [ventSite, setVentSite] = useState<VentricularSite>("Belirsiz");
+
   const [enhPattern, setEnhPattern] = useState<EnhancementPattern>("Belirsiz");
+  const [enhHomog, setEnhHomog] = useState<EnhancementHomogeneity>("Belirsiz");
+
   const [t2Signal, setT2Signal] = useState<T2Scale>("Belirsiz");
   const [ringWallIrregular, setRingWallIrregular] = useState<"bilinmiyor" | "ince-düzgün" | "kalın/irregüler">("bilinmiyor");
   const [edema, setEdema] = useState<"yok" | "hafif" | "belirgin" | "bilinmiyor">("bilinmiyor");
@@ -225,7 +247,14 @@ function BrainModule() {
   const [cbv, setCbv] = useState<"bilinmiyor" | "yuksek" | "dusuk">("bilinmiyor");
   const [swiHemorrhage, setSwiHemorrhage] = useState<"bilinmiyor" | "var" | "yok">("bilinmiyor");
   const [extraAxialSigns, setExtraAxialSigns] = useState(false); // dural tail/CSF cleft etc.
-  const [meningealEnh, setMeningealEnh] = useState(false); // leptomeningeal/pachymeningeal enhancement
+  const [meningealEnh, setMeningealEnh] = useState(false);
+
+  // NEW: “bone/dural” high-yield meningioma features
+  const [hyperostosis, setHyperostosis] = useState(false);
+  const [calcification, setCalcification] = useState(false);
+  const [broadDuralBase, setBroadDuralBase] = useState(false);
+  const [csfCleft, setCsfCleft] = useState(false);
+  const [boneErosion, setBoneErosion] = useState(false); // helps atypical/aggressive + ddx
 
   const copyText = async (text: string) => {
     try {
@@ -310,6 +339,11 @@ function BrainModule() {
     massEffectText,
   ]);
 
+  const protocolLine =
+    modality === "BT"
+      ? `BT protokol: ${ctPackage}.`
+      : `MR protokol: ${mrPackage}.`;
+
   /** ---------- Core engine ---------- */
   const engine = useMemo(() => {
     const ddx: DdxItem[] = [];
@@ -320,16 +354,10 @@ function BrainModule() {
     if (feverSepsis) ctx.push("Ateş/sepsis kliniği.");
     if (traumaHx) ctx.push("Travma öyküsü.");
     if (anticoagulant) ctx.push("Antikoagülan/antiagregan kullanımı.");
-
-    /** ---- PROTOCOL SUGGESTIONS ---- */
-    const protocolLine =
-      modality === "BT"
-        ? `BT protokol: ${ctPackage}.`
-        : `MR protokol: ${mrPackage}.`;
+    if (immunosuppressed) ctx.push("İmmünsüpresyon öyküsü.");
 
     /** ---- TRAVMA ---- */
     if (flow === "travma") {
-      // Protocol sanity
       if (modality === "BT") {
         if (ctPackage === "Non-kontrast BT") {
           suggestions.push({
@@ -358,30 +386,22 @@ function BrainModule() {
         }
         if ((gcsLow || focalDeficit) && ctPackage === "Non-kontrast BT") {
           suggestions.push({
-            title: "Ağır travma / nörolojik defisitte CTA/CTP düşün",
+            title: "Ağır travma / defisitte CTA/CTP düşün",
             urgency: "Öncelikli",
-            details: ["Vasküler hasar, hipoperfüzyon veya sekonder iskemik süreç açısından klinikle birlikte değerlendirilir."],
+            details: ["Vasküler hasar veya hipoperfüzyon açısından klinikle birlikte değerlendirilir."],
           });
         }
       } else {
-        // MR trauma
-        if ((daiSuspect === "var" || (daiSuspect === "bilinmiyor" && (gcsLow || focalDeficit))) && mrPackage !== "Non-kontrast MR") {
-          suggestions.push({
-            title: "DAI şüphesinde non-kontrast MR protokolü yeterli olabilir",
-            urgency: "Öncelikli",
-            details: ["SWI/GRE + DWI/ADC + FLAIR", "Gerekirse DTI (merkez olanaklıysa)"],
-          });
-        }
         if (mrPackage === "Non-kontrast MR") {
           suggestions.push({
-            title: "Travma MR: DAI ve mikrokanama için en kritik sekanslar",
+            title: "Travma MR: DAI ve mikrokanama için kritik sekanslar",
             urgency: "Öncelikli",
             details: ["SWI/GRE", "DWI/ADC", "FLAIR", "T1/T2"],
           });
         }
         if (vascularInjurySuspect && mrPackage !== "MRA") {
           suggestions.push({
-            title: "Vasküler yaralanma şüphesinde MRA (gerekirse kontrastlı) düşün",
+            title: "Vasküler yaralanma şüphesinde MRA düşün",
             urgency: "Öncelikli",
             details: ["Diseksiyon/pseudoanevrizma açısından MRA/kontrastlı MRA klinikle değerlendirilebilir."],
           });
@@ -390,12 +410,11 @@ function BrainModule() {
           suggestions.push({
             title: "Venöz sinüs patolojisi şüphesinde MRV düşün",
             urgency: "Öncelikli",
-            details: ["Akım artefaktı vs trombüs ayrımı için MRV + SWI + T1/T2 korelasyon."],
+            details: ["Akım artefaktı vs trombüs ayrımı için MRV + SWI + korelasyon."],
           });
         }
       }
 
-      // DDX logic (trauma)
       if (skullFractureSuspect) {
         ddx.push({ name: "Kalvaryal / kafa tabanı fraktürü (şüphe)", likelihood: "Orta", why: [protocolLine, ...ctx, "Kemik pencere korelasyonu önerilir."] });
       }
@@ -409,7 +428,6 @@ function BrainModule() {
         ddx.push({ name: "Diffüz aksonal yaralanma (DAI) olası", likelihood: "Orta", why: [protocolLine, ...ctx, "Klinik ağır travma/defisit ile birlikte DAI düşünülür; SWI/DWI önemlidir."] });
       }
 
-      // If none selected, still guide
       if (ddx.length === 0) {
         ddx.push({
           name: "Travmaya bağlı belirgin akut patoloji lehine seçili güçlü parametre yok",
@@ -525,7 +543,7 @@ function BrainModule() {
       }
     }
 
-    /** ---- KİTLE / ENFEKSİYON (strong) ---- */
+    /** ---- KİTLE / ENFEKSİYON (expanded meningioma + lymphoma + location) ---- */
     if (flow === "kitle") {
       if (!massPresent) {
         ddx.push({ name: "Kitle/enfeksiyon açısından belirgin bulgu seçilmedi", likelihood: "Düşük", why: [protocolLine, ...ctx, "Kitle var seçilmedi."] });
@@ -551,21 +569,63 @@ function BrainModule() {
             suggestions.push({
               title: "Kitle ayrımında perfüzyon ve DWI kritik",
               urgency: "Öncelikli",
-              details: ["CBV↑ → tümör lehine", "DWI(+) → apse/hipersellüler lezyon lehine olabilir"],
+              details: ["CBV↑ → tümör lehine", "DWI(+) + CBV düşük → lenfoma/apse ayırıcıda"],
             });
           }
         }
 
-        // DDX scoring
+        // Baseline likelihoods
         let absLike: Likelihood = feverSepsis ? "Orta" : "Düşük";
         let gbmLike: Likelihood = "Orta";
         let metLike: Likelihood = knownMalignancy ? "Yüksek" : "Orta";
-        let meningiomaLike: Likelihood = extraAxialSigns || enhPattern === "Dural tail / ekstraaksiyel" ? "Yüksek" : "Düşük";
+        let meningiomaLike: Likelihood = "Düşük";
+        let lymphomaLike: Likelihood = "Düşük";
 
         const whyAbs: string[] = [protocolLine, ...ctx];
         const whyGbm: string[] = [protocolLine, ...ctx];
         const whyMet: string[] = [protocolLine, ...ctx];
         const whyMen: string[] = [protocolLine, ...ctx];
+        const whyLym: string[] = [protocolLine, ...ctx];
+
+        // Location weight
+        if (compartment === "Ekstraaksiyel") {
+          meningiomaLike = bumpLikelihood(meningiomaLike, "up");
+          whyMen.push("Ekstraaksiyel yerleşim meningiom lehine.");
+          gbmLike = bumpLikelihood(gbmLike, "down");
+        }
+        if (compartment === "İntraaksiyel") {
+          gbmLike = bumpLikelihood(gbmLike, "up");
+          whyGbm.push("İntraaksiyel yerleşim gliom lehine olabilir.");
+        }
+        if (compartment === "İntraventriküler") {
+          // keep ddx list broad; we just soften some
+          whyMet.push("İntraventriküler yerleşim bazı metastaz/diğer tümörlerle ilişkili olabilir (ayırıcı geniş).");
+        }
+
+        // Specific sites
+        if (compartment === "Ekstraaksiyel") {
+          if (extraSite === "Parasagittal / Falx" || extraSite === "Konveksite" || extraSite === "Tentoryum" || extraSite === "Sfenoid kanat / olfaktör oluk") {
+            meningiomaLike = bumpLikelihood(meningiomaLike, "up");
+            whyMen.push(`Sık meningiom lokasyonu: ${extraSite}.`);
+          }
+          if (extraSite === "CPA (serebellopontin açı)") {
+            whyMen.push("CPA bölgesinde meningiom/Schwannom ayırıcıda; dural tail ve kemik değişikliği meningiom lehine.");
+          }
+          if (extraSite === "Kavernöz sinüs komşuluğu") {
+            whyMen.push("Kavernöz sinüs komşuluğunda meningiom sık; vasküler yapılarla ilişkisi değerlendirilir.");
+          }
+        }
+
+        if (compartment === "İntraaksiyel") {
+          if (intraSite === "Derin/periventriküler") {
+            lymphomaLike = bumpLikelihood(lymphomaLike, "up");
+            whyLym.push("Derin/periventriküler yerleşim lenfoma lehine olabilir.");
+          }
+          if (intraSite === "Lobar kortikal-subkortikal" && multiLesion === "coklu") {
+            metLike = bumpLikelihood(metLike, "up");
+            whyMet.push("Kortikomedüller bileşke/çoklu lezyon metastaz lehine.");
+          }
+        }
 
         // Enhancement pattern logic
         if (enhPattern === "Ring (ince-düzgün)" || ringWallIrregular === "ince-düzgün") {
@@ -584,23 +644,37 @@ function BrainModule() {
           gbmLike = bumpLikelihood(gbmLike, "down");
         }
         if (enhPattern === "Leptomeningeal/pial" || meningealEnh) {
-          // leptomeningeal disease: carcinomatosis/infection
           metLike = bumpLikelihood(metLike, "up");
           absLike = bumpLikelihood(absLike, "up");
           whyMet.push("Leptomeningeal/pial tutulum metastatik/inflamatuar süreç lehine olabilir.");
-          whyAbs.push("Leptomeningeal tutulum enfeksiyöz menenjit/ensefalit bağlamında olabilir.");
+          whyAbs.push("Leptomeningeal tutulum enfeksiyon bağlamında olabilir.");
         }
         if (enhPattern === "Solid") {
           gbmLike = bumpLikelihood(gbmLike, "up");
           metLike = bumpLikelihood(metLike, "up");
+          lymphomaLike = bumpLikelihood(lymphomaLike, "up");
           whyGbm.push("Solid kontrastlanma tümör lehine olabilir.");
+          whyLym.push("Lenfoma sıklıkla solid/homojen kontrastlanabilir.");
+        }
+
+        // Enhancement homogeneity helps lymphoma/meningioma
+        if (enhHomog === "Homojen") {
+          lymphomaLike = bumpLikelihood(lymphomaLike, "up");
+          meningiomaLike = bumpLikelihood(meningiomaLike, "up");
+          whyLym.push("Homojen kontrastlanma lenfoma lehine olabilir.");
+          whyMen.push("Homojen kontrastlanma meningiom ile uyumlu olabilir.");
+        }
+        if (enhHomog === "Heterojen") {
+          gbmLike = bumpLikelihood(gbmLike, "up");
+          whyGbm.push("Heterojen kontrastlanma yüksek dereceli tümör lehine olabilir.");
         }
 
         // DWI restriction
         if (dwiRestriction === "var") {
           absLike = bumpLikelihood(absLike, "up");
+          lymphomaLike = bumpLikelihood(lymphomaLike, "up");
           whyAbs.push("DWI restriksiyon apse lehine olabilir (özellikle ring lezyonda).");
-          if (!feverSepsis) whyAbs.push("Klinik ateş yoksa yine de hipersellüler tümör/lenfoma ayırıcıda düşünülür.");
+          whyLym.push("Belirgin restriksiyon hipersellüler tümör/lenfoma lehine olabilir.");
           gbmLike = bumpLikelihood(gbmLike, "down");
         }
 
@@ -611,10 +685,14 @@ function BrainModule() {
           whyGbm.push("CBV artışı neovaskülarizasyon/tümör lehine.");
           whyMet.push("CBV artışı bazı metastazlarda görülebilir.");
           absLike = bumpLikelihood(absLike, "down");
+          lymphomaLike = bumpLikelihood(lymphomaLike, "down"); // many lymphomas have lower CBV
+          whyLym.push("CBV yüksekliği lenfoma lehine değildir (ayırıcıda geri planda).");
         }
         if (cbv === "dusuk") {
           absLike = bumpLikelihood(absLike, "up");
+          lymphomaLike = bumpLikelihood(lymphomaLike, "up");
           whyAbs.push("CBV düşük olması enfeksiyöz/nekrotik süreç lehine olabilir.");
+          whyLym.push("CBV düşük/normal olması lenfoma lehine olabilir.");
         }
 
         // Multiplicity
@@ -637,21 +715,87 @@ function BrainModule() {
         // SWI hemorrhage
         if (swiHemorrhage === "var") {
           metLike = bumpLikelihood(metLike, "up");
-          whyMet.push("Hemorajik komponent bazı metastazlarda daha sık olabilir (melanom/ RCC / koryokarsinom vb.).");
+          whyMet.push("Hemorajik komponent bazı metastazlarda daha sık olabilir (melanom/RCC/koryokarsinom vb.).");
         }
 
-        // T2 nuance (intermediate)
-        if (t2Signal === "Belirgin hiperintens" || t2Signal === "Hiperintens") {
-          whyAbs.push("T2 hiperintens içerik nekroz/sıvı/ödem bileşeni ile uyumlu olabilir.");
+        // T2 nuance: lymphoma often T2 iso-hypo relative
+        if (t2Signal === "İzo" || t2Signal === "Hipointens") {
+          lymphomaLike = bumpLikelihood(lymphomaLike, "up");
+          whyLym.push("T2 izo/hipointens eğilim hipersellüler tümör/lenfoma lehine olabilir.");
+          meningiomaLike = bumpLikelihood(meningiomaLike, "up");
+          whyMen.push("T2 izo/hipointens ve dural tabanlı lezyon meningiom lehine olabilir.");
+        }
+
+        // Immunosuppression boosts lymphoma and infection
+        if (immunosuppressed) {
+          lymphomaLike = bumpLikelihood(lymphomaLike, "up");
+          absLike = bumpLikelihood(absLike, "up");
+          whyLym.push("İmmünsüpresyon lenfoma olasılığını artırır.");
+          whyAbs.push("İmmünsüpresyonda enfeksiyon olasılığı artar.");
+        }
+
+        // NEW: Meningioma high-yield “bone/dural” features
+        if (hyperostosis) {
+          meningiomaLike = bumpLikelihood(meningiomaLike, "up");
+          whyMen.push("Hiperostoz meningiom lehine güçlü bir işarettir.");
+        }
+        if (calcification) {
+          meningiomaLike = bumpLikelihood(meningiomaLike, "up");
+          whyMen.push("Kalsifikasyon meningiom ile uyumlu olabilir.");
+        }
+        if (broadDuralBase) {
+          meningiomaLike = bumpLikelihood(meningiomaLike, "up");
+          whyMen.push("Geniş dural taban meningiom lehine.");
+        }
+        if (csfCleft) {
+          meningiomaLike = bumpLikelihood(meningiomaLike, "up");
+          whyMen.push("CSF cleft (ekstraaksiyel plan) meningiom lehine.");
+        }
+        if (boneErosion) {
+          // erosion is less typical for benign meningioma; can indicate aggressive variant or other ddx
+          meningiomaLike = bumpLikelihood(meningiomaLike, "up");
+          whyMen.push("Kemik erozyonu atipik/agresif meningiom veya alternatif ayırıcıyı düşündürebilir (klinik korelasyon).");
+        }
+
+        // Guardrail: if compartment is intraaxial, meningioma should not dominate unless strong extraaxial signs
+        if (compartment === "İntraaksiyel" && !(extraAxialSigns || enhPattern === "Dural tail / ekstraaksiyel")) {
+          meningiomaLike = bumpLikelihood(meningiomaLike, "down");
+        }
+
+        // Suggestions: lymphoma-specific
+        if (lymphomaLike !== "Düşük") {
+          suggestions.push({
+            title: "Lenfoma ayırıcıda ise",
+            urgency: "Öncelikli",
+            details: [
+              "DWI/ADC + perfüzyon (CBV) birlikte yorumla",
+              "Kontrastlanma paterni (homojen/solid) ile korele et",
+              "Klinik-hematoloji ve gerektiğinde biyopsi planı ile korelasyon",
+            ],
+          });
+        }
+
+        // Suggestions: meningioma-specific
+        if (meningiomaLike !== "Düşük") {
+          suggestions.push({
+            title: "Meningiom lehine bulgular varsa",
+            urgency: "Rutin",
+            details: [
+              "Dural tail / geniş dural taban / hiperostoz-kalsifikasyon ile birlikte değerlendir",
+              "BT kemik pencere (hiperostoz/erozyon) veya MR kontrastlı değerlendirme",
+              "Cerrahi planlama için lokal invazyon/venöz sinüs ilişkisi raporla",
+            ],
+          });
         }
 
         // Build DDX list
         ddx.push({ name: "Apse / enfeksiyöz lezyon", likelihood: absLike, why: whyAbs });
+        ddx.push({ name: "Primer SSS lenfoması / hipersellüler tümör", likelihood: lymphomaLike, why: whyLym });
         ddx.push({ name: "Yüksek dereceli gliom / nekrotik tümör", likelihood: gbmLike, why: whyGbm });
         ddx.push({ name: "Metastaz", likelihood: metLike, why: whyMet });
         ddx.push({ name: "Meningiom (ekstraaksiyel)", likelihood: meningiomaLike, why: whyMen });
 
-        // Suggestions for next steps
+        // Global suggestions
         if (modality === "MR") {
           suggestions.push({
             title: "Önerilen MR sekans paketi",
@@ -659,7 +803,7 @@ function BrainModule() {
             details: [
               "T1 pre/post + FLAIR + DWI/ADC + SWI",
               cbv === "bilinmiyor" ? "Ayrım için perfüzyon (DSC/ASL) eklenebilir" : "Perfüzyon bilgisi motoru destekler",
-              enhPattern.includes("Leptomeningeal") ? "Gerekirse spinal MR / BOS korelasyonu" : "Klinik korelasyon",
+              meningealEnh ? "Gerekirse spinal MR / BOS korelasyonu" : "Klinik korelasyon",
             ],
           });
         } else {
@@ -687,7 +831,7 @@ function BrainModule() {
       final = `${modality} incelemede belirgin akut patoloji izlenmemektedir. Klinik korelasyon önerilir.`;
     }
 
-    return { ddx: topDdx, suggestions, final, protocolLine };
+    return { ddx: topDdx, suggestions, final };
   }, [
     modality,
     flow,
@@ -695,6 +839,7 @@ function BrainModule() {
     feverSepsis,
     traumaHx,
     anticoagulant,
+    immunosuppressed,
     ctPackage,
     mrPackage,
     // travma
@@ -732,7 +877,12 @@ function BrainModule() {
     extraAxialSentence,
     // kitle
     massPresent,
+    compartment,
+    extraSite,
+    intraSite,
+    ventSite,
     enhPattern,
+    enhHomog,
     ringWallIrregular,
     t2Signal,
     edema,
@@ -741,9 +891,14 @@ function BrainModule() {
     swiHemorrhage,
     extraAxialSigns,
     meningealEnh,
+    hyperostosis,
+    calcification,
+    broadDuralBase,
+    csfCleft,
+    boneErosion,
   ]);
 
-  const { ddx, suggestions, final, protocolLine } = engine;
+  const { ddx, suggestions, final } = engine;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
@@ -751,9 +906,9 @@ function BrainModule() {
       <div className="space-y-6">
         <Card className="rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-lg">Beyin AI Yardımcı Modül (v1.5)</CardTitle>
+            <CardTitle className="text-lg">Beyin AI Yardımcı Modül</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Travma + Kitle akışlarında BT/MR protokol (kontrast/anjiyo/perfüzyon) + alt seçimler eklendi.
+              Travma + Kanama + Kitle/Enfeksiyon. Kitle modülünde: lokasyon + dural/bone işaretleri + meningiom/lenfoma güçlendirildi.
             </p>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -768,7 +923,6 @@ function BrainModule() {
               </div>
             </div>
 
-            {/* Protocol block */}
             <div className="space-y-2">
               <Label>Protokol / Faz</Label>
               {modality === "BT" ? (
@@ -839,6 +993,13 @@ function BrainModule() {
                   </div>
                   <Switch checked={feverSepsis} onCheckedChange={setFeverSepsis} />
                 </div>
+                <div className="flex items-center justify-between rounded-xl border p-3 sm:col-span-2">
+                  <div>
+                    <div className="text-sm font-medium">İmmünsüpresyon</div>
+                    <div className="text-xs text-muted-foreground">Lenfoma + oportunistik enfeksiyon ayırıcıda</div>
+                  </div>
+                  <Switch checked={immunosuppressed} onCheckedChange={setImmunosuppressed} />
+                </div>
               </div>
             </div>
           </CardContent>
@@ -849,7 +1010,7 @@ function BrainModule() {
           <Card className="rounded-2xl">
             <CardHeader>
               <CardTitle className="text-base">Travma</CardTitle>
-              <p className="text-sm text-muted-foreground">BT/MR protokol seçimine göre öneriler güçlenir (CTA/CTV/MRA/MRV/Perfüzyon).</p>
+              <p className="text-sm text-muted-foreground">BT/MR protokol seçimine göre öneriler (CTA/CTV/MRA/MRV/Perfüzyon) otomatik çıkar.</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
@@ -1191,7 +1352,9 @@ function BrainModule() {
           <Card className="rounded-2xl">
             <CardHeader>
               <CardTitle className="text-base">Kitle / Enfeksiyon</CardTitle>
-              <p className="text-sm text-muted-foreground">Kontrast paterni + DWI + perfüzyon (CBV) + ara sinyal seçenekleri ile güçlü DDX.</p>
+              <p className="text-sm text-muted-foreground">
+                Lokasyon + dural/bone işaretleri + kontrast paterni + DWI + perfüzyon (CBV) ile meningiom/lenfoma ayrımı güçlendirildi.
+              </p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between rounded-xl border p-3">
@@ -1203,6 +1366,72 @@ function BrainModule() {
               </div>
 
               <div className={cn("space-y-3", !massPresent && "opacity-60 pointer-events-none")}>
+                {/* 1) COMPARTMENT + SITE */}
+                <div className="space-y-2 rounded-2xl border p-4">
+                  <div className="text-sm font-semibold">Lokasyon</div>
+
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Kompartman</div>
+                    <div className="flex flex-wrap gap-2">
+                      {(["Belirsiz", "İntraaksiyel", "Ekstraaksiyel", "İntraventriküler"] as LesionCompartment[]).map((v) => (
+                        <Button key={v} size="sm" variant={compartment === v ? "default" : "outline"} onClick={() => setCompartment(v)}>
+                          {v}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {compartment === "Ekstraaksiyel" && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">Ekstraaksiyel bölge</div>
+                      <div className="flex flex-wrap gap-2">
+                        {(
+                          [
+                            "Belirsiz",
+                            "Konveksite",
+                            "Parasagittal / Falx",
+                            "Tentoryum",
+                            "Sfenoid kanat / olfaktör oluk",
+                            "CPA (serebellopontin açı)",
+                            "Kavernöz sinüs komşuluğu",
+                          ] as ExtraAxialSite[]
+                        ).map((v) => (
+                          <Button key={v} size="sm" variant={extraSite === v ? "default" : "outline"} onClick={() => setExtraSite(v)}>
+                            {v}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {compartment === "İntraaksiyel" && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">İntraaksiyel bölge</div>
+                      <div className="flex flex-wrap gap-2">
+                        {(["Belirsiz", "Lobar kortikal-subkortikal", "Derin/periventriküler", "Beyin sapı", "Serebellum"] as IntraAxialSite[]).map((v) => (
+                          <Button key={v} size="sm" variant={intraSite === v ? "default" : "outline"} onClick={() => setIntraSite(v)}>
+                            {v}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {compartment === "İntraventriküler" && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">Ventriküler bölge</div>
+                      <div className="flex flex-wrap gap-2">
+                        {(["Belirsiz", "Lateral ventrikül", "3. ventrikül", "4. ventrikül"] as VentricularSite[]).map((v) => (
+                          <Button key={v} size="sm" variant={ventSite === v ? "default" : "outline"} onClick={() => setVentSite(v)}>
+                            {v}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2) CONTRAST PATTERN + HOMOGENEITY */}
                 <div className="space-y-2 rounded-xl border p-3">
                   <div className="text-sm font-medium">Kontrastlanma paterni</div>
                   <div className="flex flex-wrap gap-2">
@@ -1223,7 +1452,18 @@ function BrainModule() {
                     ))}
                   </div>
 
-                  <div className="mt-2 space-y-2">
+                  <div className="mt-3 space-y-2">
+                    <div className="text-sm font-medium">Kontrastlanma homojenliği</div>
+                    <div className="flex flex-wrap gap-2">
+                      {(["Belirsiz", "Homojen", "Heterojen"] as EnhancementHomogeneity[]).map((v) => (
+                        <Button key={v} size="sm" variant={enhHomog === v ? "default" : "outline"} onClick={() => setEnhHomog(v)}>
+                          {v}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 space-y-2">
                     <div className="text-sm font-medium">Ring duvar karakteri (opsiyonel)</div>
                     <div className="flex flex-wrap gap-2">
                       {(["bilinmiyor", "ince-düzgün", "kalın/irregüler"] as const).map((v) => (
@@ -1235,6 +1475,69 @@ function BrainModule() {
                   </div>
                 </div>
 
+                {/* 3) “DURAL/BONE” FEATURES (meningioma power pack) */}
+                <div className="space-y-3 rounded-2xl border p-4">
+                  <div className="text-sm font-semibold">Ekstraaksiyel / dural-bone işaretleri</div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="flex items-center justify-between rounded-xl border p-3">
+                      <div>
+                        <div className="text-sm font-medium">Ekstraaksiyel işaretler</div>
+                        <div className="text-xs text-muted-foreground">CSF cleft / dural taban vb</div>
+                      </div>
+                      <Switch checked={extraAxialSigns} onCheckedChange={setExtraAxialSigns} />
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-xl border p-3">
+                      <div>
+                        <div className="text-sm font-medium">Geniş dural taban</div>
+                        <div className="text-xs text-muted-foreground">Broad dural base</div>
+                      </div>
+                      <Switch checked={broadDuralBase} onCheckedChange={setBroadDuralBase} />
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-xl border p-3">
+                      <div>
+                        <div className="text-sm font-medium">CSF cleft</div>
+                        <div className="text-xs text-muted-foreground">Ekstraaksiyel planı destekler</div>
+                      </div>
+                      <Switch checked={csfCleft} onCheckedChange={setCsfCleft} />
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-xl border p-3">
+                      <div>
+                        <div className="text-sm font-medium">Hiperostoz</div>
+                        <div className="text-xs text-muted-foreground">Meningiom lehine güçlü</div>
+                      </div>
+                      <Switch checked={hyperostosis} onCheckedChange={setHyperostosis} />
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-xl border p-3">
+                      <div>
+                        <div className="text-sm font-medium">Kalsifikasyon</div>
+                        <div className="text-xs text-muted-foreground">BT’de daha iyi</div>
+                      </div>
+                      <Switch checked={calcification} onCheckedChange={setCalcification} />
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-xl border p-3">
+                      <div>
+                        <div className="text-sm font-medium">Kemik erozyonu</div>
+                        <div className="text-xs text-muted-foreground">Agresif/atipik olabilir</div>
+                      </div>
+                      <Switch checked={boneErosion} onCheckedChange={setBoneErosion} />
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-xl border p-3 sm:col-span-2">
+                      <div>
+                        <div className="text-sm font-medium">Meningeal tutulum</div>
+                        <div className="text-xs text-muted-foreground">Leptomeningeal/pachymeningeal</div>
+                      </div>
+                      <Switch checked={meningealEnh} onCheckedChange={setMeningealEnh} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Other features */}
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-2 rounded-xl border p-3">
                     <div className="text-sm font-medium">T2 sinyal (ara formlar)</div>
@@ -1280,7 +1583,7 @@ function BrainModule() {
                         </Button>
                       ))}
                     </div>
-                    <div className="text-xs text-muted-foreground">CBV↑ genelde tümör lehine; CBV↓ enfeksiyon/nekroz lehine olabilir.</div>
+                    <div className="text-xs text-muted-foreground">CBV↑ genelde tümör; CBV↓ lenfoma/apse lehine olabilir.</div>
                   </div>
                 </div>
 
@@ -1305,24 +1608,6 @@ function BrainModule() {
                         </Button>
                       ))}
                     </div>
-                  </div>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="flex items-center justify-between rounded-xl border p-3">
-                    <div>
-                      <div className="text-sm font-medium">Ekstraaksiyel işaretler</div>
-                      <div className="text-xs text-muted-foreground">Dural tail / CSF cleft vb</div>
-                    </div>
-                    <Switch checked={extraAxialSigns} onCheckedChange={setExtraAxialSigns} />
-                  </div>
-
-                  <div className="flex items-center justify-between rounded-xl border p-3">
-                    <div>
-                      <div className="text-sm font-medium">Meningeal tutulum</div>
-                      <div className="text-xs text-muted-foreground">Leptomeningeal/pachymeningeal</div>
-                    </div>
-                    <Switch checked={meningealEnh} onCheckedChange={setMeningealEnh} />
                   </div>
                 </div>
               </div>
@@ -1386,7 +1671,7 @@ function BrainModule() {
 
             <div className="space-y-2">
               <div className="text-sm font-medium">Öneriler</div>
-              {engine.suggestions.length === 0 ? (
+              {suggestions.length === 0 ? (
                 <div className="text-sm text-muted-foreground rounded-xl border p-3">Bu seçimlerle otomatik öneri oluşmadı.</div>
               ) : (
                 <div className="space-y-2">
