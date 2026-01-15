@@ -299,7 +299,7 @@ type LiverMRSignalCombo = {
 };
 
 function liverMR_BaselineDdx(s: LiverMRSignalCombo): DdxItem[] {
-  const ddx: DdxItem[] = [];
+  let ddx: DdxItem[] = [];
 
   ddx.push(
     { name: "Basit kist", likelihood: "Orta", why: ["T2 hiper ve DWI restriksiyon yoksa kist lehine güçlenir."] },
