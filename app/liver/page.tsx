@@ -1,328 +1,212 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 
-type YesNo = "Yok" | "Var";
-type UYN = "Bilinmiyor" | "Yok" | "Var";
+type YesNoUnknown = "Var" | "Yok" | "Bilinmiyor";
+type Modality = "BT" | "MR" | "BT+MR";
 
-function cx(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ");
+type CTContrast = "Kontrastsız" | "Kontrastlı" | "Bilinmiyor";
+type MRDynamic = "Dinamik var" | "Dinamiksiz" | "Bilinmiyor";
+
+type LiverDensity = "Hipodens" | "İzodens" | "Hiperdens" | "Bilinmiyor";
+type CTEnhPattern =
+  | "Belirsiz"
+  | "Periferik nodüler"
+  | "Homojen erken"
+  | "Heterojen"
+  | "Halka tarzı (rim)"
+  | "Progressif santral"
+  | "Non-enhancing"
+  | "Bilinmiyor";
+
+type MRT1 = "Hipo" | "İzo" | "Hiper" | "Bilinmiyor";
+type MRT2 = "Hipo" | "İzo" | "Hiper" | "Bilinmiyor";
+type DWI = "Restriksiyon var" | "Restriksiyon yok" | "Bilinmiyor";
+
+type FinalFormat = "Olasılık dili" | "Öneri dili";
+
+function cx(...cls: Array<string | false | null | undefined>) {
+  return cls.filter(Boolean).join(" ");
 }
 
-function Section({
-  title,
-  right,
-  children,
-}: {
-  title: string;
-  right?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-2xl border border-neutral-300 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <div className="font-semibold">{title}</div>
-        {right}
-      </div>
-      {children}
-    </div>
-  );
+function uniqPush(arr: string[], v: string) {
+  if (!v) return;
+  if (!arr.includes(v)) arr.push(v);
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-4">
-      <div className="mb-2 text-sm font-semibold">{title}</div>
-      {children}
-    </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-  hint,
-  disabled,
-}: {
-  label: string;
-  children: React.ReactNode;
-  hint?: string;
-  disabled?: boolean;
-}) {
-  return (
-    <div className={cx("flex flex-col gap-1", disabled && "opacity-60")}>
-      <div className="text-sm font-medium text-neutral-800">{label}</div>
-      {children}
-      {hint ? <div className="text-xs text-neutral-500 leading-snug">{hint}</div> : null}
-    </div>
-  );
-}
-
-function Select({
-  value,
-  onChange,
-  options,
-  disabled,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  options: string[];
-  disabled?: boolean;
-}) {
-  return (
-    <select
-      className="h-10 w-full rounded-xl border border-neutral-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-neutral-200"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      disabled={disabled}
-    >
-      {options.map((o) => (
-        <option key={o} value={o}>
-          {o}
-        </option>
-      ))}
-    </select>
-  );
-}
-
-function Input({
-  value,
-  onChange,
-  placeholder,
-  disabled,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  disabled?: boolean;
-}) {
-  return (
-    <input
-      className="h-10 w-full rounded-xl border border-neutral-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-neutral-200"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      disabled={disabled}
-    />
-  );
-}
-
-function TextArea({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <textarea
-      className="min-h-[110px] w-full resize-y rounded-2xl border border-neutral-300 bg-white p-3 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-neutral-200"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-    />
-  );
-}
-
-function Pill({
-  children,
-  active,
-  onClick,
-}: {
-  children: React.ReactNode;
-  active?: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cx(
-        "rounded-full border px-3 py-1 text-xs transition",
-        active
-          ? "border-neutral-900 bg-neutral-900 text-white"
-          : "border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50"
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
-function CopyButton({
-  text,
-  label = "Kopyala",
-  copiedLabel = "Kopyalandı",
-}: {
-  text: string;
-  label?: string;
-  copiedLabel?: string;
-}) {
-  const [ok, setOk] = useState(false);
-
-  return (
-    <button
-      type="button"
-      className={cx(
-        "h-10 rounded-xl border px-4 text-sm font-medium transition",
-        ok
-          ? "border-emerald-600 bg-emerald-600 text-white"
-          : "border-neutral-900 bg-neutral-900 text-white hover:bg-neutral-800"
-      )}
-      onClick={async () => {
-        try {
-          await navigator.clipboard.writeText(text);
-          setOk(true);
-          setTimeout(() => setOk(false), 900);
-        } catch {
-          // noop
-        }
-      }}
-      title="Panoya kopyalar"
-    >
-      {ok ? copiedLabel : label}
-    </button>
-  );
-}
-
-function addUnique(arr: string[], item: string) {
-  if (!item) return;
-  if (!arr.includes(item)) arr.push(item);
-}
-
-function normalizeSentence(s: string) {
-  const t = (s || "").trim();
+function sentenceize(txt: string) {
+  const t = (txt || "").trim();
   if (!t) return "";
-  const endsWithPunct = /[.!?…]$/.test(t);
-  return endsWithPunct ? t : `${t}.`;
+  // tek cümle gibi davran, nokta yoksa ekle
+  if (/[.!?]$/.test(t)) return t;
+  return t + ".";
 }
 
-function headerLine(txt: string) {
-  // Kopyalanan metinde gözle ayrıştırmak için
-  return `${txt.toUpperCase()}:`;
+async function copyText(text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    // fallback
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+  }
 }
 
 export default function LiverPage() {
-  const outputRef = useRef<HTMLDivElement | null>(null);
+  // ===== 1) İnceleme & Klinik =====
+  const [modality, setModality] = useState<Modality>("BT");
+  const showCT = modality === "BT" || modality === "BT+MR";
+  const showMR = modality === "MR" || modality === "BT+MR";
 
-  const [mode, setMode] = useState<"Var/Yok → Detay" | "Rapor dili + öneri">("Var/Yok → Detay");
+  const [ctContrast, setCtContrast] = useState<CTContrast>("Bilinmiyor");
+  const [mrDynamic, setMrDynamic] = useState<MRDynamic>("Bilinmiyor");
 
-  // Manuel ek bulgular
-  const [extraFindings, setExtraFindings] = useState("");
+  const [malignancyHx, setMalignancyHx] = useState<YesNoUnknown>("Bilinmiyor");
+  const [cirrhosis, setCirrhosis] = useState<YesNoUnknown>("Bilinmiyor");
+  const [feverInf, setFeverInf] = useState<YesNoUnknown>("Bilinmiyor");
+  const [jaundiceCholestasis, setJaundiceCholestasis] =
+    useState<YesNoUnknown>("Bilinmiyor");
 
-  // İnceleme tipi
-  const [examType, setExamType] = useState<"BT" | "MR" | "BT+MR">("BT");
-  const showCT = examType === "BT" || examType === "BT+MR";
-  const showMR = examType === "MR" || examType === "BT+MR";
-
-  // BT kontrast durumu
-  const [ctContrast, setCtContrast] = useState<"Kontrastsız" | "Kontrastlı (dinamik)" | "Bilinmiyor">(
-    "Bilinmiyor"
+  // ===== 2) Karaciğer =====
+  const [liverLesion, setLiverLesion] = useState<YesNoUnknown>("Yok");
+  const [fattyLiver, setFattyLiver] = useState<YesNoUnknown>("Bilinmiyor");
+  const [vascularInvasion, setVascularInvasion] =
+    useState<YesNoUnknown>("Bilinmiyor");
+  const [lesionCount, setLesionCount] = useState<"Tek" | "Çoklu">("Tek");
+  const [segment, setSegment] = useState<string>("S7");
+  const [maxSizeMm, setMaxSizeMm] = useState<number>(18);
+  const [margin, setMargin] = useState<"Düzgün" | "Düzensiz" | "Bilinmiyor">(
+    "Düzgün"
   );
-  const isCtNonContrast = ctContrast === "Kontrastsız";
 
-  // MR dinamik durumu
-  const [mrDynamic, setMrDynamic] = useState<"Dinamiksiz" | "Dinamik (arteryel/portal/geç)" | "Bilinmiyor">(
-    "Bilinmiyor"
-  );
-  const isMrNoDynamic = mrDynamic === "Dinamiksiz";
+  // CT lezyon
+  const [ctDensity, setCtDensity] = useState<LiverDensity>("Hipodens");
+  const [ctEnhPattern, setCtEnhPattern] = useState<CTEnhPattern>("Belirsiz");
+  const [ctFillIn, setCtFillIn] = useState<YesNoUnknown>("Bilinmiyor");
+  const [ctWashout, setCtWashout] = useState<YesNoUnknown>("Bilinmiyor");
 
-  // Klinik
-  const [malignHx, setMalignHx] = useState<UYN>("Bilinmiyor");
-  const [cirrhosis, setCirrhosis] = useState<UYN>("Bilinmiyor");
-  const [feverInf, setFeverInf] = useState<UYN>("Bilinmiyor");
-  const [jaundiceChol, setJaundiceChol] = useState<UYN>("Bilinmiyor");
-
-  // Karaciğer
-  const [liverLesion, setLiverLesion] = useState<YesNo>("Yok");
-  const [fattyLiver, setFattyLiver] = useState<UYN>("Bilinmiyor");
-  const [lesionCount, setLesionCount] = useState<"Tek" | "Çok" | "Bilinmiyor">("Tek");
-  const [largestMm, setLargestMm] = useState("18");
-  const [segment, setSegment] = useState<"Bilinmiyor" | "S1" | "S2" | "S3" | "S4" | "S5" | "S6" | "S7" | "S8">(
-    "S7"
-  );
-  const [margin, setMargin] = useState<"Düzgün" | "Düzensiz" | "Bilinmiyor">("Düzgün");
-  const [vascularInv, setVascularInv] = useState<UYN>("Bilinmiyor");
-
-  // BT (karaciğer)
-  const [ctDensity, setCtDensity] = useState<"Hipodens" | "İzodens" | "Hiperdens" | "Bilinmiyor">("Hipodens");
-  const [ctEnhPattern, setCtEnhPattern] = useState<
-    "Periferik nodüler" | "Homojen" | "Halka (rim)" | "Heterojen" | "Arteryel hiper" | "Bilinmiyor"
-  >("Periferik nodüler");
-  const [ctFillIn, setCtFillIn] = useState<UYN>("Var");
-  const [ctWashout, setCtWashout] = useState<UYN>("Yok");
-
-  // MR (karaciğer)
-  const [mrT1, setMrT1] = useState<"Hipo" | "İzo" | "Hiper" | "Bilinmiyor">("Bilinmiyor");
-  const [mrT2, setMrT2] = useState<"Hipo" | "İzo" | "Hiper" | "Bilinmiyor">("Bilinmiyor");
-  const [dwiRestrict, setDwiRestrict] = useState<UYN>("Bilinmiyor");
-  const [mrEnhPattern, setMrEnhPattern] = useState<
-    "Arteryel hiper" | "Periferik nodüler" | "Halka (rim)" | "Homojen" | "Heterojen" | "Bilinmiyor"
+  // MR lezyon (dinamik olmasa bile baz ddx için)
+  const [mrT1, setMrT1] = useState<MRT1>("Bilinmiyor");
+  const [mrT2, setMrT2] = useState<MRT2>("Bilinmiyor");
+  const [mrDwi, setMrDwi] = useState<DWI>("Bilinmiyor");
+  const [mrArterialHyper, setMrArterialHyper] =
+    useState<YesNoUnknown>("Bilinmiyor");
+  const [mrWashout, setMrWashout] = useState<YesNoUnknown>("Bilinmiyor");
+  const [mrCapsule, setMrCapsule] = useState<YesNoUnknown>("Bilinmiyor");
+  const [mrHBP, setMrHBP] = useState<
+    "Hipointens" | "İzointens" | "Hiperintens" | "Bilinmiyor"
   >("Bilinmiyor");
-  const [mrWashout, setMrWashout] = useState<UYN>("Bilinmiyor");
-  const [hbPhase, setHbPhase] = useState<"Yapılmadı" | "Hipointens" | "İzointens" | "Hiperintens" | "Bilinmiyor">(
-    "Bilinmiyor"
-  );
 
-  // Safra kesesi
-  const [gbPath, setGbPath] = useState<YesNo>("Yok");
+  // ===== 3) Safra Kesesi =====
+  const [gbPath, setGbPath] = useState<YesNoUnknown>("Yok");
   const [gbDx, setGbDx] = useState<
     | "Kolesistolitiazis (taş)"
+    | "Biliyer çamur"
     | "Akut kolesistit"
     | "Kronik kolesistit"
     | "Polip"
-    | "Kitle (şüpheli)"
-    | "Bilier çamur"
     | "Porcelain GB"
-    | "Adenomiyomatozis"
-    | "Bilinmiyor"
+    | "Emfizematöz kolesistit"
+    | "GB kitle şüphesi"
   >("Kolesistolitiazis (taş)");
-  const [gbWallThick, setGbWallThick] = useState<UYN>("Bilinmiyor");
-  const [gbPeriFluid, setGbPeriFluid] = useState<UYN>("Bilinmiyor");
-  const [gbDistension, setGbDistension] = useState<UYN>("Bilinmiyor");
-  const [murphy, setMurphy] = useState<"Bilinmiyor" | "Negatif" | "Pozitif">("Bilinmiyor");
-  const [gbGas, setGbGas] = useState<YesNo>("Yok");
-  const [polypMm, setPolypMm] = useState("6");
-  const [gbComp, setGbComp] = useState<"Yok" | "Perforasyon şüphesi" | "Ampiyem" | "Gangren" | "Bilinmiyor">(
-    "Yok"
-  );
+  const [gbWall, setGbWall] = useState<YesNoUnknown>("Bilinmiyor");
+  const [gbPeriFluid, setGbPeriFluid] = useState<YesNoUnknown>("Bilinmiyor");
+  const [gbDistension, setGbDistension] = useState<YesNoUnknown>("Bilinmiyor");
+  const [gbMurphy, setGbMurphy] = useState<YesNoUnknown>("Bilinmiyor");
+  const [gbGas, setGbGas] = useState<YesNoUnknown>("Yok");
+  const [gbPolypMm, setGbPolypMm] = useState<number>(6);
+  const [gbComplication, setGbComplication] = useState<
+    "Yok" | "Perforasyon şüphesi" | "Gangren/nekroz şüphesi" | "Bilinmiyor"
+  >("Yok");
 
-  // Safra yolları
-  const [bdPath, setBdPath] = useState<YesNo>("Yok");
+  // ===== 4) Safra Yolları =====
+  const [bdPath, setBdPath] = useState<YesNoUnknown>("Yok");
   const [bdCause, setBdCause] = useState<
-    "Belirsiz" | "Koledok taşı" | "Benign striktür" | "Malign obstrüksiyon" | "Kolanjit" | "PSC (şüpheli)" | "İatrojenik"
+    | "Belirsiz"
+    | "Koledok taşı"
+    | "Benign striktür"
+    | "Malign obstrüksiyon"
+    | "PSC paterni"
+    | "Kolangit şüphesi"
+    | "Pankreatit ile ilişkili"
+    | "Stent/operasyon sonrası"
   >("Belirsiz");
-  const [bdDil, setBdDil] = useState<UYN>("Bilinmiyor");
-  const [bdLevel, setBdLevel] = useState<"Bilinmiyor" | "İntrahepatik" | "Ekstrahepatik" | "Her ikisi">(
-    "Bilinmiyor"
-  );
-  const [cholangitis, setCholangitis] = useState<YesNo>("Yok");
-  const [bdStone, setBdStone] = useState<YesNo>("Yok");
-  const [bdStricture, setBdStricture] = useState<"Bilinmiyor" | "Benign striktür" | "Malign striktür" | "Yok">(
-    "Bilinmiyor"
-  );
-  const [pscPattern, setPscPattern] = useState<YesNo>("Yok");
-  const [bdMassSuspect, setBdMassSuspect] = useState<UYN>("Bilinmiyor");
+  const [bdDilatation, setBdDilatation] = useState<YesNoUnknown>("Bilinmiyor");
+  const [bdLevel, setBdLevel] = useState<
+    "İntrahepatik" | "Ekstrahepatik" | "Her ikisi" | "Bilinmiyor"
+  >("Bilinmiyor");
+  const [bdCholangitis, setBdCholangitis] =
+    useState<YesNoUnknown>("Bilinmiyor");
+  const [bdMassSusp, setBdMassSusp] = useState<YesNoUnknown>("Bilinmiyor");
 
-  // Final format
-  const [finalFormat, setFinalFormat] = useState<"Olasılık dili" | "Öneri dili" | "Nötr">("Olasılık dili");
+  // ===== Ek bulgular (manuel) =====
+  const [incidentalText, setIncidentalText] = useState<string>("");
 
-  const outputs = useMemo(() => {
-    const hasLiver = liverLesion === "Var";
-    const hasGB = gbPath === "Var";
-    const hasBD = bdPath === "Var";
+  // ===== Final format =====
+  const [finalFormat, setFinalFormat] = useState<FinalFormat>("Olasılık dili");
 
-    // Organ bazlı rapor cümleleri
-    const organReport = {
-      liver: [] as string[],
-      gb: [] as string[],
-      bd: [] as string[],
-      general: [] as string[], // hiçbiri yoksa
-    };
+  // ===== Reset =====
+  const resetAll = () => {
+    setModality("BT");
+    setCtContrast("Bilinmiyor");
+    setMrDynamic("Bilinmiyor");
+    setMalignancyHx("Bilinmiyor");
+    setCirrhosis("Bilinmiyor");
+    setFeverInf("Bilinmiyor");
+    setJaundiceCholestasis("Bilinmiyor");
 
-    const reportExtraBucket: string[] = []; // Ek bulgular
+    setLiverLesion("Yok");
+    setFattyLiver("Bilinmiyor");
+    setVascularInvasion("Bilinmiyor");
+    setLesionCount("Tek");
+    setSegment("S7");
+    setMaxSizeMm(18);
+    setMargin("Düzgün");
+    setCtDensity("Hipodens");
+    setCtEnhPattern("Belirsiz");
+    setCtFillIn("Bilinmiyor");
+    setCtWashout("Bilinmiyor");
+
+    setMrT1("Bilinmiyor");
+    setMrT2("Bilinmiyor");
+    setMrDwi("Bilinmiyor");
+    setMrArterialHyper("Bilinmiyor");
+    setMrWashout("Bilinmiyor");
+    setMrCapsule("Bilinmiyor");
+    setMrHBP("Bilinmiyor");
+
+    setGbPath("Yok");
+    setGbDx("Kolesistolitiazis (taş)");
+    setGbWall("Bilinmiyor");
+    setGbPeriFluid("Bilinmiyor");
+    setGbDistension("Bilinmiyor");
+    setGbMurphy("Bilinmiyor");
+    setGbGas("Yok");
+    setGbPolypMm(6);
+    setGbComplication("Yok");
+
+    setBdPath("Yok");
+    setBdCause("Belirsiz");
+    setBdDilatation("Bilinmiyor");
+    setBdLevel("Bilinmiyor");
+    setBdCholangitis("Bilinmiyor");
+    setBdMassSusp("Bilinmiyor");
+
+    setIncidentalText("");
+    setFinalFormat("Olasılık dili");
+  };
+
+  // ===== AI Motor (CANLI) =====
+  const output = useMemo(() => {
+    // containers
+    const reportLines: string[] = []; // rapor dili (yalnız patoloji varsa)
+    const advTests: string[] = []; // ileri inceleme + sekanslar
+    const recs: string[] = []; // öneriler
+    const warnings: string[] = []; // acil/uyarı
 
     const ddx = {
       liver: { high: [] as string[], mid: [] as string[] },
@@ -330,964 +214,1381 @@ export default function LiverPage() {
       bd: { high: [] as string[], mid: [] as string[] },
     };
 
-    const rec: string[] = [];
-    const advanced: string[] = [];
-    const alerts: string[] = [];
+    const hasLiver = liverLesion === "Var";
+    const hasGB = gbPath === "Var";
+    const hasBD = bdPath === "Var";
 
-    const sizeTxt = largestMm?.trim() ? `${largestMm.trim()} mm` : "ölçülemeyen";
-    const segTxt = segment !== "Bilinmiyor" ? segment : "ilgili segment";
-    const marginAvoid = margin === "Bilinmiyor";
-    const marginTxt =
-      margin === "Düzgün"
-        ? "düzgün sınırlı"
-        : margin === "Düzensiz"
-        ? "düzensiz sınırlı"
-        : "sınır özellikleri belirsiz";
-    const multiTxt = lesionCount === "Çok" ? "Çoklu lezyon lehine." : "";
+    const ctNoPhase =
+      showCT && (ctContrast === "Bilinmiyor" || ctContrast === "Kontrastsız");
+    const ctHasContrast = showCT && ctContrast === "Kontrastlı";
+    const mrNoDyn = showMR && (mrDynamic === "Bilinmiyor" || mrDynamic === "Dinamiksiz");
+    const mrHasDyn = showMR && mrDynamic === "Dinamik var";
 
-    // ===== KARACİĞER =====
+    // -------- KARACİĞER RAPOR + DDX --------
     if (hasLiver) {
-      const baseSentence = `Karaciğerde ${segTxt} düzeyinde ${sizeTxt} boyutlu ${marginAvoid ? "" : marginTxt} lezyon izlenmektedir.`;
-      organReport.liver.push(baseSentence.replace(/\s+/g, " ").trim());
-      if (multiTxt) organReport.liver.push(multiTxt);
-      if (fattyLiver === "Var") organReport.liver.push(`Hepatik steatoz ile uyumlu görünüm izlenmektedir.`);
+      const base =
+        `Karaciğerde ${segment} düzeyinde ${lesionCount === "Tek" ? "tek odak" : "çoklu odak"} ` +
+        `${Math.max(1, Math.round(maxSizeMm))} mm boyutlu, ${margin === "Bilinmiyor" ? "sınır özellikleri değerlendirilemeyen" : margin.toLowerCase() + " sınırlı"} lezyon izlenmektedir.`;
 
+      // BT bulgusu metni
       if (showCT) {
+        const ctParts: string[] = [];
+        if (ctDensity !== "Bilinmiyor") ctParts.push(`Nonkontrast densite: ${ctDensity.toLowerCase()}`);
         if (ctContrast === "Kontrastsız") {
-          organReport.liver.push(`Kontrastsız BT'de lezyon densitesi: ${ctDensity.toLowerCase()}.`);
-          addUnique(advanced, `Lezyon karakterizasyonu için kontrastlı multipazik KC BT veya dinamik KC MR önerilir.`);
-        } else if (ctContrast === "Kontrastlı (dinamik)") {
-          organReport.liver.push(
-            `BT'de lezyon nonkontrast densitesi ${ctDensity.toLowerCase()}, kontrastlanma paterni ${ctEnhPattern.toLowerCase()} olarak izlenmektedir.`
-          );
-          if (ctFillIn !== "Bilinmiyor") organReport.liver.push(`Geç dolum (fill-in): ${ctFillIn.toLowerCase()}.`);
-          if (ctWashout !== "Bilinmiyor") organReport.liver.push(`Washout: ${ctWashout.toLowerCase()}.`);
-        }
-      }
-
-      if (showMR) {
-        const base = `MR'da lezyon T1: ${mrT1}, T2: ${mrT2}, DWI kısıtlılığı: ${dwiRestrict}.`;
-        if (mrDynamic === "Dinamiksiz") {
-          organReport.liver.push(base + ` Dinamik seri izlenmemiştir.`);
-          addUnique(advanced, `Dinamik karakterizasyon için arteriyel-portal-geç faz içeren dinamik KC MR önerilir.`);
-        } else if (mrDynamic === "Dinamik (arteryel/portal/geç)") {
-          organReport.liver.push(
-            base + ` Dinamik kontrast paterni: ${mrEnhPattern}, washout: ${mrWashout}, HBP: ${hbPhase}.`
-          );
-        }
-      }
-
-      const highHccRisk = cirrhosis === "Var";
-      if (highHccRisk) {
-        addUnique(
-          alerts,
-          `Siroz/kronik KC zemininde HCC riski artmıştır; lezyonlar LI-RADS yaklaşımı ile değerlendirilmelidir.`
-        );
-        addUnique(rec, `AFP ve hepatoloji korelasyonu önerilir.`);
-      }
-
-      const hemLikeCT =
-        showCT &&
-        ctContrast === "Kontrastlı (dinamik)" &&
-        ctEnhPattern === "Periferik nodüler" &&
-        (ctFillIn === "Var" || ctFillIn === "Bilinmiyor") &&
-        ctWashout === "Yok";
-
-      const hemLikeMR =
-        showMR &&
-        mrT2 === "Hiper" &&
-        (mrEnhPattern === "Periferik nodüler" || mrEnhPattern === "Bilinmiyor") &&
-        (mrWashout === "Yok" || mrWashout === "Bilinmiyor");
-
-      if (hemLikeCT || hemLikeMR) {
-        addUnique(ddx.liver.high, "Hemangiom");
-        addUnique(ddx.liver.mid, "Atipik hemangiom");
-        addUnique(
-          rec,
-          `Tipik hemangiom paterni varsa önceki tetkiklerle karşılaştırma; şüphede dinamik MR (gerekirse HBP) ile doğrulama.`
-        );
-      }
-
-      const fnhLike =
-        showMR &&
-        mrDynamic === "Dinamik (arteryel/portal/geç)" &&
-        mrEnhPattern === "Arteryel hiper" &&
-        (mrWashout === "Yok" || mrWashout === "Bilinmiyor") &&
-        hbPhase === "Hiperintens";
-
-      if (fnhLike) {
-        addUnique(ddx.liver.high, "FNH");
-        addUnique(ddx.liver.mid, "FNH-benzeri nodül");
-        addUnique(rec, `FNH lehine bulgular varsa klinik korelasyon; tipikse izlem/öncekiyle karşılaştırma.`);
-      }
-
-      const hccLike =
-        (showCT &&
-          ctContrast === "Kontrastlı (dinamik)" &&
-          ctEnhPattern === "Arteryel hiper" &&
-          ctWashout === "Var") ||
-        (showMR &&
-          mrDynamic === "Dinamik (arteryel/portal/geç)" &&
-          mrEnhPattern === "Arteryel hiper" &&
-          mrWashout === "Var");
-
-      if (hccLike && highHccRisk) {
-        addUnique(ddx.liver.high, "HCC");
-        addUnique(rec, `LI-RADS raporlama + uygun ise MDT değerlendirmesi önerilir.`);
-        addUnique(alerts, `Arteryel hiper + washout paterni sirotik zeminde HCC lehinedir; öncelikli değerlendirme önerilir.`);
-      } else if (hccLike) {
-        addUnique(ddx.liver.mid, "HCC (zemine göre değişken olasılık)");
-        addUnique(ddx.liver.mid, "Hiper-vasküler metastaz");
-        addUnique(rec, `Zemine göre malignite riski; kontrastlı multipazik BT / dinamik MR ile karakterizasyon önerilir.`);
-      }
-
-      const rimLike =
-        (showCT && ctContrast === "Kontrastlı (dinamik)" && ctEnhPattern === "Halka (rim)") ||
-        (showMR && mrEnhPattern === "Halka (rim)");
-
-      if (rimLike) {
-        addUnique(ddx.liver.mid, "Metastaz (rim-enhancing)");
-        if (feverInf === "Var" || dwiRestrict === "Var") {
-          addUnique(ddx.liver.high, "Abse / enfekte koleksiyon");
-          addUnique(alerts, `Enfeksiyon/abse olasılığı: klinik + CRP/WBC korelasyonu ve yakın takip önerilir.`);
-          addUnique(rec, `Uygunsa klinik/cerrahi konsültasyon ve uygun tedavi planı; görüntüleme ile takip.`);
-        }
-      }
-
-      if (vascularInv === "Var") {
-        addUnique(
-          alerts,
-          `Vasküler invazyon lehine bulgular: malignite olasılığı belirgin artar; acil hepatobiliyer/onkoloji değerlendirmesi önerilir.`
-        );
-      }
-
-      addUnique(
-        advanced,
-        `Dinamik KC MR önerilecekse: aksiyel T2 (SSFSE/HASTE), T2 FS, T1 in/out-of-phase, DWI (b0/400/800) + ADC, prekontrast T1 FS, dinamik arteriyel/portal/denge, geç faz; uygun ise hepatobiliyer faz (gadoxetic asit) + MRCP eklenebilir.`
-      );
-      addUnique(
-        advanced,
-        `Multipazik KC BT önerilecekse: nonkontrast + arteriyel + portal venöz + (gerektiğinde) geç faz; lezyon boyut/segment ve vasküler ilişki raporlanır.`
-      );
-    }
-
-    // ===== SAFRA KESESİ =====
-    if (hasGB) {
-      const parts: string[] = [];
-      parts.push(`Safra kesesinde ${gbDx.toLowerCase()} ile uyumlu görünüm mevcuttur.`);
-      if (gbWallThick === "Var") parts.push(`Duvar kalınlaşması eşlik etmektedir.`);
-      if (gbPeriFluid === "Var") parts.push(`Perikolesistik sıvı izlenmektedir.`);
-      if (gbDistension === "Var") parts.push(`Distansiyon mevcuttur.`);
-      if (murphy === "Pozitif") parts.push(`Klinik Murphy pozitifliği ile uyumlu olabilir.`);
-      if (gbGas === "Var") parts.push(`Duvar/lümende gaz izlenmesi (emfizemli kolesistit?) açısından dikkat.`);
-      if (gbDx === "Polip" && polypMm?.trim()) parts.push(`Polip boyutu ~${polypMm.trim()} mm.`);
-      if (gbComp !== "Yok") parts.push(`Komplikasyon: ${gbComp}.`);
-      organReport.gb.push(parts.join(" "));
-
-      if (gbDx.includes("taş") || gbDx.includes("çamur")) {
-        addUnique(ddx.gb.high, "Kolesistolitiazis / bilier çamur");
-        if (gbWallThick === "Var" || gbPeriFluid === "Var" || gbDistension === "Var" || murphy === "Pozitif") {
-          addUnique(ddx.gb.high, "Akut kolesistit");
-          addUnique(alerts, `Akut kolesistit lehine eşlikçi bulgular olabilir; klinik korelasyon ve acil cerrahi değerlendirme düşünülebilir.`);
-          addUnique(rec, `Klinik uygunsa cerrahi konsültasyon; hedeflenmiş USG ile korelasyon önerilir.`);
+          ctParts.push("Kontrast uygulanmamıştır");
+        } else if (ctContrast === "Kontrastlı") {
+          if (ctEnhPattern && ctEnhPattern !== "Bilinmiyor")
+            ctParts.push(`Kontrastlanma paterni: ${ctEnhPattern}`);
+          if (ctFillIn !== "Bilinmiyor") ctParts.push(`Geç dolum (fill-in): ${ctFillIn.toLowerCase()}`);
+          if (ctWashout !== "Bilinmiyor") ctParts.push(`Washout: ${ctWashout.toLowerCase()}`);
         } else {
-          addUnique(ddx.gb.mid, "Semptomsuz taş");
-          addUnique(rec, `Semptom varsa USG ile doğrulama ve klinik/cerrahi değerlendirme önerilir.`);
+          // bilinmiyor
+          ctParts.push("Kontrast faz bilgisi bilinmiyor");
+        }
+
+        reportLines.push(
+          base + (ctParts.length ? " " + ctParts.join(", ") + "." : "")
+        );
+      }
+
+      // MR bulgusu metni (dinamik yoksa bile T1/T2/DWI ile)
+      if (showMR) {
+        const mrParts: string[] = [];
+        if (mrT1 !== "Bilinmiyor") mrParts.push(`T1: ${mrT1.toLowerCase()}`);
+        if (mrT2 !== "Bilinmiyor") mrParts.push(`T2: ${mrT2.toLowerCase()}`);
+        if (mrDwi !== "Bilinmiyor")
+          mrParts.push(`DWI: ${mrDwi === "Restriksiyon var" ? "restriksiyon mevcut" : mrDwi === "Restriksiyon yok" ? "restriksiyon izlenmedi" : "bilinmiyor"}`);
+        if (mrHasDyn) {
+          if (mrArterialHyper !== "Bilinmiyor") mrParts.push(`Arteriyel hiper: ${mrArterialHyper.toLowerCase()}`);
+          if (mrWashout !== "Bilinmiyor") mrParts.push(`Washout: ${mrWashout.toLowerCase()}`);
+          if (mrCapsule !== "Bilinmiyor") mrParts.push(`Kapsül: ${mrCapsule.toLowerCase()}`);
+          if (mrHBP !== "Bilinmiyor") mrParts.push(`HBP: ${mrHBP.toLowerCase()}`);
+        } else {
+          mrParts.push("Dinamik faz/HBP bilgisi yok");
+        }
+
+        // BT zaten yazıldıysa MR'yi ek cümle gibi yaz
+        reportLines.push(
+          `MR sinyal özellikleri: ${mrParts.join(", ")}.`
+        );
+      }
+
+      // risk/zemin
+      if (cirrhosis === "Var") uniqPush(warnings, "Siroz/kronik KC zemininde malignite riski artmıştır.");
+      if (malignancyHx === "Var") uniqPush(recs, "Malignite öyküsü varlığında metastaz lehine değerlendirme ve önceki tetkiklerle karşılaştırma önerilir.");
+      if (vascularInvasion === "Var") uniqPush(warnings, "Vasküler invazyon şüphesi: acil hepatobiliyer değerlendirme önerilir.");
+
+      // ---- KARACİĞER BAZ DDX (BT kontrast yok/bilinmiyor) ----
+      if (ctNoPhase && showCT) {
+        if (ctDensity === "Hipodens") {
+          uniqPush(ddx.liver.high, "Basit kist");
+          uniqPush(ddx.liver.high, "Hemangiom (özellikle küçük lezyonlarda)");
+          if (fattyLiver === "Var") uniqPush(ddx.liver.high, "Fokal yağ sparing / yağlanma paterni (zemine göre)");
+          uniqPush(ddx.liver.mid, "Metastaz");
+          if (feverInf === "Var") uniqPush(ddx.liver.mid, "Abse (klinik/lab ile)");
+          if (cirrhosis === "Var") uniqPush(ddx.liver.mid, "HCC (siroz zemininde; dinamik karakterizasyon şart)");
+          uniqPush(recs, "Kontrast faz bilgisi yok/kontrastsız BT: lezyon karakterizasyonu için dinamik KC MR (tercihen HBP) veya multipazik KC BT önerilir.");
+        }
+        if (ctDensity === "İzodens") {
+          uniqPush(ddx.liver.high, "Küçük hemangiom/FNH (BT’de izodens kalabilir)");
+          uniqPush(ddx.liver.mid, "Metastaz");
+          if (cirrhosis === "Var") uniqPush(ddx.liver.mid, "HCC");
+          uniqPush(recs, "İzodens lezyonlarda BT duyarlılığı sınırlı olabilir; dinamik KC MR ile karakterizasyon önerilir.");
+        }
+        if (ctDensity === "Hiperdens") {
+          uniqPush(ddx.liver.high, "Hemorajik kist");
+          uniqPush(ddx.liver.mid, "Hipervasküler metastaz");
+          if (cirrhosis === "Var") uniqPush(ddx.liver.mid, "HCC");
+          uniqPush(ddx.liver.mid, "Hepatik adenom");
+          uniqPush(recs, "Hiperdens lezyonlarda dinamik kontrast paterni ayırıcı tanı için kritiktir; multipazik BT/dinamik MR önerilir.");
         }
       }
 
-      if (gbDx === "Polip") {
-        const n = Number(polypMm);
-        addUnique(ddx.gb.high, "Safra kesesi polipi");
-        if (!Number.isNaN(n)) {
-          if (n >= 10) {
-            addUnique(alerts, `≥10 mm polip: malignite riski artar; cerrahi değerlendirme önerilir.`);
-            addUnique(rec, `≥10 mm polipte cerrahi konsültasyon; risk faktörleriyle birlikte karar.`);
-          } else if (n >= 6) {
-            addUnique(rec, `6–9 mm polipte risk faktörlerine göre USG takip (örn: 6–12 ay) önerilebilir.`);
-          } else {
-            addUnique(rec, `<6 mm polipte düşük risk; uygun aralıklarla USG takip düşünülebilir.`);
-          }
+      // ---- KARACİĞER Patern bazlı rafine ddx (BT kontrastlıysa) ----
+      if (ctHasContrast && showCT) {
+        // hemangiom paterni
+        const hemangLike =
+          ctEnhPattern === "Periferik nodüler" && (ctFillIn === "Var" || ctFillIn === "Bilinmiyor");
+        if (hemangLike) {
+          uniqPush(ddx.liver.high, "Hemangiom");
+          uniqPush(ddx.liver.mid, "FNH");
+          uniqPush(recs, "Tipik hemangiom paterni varsa (periferik nodüler + progresif dolum), takip/karşılaştırma klinik ile planlanabilir.");
+        }
+
+        // HCC paterni (siroz + washout)
+        const hccLike =
+          (ctWashout === "Var") && (cirrhosis === "Var" || cirrhosis === "Bilinmiyor");
+        if (hccLike) {
+          uniqPush(ddx.liver.high, "HCC");
+          uniqPush(ddx.liver.mid, "Displastik nodül / rejeneratif nodül");
+          uniqPush(recs, "LI-RADS yaklaşımı + AFP/hepatoloji korelasyonu önerilir.");
+          uniqPush(warnings, "Washout paterni malignite lehine olabilir; acil klinik korelasyon ve ileri karakterizasyon önerilir.");
+        }
+
+        // rim enhancement → metastaz/abse
+        if (ctEnhPattern === "Halka tarzı (rim)") {
+          uniqPush(ddx.liver.high, "Metastaz");
+          if (feverInf === "Var") uniqPush(ddx.liver.high, "Abse");
+          uniqPush(ddx.liver.mid, "Kolanjiokarsinom (periferik)");
+          uniqPush(recs, "Rim kontrastlanan lezyonlarda klinik (ateş/lab) ve DWI/kontrastlı MR ile ayırım önerilir.");
         }
       }
 
-      if (gbDx.includes("kitle") || gbDx.includes("Porcelain")) {
-        addUnique(ddx.gb.high, "Safra kesesi malignitesi olasılığı");
-        addUnique(rec, `Kontrastlı abdomen BT/MR ile lokal invazyon/lenf nodu değerlendirmesi + cerrahi/onkoloji konsültasyonu önerilir.`);
-        addUnique(alerts, `Safra kesesi malignitesi şüphesi: öncelikli değerlendirme önerilir.`);
+      // ---- MR BAZ DDX (dinamik olmasa bile T1/T2/DWI kombinasyonları) ----
+      // Bu kısım senin istediğin “MR tarafında geniş baz ddx” çekirdeği:
+      if (showMR && mrNoDyn) {
+        // T2 hiper + DWI restr yok → kist/hemangiom
+        if (mrT2 === "Hiper" && mrDwi === "Restriksiyon yok") {
+          uniqPush(ddx.liver.high, "Basit kist");
+          uniqPush(ddx.liver.high, "Hemangiom");
+          uniqPush(ddx.liver.mid, "Biliyer hamartom (çoklu küçük ise)");
+        }
+
+        // T2 hiper + DWI restr var → abse / malignite / kolanjiokarsinom
+        if (mrT2 === "Hiper" && mrDwi === "Restriksiyon var") {
+          if (feverInf === "Var") uniqPush(ddx.liver.high, "Abse (klinik/lab ile güçlü)");
+          uniqPush(ddx.liver.mid, "Metastaz (sellüler lezyonlarda)");
+          uniqPush(ddx.liver.mid, "Kolanjiokarsinom (klinik/kolestaz ile)");
+          uniqPush(recs, "DWI restriksiyonu olan lezyonlarda klinik-lab korelasyonu + kontrastlı dinamik MR önerilir.");
+        }
+
+        // T1 hiper → hemorajik/proteinöz içerik, adenoma, HCC vb (zemine göre)
+        if (mrT1 === "Hiper") {
+          uniqPush(ddx.liver.mid, "Hemorajik/proteinöz içerikli kist");
+          uniqPush(ddx.liver.mid, "Hepatik adenom (özellikle T1 hiper komponent olabilir)");
+          if (cirrhosis === "Var") uniqPush(ddx.liver.mid, "HCC (siroz zemininde)");
+          uniqPush(recs, "T1 hiper lezyonlarda yağ/kan ürünleri ayrımı için in-out phase ve SWI/T2* sekansları faydalıdır.");
+        }
+
+        // T2 düşük + DWI restr var → bazı maligniteler/fibrotik lezyonlar (temkinli)
+        if (mrT2 === "Hipo" && mrDwi === "Restriksiyon var") {
+          uniqPush(ddx.liver.mid, "Hiposellüler fibrotik lezyon / metastaz varyantları (klinikle)");
+          uniqPush(ddx.liver.mid, "Kolanjiokarsinom (fibrotik komponent)");
+        }
+
+        // genel ileri tetkik önerisi
+        uniqPush(recs, "Dinamik bilgi yoksa: lezyon karakterizasyonu için hepatobiliyer kontrastlı (HBP) dinamik KC MR önerilir.");
       }
 
-      addUnique(
-        advanced,
-        `Safra kesesi/akut kolesistit için: hedeflenmiş USG (duvar kalınlığı, Murphy, perikolesistik sıvı), gerekirse kontrastlı BT; komplike olguda MR/MRCP düşünülebilir.`
-      );
-    }
+      // ---- MR DİNAMİK VARSA rafine ddx (opsiyonel ama faydalı) ----
+      if (showMR && mrHasDyn) {
+        // FNH: arteriyel hiper + HBP hiper/izo + washout yok
+        const fnhLike =
+          mrArterialHyper === "Var" &&
+          (mrWashout === "Yok" || mrWashout === "Bilinmiyor") &&
+          (mrHBP === "Hiperintens" || mrHBP === "İzointens");
+        if (fnhLike) {
+          uniqPush(ddx.liver.high, "FNH");
+          uniqPush(ddx.liver.mid, "Adenom");
+          uniqPush(recs, "FNH lehine bulgularda klinik uygun ise takip/karşılaştırma planlanabilir.");
+        }
 
-    // ===== SAFRA YOLLARI =====
-    if (hasBD) {
-      const parts: string[] = [];
-      parts.push(`Safra yollarında patoloji mevcuttur.`);
-      if (bdDil === "Var") parts.push(`Dilatas­yon izlenmektedir (${bdLevel.toLowerCase()}).`);
-      if (bdStone === "Var") parts.push(`Koledok taşı ile uyumlu görünüm mevcuttur.`);
-      if (bdStricture !== "Yok" && bdStricture !== "Bilinmiyor") parts.push(`Striktür: ${bdStricture.toLowerCase()}.`);
-      if (pscPattern === "Var") parts.push(`PSC paterni düşündüren segmenter daralma-genişleme olabilir.`);
-      if (cholangitis === "Var") parts.push(`Kolanjit lehine bulgular olabilir.`);
-      if (bdMassSuspect === "Var") parts.push(`Kitle/obstrüksiyon odağı açısından şüpheli bulgular mevcuttur.`);
-      parts.push(`Olası neden: ${bdCause}.`);
-      organReport.bd.push(parts.join(" "));
+        // HCC: arteriyel hiper + washout + (kapsül)
+        const mrHccLike = mrArterialHyper === "Var" && mrWashout === "Var";
+        if (mrHccLike) {
+          uniqPush(ddx.liver.high, "HCC");
+          uniqPush(ddx.liver.mid, "Adenom / hipervasküler metastaz");
+          uniqPush(recs, "LI-RADS kriterleri ile evreleme + AFP/hepatoloji korelasyonu önerilir.");
+          uniqPush(warnings, "Dinamik MR’da arteriyel hiper + washout paterni malignite lehine olabilir.");
+        }
 
-      if (bdStone === "Var" || bdCause === "Koledok taşı") {
-        addUnique(ddx.bd.high, "Koledok taşı (koledokolitiazis)");
-        addUnique(ddx.bd.mid, "Papilla düzeyi taş/çamur");
-        addUnique(rec, `Klinik-lab kolestaz ile korelasyon; uygun ise ERCP planlaması düşünülebilir.`);
-        addUnique(advanced, `MRCP: 3D heavily T2 (MRCP), aksiyel T2 FS, DWI; taş/striktür/obstrüksiyon seviyesi için önerilir.`);
+        // Hemangiom: T2 hiper + periferik/progresif dolum (bu sayfada patern alanı yok → temel öneri)
+        if (mrT2 === "Hiper" && mrArterialHyper === "Bilinmiyor") {
+          uniqPush(ddx.liver.mid, "Hemangiom (dinamik paterni ile doğrulanır)");
+        }
       }
 
-      if (bdDil === "Var" && bdStone !== "Var" && bdCause === "Belirsiz") {
-        addUnique(ddx.bd.high, "Obstrüktif kolestaz");
-        addUnique(ddx.bd.mid, "Benign striktür");
-        addUnique(ddx.bd.mid, "Malign obstrüksiyon (periampuller/kolanjiokarsinom/pankreas başı)");
-        addUnique(rec, `Obstrüksiyon seviyesini belirlemek için MRCP önerilir; kitle şüphesinde kontrastlı BT/MR ile değerlendirme.`);
-      }
-
-      if (bdStricture === "Malign striktür" || bdMassSuspect === "Var" || bdCause === "Malign obstrüksiyon") {
-        addUnique(ddx.bd.high, "Malign obstrüksiyon (kolanjiokarsinom / periampuller / pankreas başı)");
-        addUnique(rec, `Kontrastlı pankreas protokol BT veya üst abdomen MR ile kitle ve damar invazyonu değerlendirmesi; MDT önerilir.`);
-        addUnique(alerts, `Malign obstrüksiyon şüphesi: öncelikli değerlendirme ve hızlı ileri tetkik önerilir.`);
-        addUnique(advanced, `Üst abdomen MR önerilecekse: MRCP (3D T2), T1 FS, T2 FS, DWI, dinamik kontrast (arteriyel/portal/geç), gerekirse gecikmiş faz.`);
-      }
-
-      if (cholangitis === "Var") {
-        addUnique(ddx.bd.high, "Akut kolanjit (klinik ile)");
-        addUnique(alerts, `Kolanjit şüphesi: ateş-sarılık-ağrı ve laboratuvar ile acil klinik değerlendirme gerekir.`);
-        addUnique(rec, `Acil klinik/lab korelasyonu; uygun olguda drenaj (ERCP/PTC) gereksinimi açısından değerlendirme.`);
-      }
-
-      if (pscPattern === "Var") {
-        addUnique(ddx.bd.high, "Primer sklerozan kolanjit (PSC) olasılığı");
-        addUnique(rec, `MRCP ile tipik multifokal daralma-genişleme paterninin doğrulanması + hepatoloji/gastroenteroloji korelasyonu önerilir.`);
-      }
+      // ---- İleri inceleme (sekanslar) ----
+      // karaciğer lezyonu varsa, “hangi tetkikler + sekanslar” kutusu için:
+      uniqPush(advTests, "Dinamik KC MR (tercihen hepatobiliyer kontrast: gadoxetate) önerilir: T1 in/out phase, T2 (HASTE/SSFSE), DWI (b=0/400/800), Dinamik arteriyel-portal-geç faz, HBP (20 dk), gerekirse T2* / SWI.");
+      if (showCT) uniqPush(advTests, "Multipazik KC BT (arteriyel + portal venöz + geç faz) alternatif olabilir (klinik uygunluk/radyasyon göz önüne alınarak).");
     }
 
-    if (!hasLiver && !hasGB && !hasBD) {
-      organReport.general.push(`Karaciğer, safra kesesi ve safra yollarında belirgin patoloji lehine bulgu izlenmemektedir.`);
-      addUnique(rec, `Klinik/laboratuvar ve önceki tetkiklerle korelasyon önerilir.`);
-    }
-
-    if (jaundiceChol === "Var") {
-      addUnique(rec, `Kolestaz/sarılık varlığında: LFT (AST/ALT/ALP/GGT), bilirubin fraksiyonları ve klinik korelasyon önerilir.`);
-      if (bdPath === "Var") addUnique(rec, `Obstrüksiyon düşünülüyorsa MRCP ile seviye/neden değerlendirilmesi önerilir.`);
-    }
-
-    if (malignHx === "Var" && hasLiver) {
-      addUnique(ddx.liver.mid, "Metastaz");
-      addUnique(rec, `Malignite öyküsü varlığında metastaz açısından klinik korelasyon ve sistemik tarama/önceki tetkiklerle karşılaştırma önerilir.`);
-    }
-
-    // Ek bulgular ayrı başlık için
-    const extra = normalizeSentence(extraFindings);
-    if (extra) reportExtraBucket.push(extra);
-
-    // Final tek cümle
-    const shortBits: string[] = [];
-    if (hasLiver) {
-      if (finalFormat === "Olasılık dili") shortBits.push(`Karaciğerde ${segTxt} düzeyinde ${sizeTxt} lezyon (karakterizasyon gerekli)`);
-      else if (finalFormat === "Öneri dili") shortBits.push(`Karaciğerde ${segTxt} düzeyinde ${sizeTxt} lezyon; dinamik kontrastlı BT/MR ile karakterizasyon önerilir`);
-      else shortBits.push(`Karaciğerde ${segTxt} düzeyinde ${sizeTxt} lezyon izlenmektedir`);
-    }
+    // -------- SAFRA KESESİ RAPOR + DDX --------
     if (hasGB) {
-      if (finalFormat === "Olasılık dili") shortBits.push(`safra kesesinde ${gbDx.toLowerCase()} ile uyumlu görünüm`);
-      else if (finalFormat === "Öneri dili") shortBits.push(`safra kesesi patolojisi için klinik/USG korelasyonu önerilir`);
-      else shortBits.push(`safra kesesinde patoloji izlenmektedir`);
+      // rapor dili: sadece patoloji varsa yaz
+      const gbLines: string[] = [];
+      gbLines.push(`Safra kesesinde ${gbDx.toLowerCase()} ile uyumlu görünüm mevcuttur.`);
+      if (gbWall !== "Bilinmiyor") gbLines.push(`Duvar kalınlaşması: ${gbWall.toLowerCase()}.`);
+      if (gbPeriFluid !== "Bilinmiyor") gbLines.push(`Perikolesistik sıvı: ${gbPeriFluid.toLowerCase()}.`);
+      if (gbDistension !== "Bilinmiyor") gbLines.push(`Distansiyon: ${gbDistension.toLowerCase()}.`);
+      if (gbGas !== "Yok") gbLines.push(`Duvar/lümende gaz izlenmektedir (emfizematöz kolesistit lehine).`);
+      if (gbDx === "Polip") gbLines.push(`Polip boyutu: ~${Math.max(1, Math.round(gbPolypMm))} mm.`);
+      if (gbComplication !== "Yok" && gbComplication !== "Bilinmiyor") gbLines.push(`${gbComplication}.`);
+
+      reportLines.push(gbLines.join(" "));
+
+      // ddx
+      if (gbDx === "Kolesistolitiazis (taş)" || gbDx === "Biliyer çamur") {
+        uniqPush(ddx.gb.high, "Kolesistolitiazis / biliyer çamur");
+        uniqPush(ddx.gb.mid, "Akut kolesistit (klinik ile)");
+      }
+      if (gbDx === "Akut kolesistit") {
+        uniqPush(ddx.gb.high, "Akut kolesistit");
+        uniqPush(ddx.gb.mid, "Gangrenöz/komplike kolesistit");
+        if (gbGas === "Var") uniqPush(ddx.gb.high, "Emfizematöz kolesistit");
+        uniqPush(warnings, "Akut kolesistit şüphesinde acil klinik değerlendirme önerilir.");
+      }
+      if (gbDx === "Polip") {
+        uniqPush(ddx.gb.high, "GB polipi");
+        uniqPush(ddx.gb.mid, "Adenom / malignite (boyut/zemine göre)");
+        if (gbPolypMm >= 10) uniqPush(warnings, "≥10 mm poliplerde malignite riski artar; cerrahi/gastroenteroloji değerlendirmesi önerilir.");
+      }
+      if (gbDx === "GB kitle şüphesi") {
+        uniqPush(ddx.gb.high, "GB malignitesi");
+        uniqPush(ddx.gb.mid, "Xantogranülomatöz kolesistit");
+        uniqPush(warnings, "GB kitle şüphesinde hızlı ileri inceleme ve klinik korelasyon önerilir.");
+      }
+
+      // öneriler
+      if (gbDx === "Akut kolesistit" || gbWall === "Var" || gbPeriFluid === "Var" || gbMurphy === "Var") {
+        uniqPush(recs, "Akut kolesistit açısından klinik (Murphy), lab ve USG korelasyonu önerilir; komplikasyon şüphesinde kontrastlı BT/MR düşünülebilir.");
+      } else {
+        uniqPush(recs, "Safra kesesi bulguları için klinik korelasyon ve önceki tetkiklerle karşılaştırma önerilir.");
+      }
+
+      // ileri inceleme (sekanslar / tetkik)
+      uniqPush(advTests, "Safra kesesi için: hedeflenmiş USG (taş/mobilite, duvar, Murphy) ve komplikasyon şüphesinde kontrastlı BT/MR değerlendirilebilir.");
     }
+
+    // -------- SAFRA YOLLARI RAPOR + DDX --------
     if (hasBD) {
-      if (finalFormat === "Olasılık dili") shortBits.push(`safra yollarında obstrüksiyon/kolestaz lehine bulgular`);
-      else if (finalFormat === "Öneri dili") shortBits.push(`safra yolları için MRCP (gerekirse ERCP) ile ileri değerlendirme önerilir`);
-      else shortBits.push(`safra yollarında patoloji izlenmektedir`);
+      const bdLines: string[] = [];
+      bdLines.push("Safra yollarında patoloji mevcuttur.");
+      if (bdDilatation !== "Bilinmiyor") bdLines.push(`Dilatatasyon: ${bdDilatation.toLowerCase()}.`);
+      if (bdLevel !== "Bilinmiyor") bdLines.push(`Seviye: ${bdLevel.toLowerCase()}.`);
+      if (bdCause) bdLines.push(`Olası neden: ${bdCause}.`);
+      if (bdCholangitis === "Var") bdLines.push("Kolangit lehine eşlikçi bulgular olabilir.");
+      if (bdMassSusp === "Var") bdLines.push("Obstrüksiyona neden olabilecek kitle lezyonu açısından ileri değerlendirme önerilir.");
+
+      reportLines.push(bdLines.join(" "));
+
+      // ddx (yüksek/orta)
+      if (bdDilatation === "Var" || jaundiceCholestasis === "Var") {
+        uniqPush(ddx.bd.high, "Obstrüktif kolestaz");
+        uniqPush(ddx.bd.high, "Klinik/biyokimyasal kolestaz ile uyumlu obstrüksiyon");
+      }
+      if (bdCause === "Koledok taşı") {
+        uniqPush(ddx.bd.high, "Koledok taşı (koledokolitiazis)");
+        uniqPush(ddx.bd.mid, "Benign striktür");
+      }
+      if (bdCause === "Benign striktür") {
+        uniqPush(ddx.bd.high, "Benign striktür");
+        uniqPush(ddx.bd.mid, "Postoperatif/postinflamatuvar değişiklik");
+      }
+      if (bdCause === "Malign obstrüksiyon") {
+        uniqPush(ddx.bd.high, "Malign obstrüksiyon");
+        uniqPush(ddx.bd.mid, "Periampuller tümör / kolanjiokarsinom / pankreas başı kitle");
+        uniqPush(warnings, "Malign obstrüksiyon şüphesinde hızlı ileri inceleme önerilir.");
+      }
+      if (bdCause === "PSC paterni") {
+        uniqPush(ddx.bd.high, "Primer sklerozan kolanjit (PSC)");
+        uniqPush(ddx.bd.mid, "Kolanjiokarsinom (PSC zemininde risk artışı)");
+        uniqPush(recs, "PSC şüphesinde MRCP ile duktal patern değerlendirmesi ve gastroenteroloji takibi önerilir.");
+      }
+      if (bdCholangitis === "Var" || bdCause === "Kolangit şüphesi") {
+        uniqPush(ddx.bd.high, "Akut kolanjit");
+        uniqPush(warnings, "Akut kolanjit şüphesinde acil klinik değerlendirme (ateş, ağrı, ikter) ve sepsis riski açısından izlem önerilir.");
+      }
+
+      // öneriler (MRCP/ERCP akıllandırma)
+      if (bdDilatation === "Var" || jaundiceCholestasis === "Var") {
+        uniqPush(recs, "Obstrüksiyon seviyesi/nedeni için MRCP önerilir; klinik uygunlukta ERCP hem tanısal hem terapötik olabilir.");
+      }
+      if (bdCause === "Koledok taşı") {
+        uniqPush(recs, "Koledok taşı şüphesinde MRCP ile doğrulama; klinik/lab ile uyumlu ise ERCP planlanması önerilir.");
+      }
+      if (bdMassSusp === "Var" || bdCause === "Malign obstrüksiyon") {
+        uniqPush(recs, "Kitle şüphesinde kontrastlı üst abdomen BT/MR + gerekirse EUS değerlendirmesi önerilir.");
+      }
+
+      // ileri inceleme (sekanslar)
+      uniqPush(advTests, "MRCP (sekans önerisi): 3D heavily T2 (MRCP), kalın slab T2, T2 HASTE/SSFSE, DWI, gerekirse kontrastlı dinamik (arteriyel/portal/geç) ve HBP (karaciğer lezyonu eşlik ediyorsa).");
     }
 
-    let finalSentence =
-      shortBits.length === 0
-        ? `Karaciğer, safra kesesi ve safra yollarında belirgin patoloji lehine bulgu izlenmemektedir.`
-        : `${shortBits.join("; ")}.`;
+    // -------- Patoloji yoksa rapor satırı üretme --------
+    // raporLines zaten yalnız patoloji/pozitif bulgu varken doluyor.
 
-    if (extra) finalSentence = `${finalSentence} Ek bulgu: ${extra}`;
+    // -------- Ek bulgular (manuel) entegrasyonu --------
+    const inc = incidentalText.trim();
+    if (inc) {
+      // “Ek bulgular:” diye ayrı cümle halinde rapora ekle
+      reportLines.push(`Ek bulgular/insidental: ${sentenceize(inc)}`);
+    }
 
-    // UI ve kopyalama için: başlıklı birleşik bulgular
-    const findingsBlocks: Array<{ title: string; lines: string[] }> = [];
-    if (organReport.liver.length) findingsBlocks.push({ title: "Karaciğer", lines: organReport.liver });
-    if (organReport.gb.length) findingsBlocks.push({ title: "Safra Kesesi", lines: organReport.gb });
-    if (organReport.bd.length) findingsBlocks.push({ title: "Safra Yolları", lines: organReport.bd });
-    if (!findingsBlocks.length && organReport.general.length)
-      findingsBlocks.push({ title: "Genel", lines: organReport.general });
+    // -------- Final tek cümle (yalnız patoloji olanları + ek bulgu) --------
+    const finalPieces: string[] = [];
+
+    if (hasLiver) {
+      if (finalFormat === "Olasılık dili") {
+        // olasılık dili: “... benign/malign ayrımı için ...”
+        let s = `Karaciğerde ${segment} düzeyinde lezyon izlenmekte olup`;
+        if (ddx.liver.high.length) s += ` öncelikle ${ddx.liver.high[0]} lehine`;
+        s += `, kesin karakterizasyon için dinamik KC MR (tercihen HBP) önerilir`;
+        finalPieces.push(sentenceize(s));
+      } else {
+        finalPieces.push(
+          sentenceize(
+            `Karaciğerde ${segment} düzeyindeki lezyon için dinamik KC MR (HBP) ile karakterizasyon önerilir`
+          )
+        );
+      }
+    }
+
+    if (hasGB) {
+      if (finalFormat === "Olasılık dili") {
+        finalPieces.push(sentenceize(`Safra kesesi bulguları ${gbDx.toLowerCase()} ile uyumludur`));
+      } else {
+        finalPieces.push(sentenceize("Safra kesesi bulguları klinik/lab ile korele edilmelidir"));
+      }
+    }
+
+    if (hasBD) {
+      if (finalFormat === "Olasılık dili") {
+        finalPieces.push(sentenceize("Safra yollarında obstrüksiyon/kolestaz lehine bulgular mevcuttur"));
+      } else {
+        finalPieces.push(sentenceize("Safra yolları için MRCP ile obstrüksiyon seviyesi/nedeni değerlendirilmesi önerilir"));
+      }
+    }
+
+    if (inc) {
+      finalPieces.push(sentenceize(`Ek bulgu: ${inc}`));
+    }
+
+    const finalSentence = finalPieces.join(" ");
+
+    // -------- İleri inceleme kutusu (unique) --------
+    const advUnique = Array.from(new Set(advTests));
+    const recUnique = Array.from(new Set(recs));
+    const warnUnique = Array.from(new Set(warnings));
+
+    // -------- Ayırıcı tanı: organ bazlı + yüksek/orta sadece ilgili organlar --------
+    const organDdxBlocks: Array<{
+      title: string;
+      high: string[];
+      mid: string[];
+      show: boolean;
+    }> = [
+      {
+        title: "Karaciğer",
+        high: ddx.liver.high,
+        mid: ddx.liver.mid,
+        show: hasLiver && (ddx.liver.high.length + ddx.liver.mid.length > 0),
+      },
+      {
+        title: "Safra Kesesi",
+        high: ddx.gb.high,
+        mid: ddx.gb.mid,
+        show: hasGB && (ddx.gb.high.length + ddx.gb.mid.length > 0),
+      },
+      {
+        title: "Safra Yolları",
+        high: ddx.bd.high,
+        mid: ddx.bd.mid,
+        show: hasBD && (ddx.bd.high.length + ddx.bd.mid.length > 0),
+      },
+    ];
+
+    // -------- “Tam çıktı” (kopyalama için) --------
+    const reportText =
+      reportLines.length > 0
+        ? reportLines.map((x) => `• ${x}`).join("\n")
+        : "• Patoloji lehine belirgin bulgu seçilmedi / rapor satırı oluşturulmadı.";
+
+    const ddxText = organDdxBlocks
+      .filter((b) => b.show)
+      .map((b) => {
+        const lines: string[] = [];
+        lines.push(`${b.title}`);
+        if (b.high.length) lines.push(`  Yüksek olasılık: ${b.high.join(", ")}`);
+        if (b.mid.length) lines.push(`  Orta olasılık: ${b.mid.join(", ")}`);
+        return lines.join("\n");
+      })
+      .join("\n\n");
+
+    const recText = recUnique.length
+      ? recUnique.map((x) => `• ${x}`).join("\n")
+      : "• (Öneri yok)";
+
+    const warnText = warnUnique.length
+      ? warnUnique.map((x) => `• ${x}`).join("\n")
+      : "• (Acil/uyarı yok)";
+
+    const advText = advUnique.length
+      ? advUnique.map((x) => `• ${x}`).join("\n")
+      : "• (İleri inceleme önerisi yok)";
+
+    const fullText =
+      `Bulgular (Rapor Dili)\n${reportText}\n\n` +
+      `Ayırıcı Tanı (Organ bazlı)\n${ddxText || "• (Ayırıcı tanı üretilmedi)"}\n\n` +
+      `Öneriler\n${recText}\n\n` +
+      `Acil / Uyarı\n${warnText}\n\n` +
+      `İleri İnceleme (Tetkik + Sekans)\n${advText}\n\n` +
+      `Final Rapor (Tek cümle)\n${finalSentence || "(final cümle oluşmadı)"}`;
 
     return {
-      hasLiver,
-      hasGB,
-      hasBD,
-      findingsBlocks,
-      reportExtraBucket,
-      ddx,
-      rec: Array.from(new Set(rec)),
-      advanced: Array.from(new Set(advanced)),
-      alerts: Array.from(new Set(alerts)),
+      reportLines,
+      organDdxBlocks,
+      recs: recUnique,
+      warnings: warnUnique,
+      adv: advUnique,
       finalSentence,
+      reportText,
+      ddxText,
+      recText,
+      warnText,
+      advText,
+      fullText,
     };
   }, [
-    extraFindings,
-    finalFormat,
-
-    examType,
+    modality,
     showCT,
     showMR,
     ctContrast,
     mrDynamic,
-
-    malignHx,
+    malignancyHx,
     cirrhosis,
     feverInf,
-    jaundiceChol,
-
+    jaundiceCholestasis,
     liverLesion,
     fattyLiver,
+    vascularInvasion,
     lesionCount,
-    largestMm,
     segment,
+    maxSizeMm,
     margin,
-    vascularInv,
-
     ctDensity,
     ctEnhPattern,
     ctFillIn,
     ctWashout,
-
     mrT1,
     mrT2,
-    dwiRestrict,
-    mrEnhPattern,
+    mrDwi,
+    mrArterialHyper,
     mrWashout,
-    hbPhase,
-
+    mrCapsule,
+    mrHBP,
     gbPath,
     gbDx,
-    gbWallThick,
+    gbWall,
     gbPeriFluid,
     gbDistension,
-    murphy,
+    gbMurphy,
     gbGas,
-    polypMm,
-    gbComp,
-
+    gbPolypMm,
+    gbComplication,
     bdPath,
     bdCause,
-    bdDil,
+    bdDilatation,
     bdLevel,
-    cholangitis,
-    bdStone,
-    bdStricture,
-    pscPattern,
-    bdMassSuspect,
+    bdCholangitis,
+    bdMassSusp,
+    incidentalText,
+    finalFormat,
   ]);
 
-  const ddxText = useMemo(() => {
-    const chunks: string[] = [];
-    const block = (title: string, high: string[], mid: string[]) => {
-      if (high.length === 0 && mid.length === 0) return;
-      chunks.push(`${title}`);
-      if (high.length) {
-        chunks.push(`  Yüksek olasılık:`);
-        high.forEach((x) => chunks.push(`   • ${x}`));
-      }
-      if (mid.length) {
-        chunks.push(`  Orta olasılık:`);
-        mid.forEach((x) => chunks.push(`   • ${x}`));
-      }
-      chunks.push("");
-    };
+  const leftCard = "rounded-2xl border border-neutral-200 bg-white shadow-sm";
+  const label = "text-sm font-medium text-neutral-800";
+  const help = "text-xs text-neutral-500";
 
-    block("Karaciğer", outputs.ddx.liver.high, outputs.ddx.liver.mid);
-    block("Safra Kesesi", outputs.ddx.gb.high, outputs.ddx.gb.mid);
-    block("Safra Yolları", outputs.ddx.bd.high, outputs.ddx.bd.mid);
+  const panelCard = "rounded-2xl border border-neutral-200 bg-white shadow-sm p-4";
+  const sectionTitle = "text-base font-semibold text-neutral-900";
+  const subTitle = "text-sm font-semibold text-neutral-800";
 
-    return chunks.length ? chunks.join("\n").trim() : "—";
-  }, [outputs.ddx]);
-
-  // --- KOPYALAMA FORMATLARI ---
-
-  // Bulgular metni (organ başlıklı)
-  const findingsText = useMemo(() => {
-    const lines: string[] = [];
-    outputs.findingsBlocks.forEach((b) => {
-      lines.push(headerLine(b.title));
-      b.lines.forEach((x) => lines.push(`- ${x}`));
-      lines.push("");
-    });
-    return lines.join("\n").trim();
-  }, [outputs.findingsBlocks]);
-
-  // 1) BULGULAR + SONUÇ (önerisiz)
-  const findingsAndConclusionToCopy = useMemo(() => {
-    const lines: string[] = [];
-    lines.push("BULGULAR:");
-    lines.push(findingsText || "- Belirgin patoloji lehine bulgu izlenmemektedir.");
-    lines.push("");
-
-    if (outputs.reportExtraBucket.length) {
-      lines.push("EK BULGULAR:");
-      outputs.reportExtraBucket.forEach((x) => lines.push(`- ${x}`));
-      lines.push("");
-    }
-
-    lines.push("SONUÇ:");
-    lines.push(outputs.finalSentence);
-    return lines.join("\n");
-  }, [findingsText, outputs.reportExtraBucket, outputs.finalSentence]);
-
-  // 2) Hastane formatlı “Raporu Kopyala” (Bulgular + Ek + Sonuç + Öneriler)
-  const reportOnlyToCopy = useMemo(() => {
-    const lines: string[] = [];
-    lines.push("BULGULAR:");
-    lines.push(findingsText || "- Belirgin patoloji lehine bulgu izlenmemektedir.");
-    lines.push("");
-
-    if (outputs.reportExtraBucket.length) {
-      lines.push("EK BULGULAR:");
-      outputs.reportExtraBucket.forEach((x) => lines.push(`- ${x}`));
-      lines.push("");
-    }
-
-    lines.push("SONUÇ:");
-    lines.push(outputs.finalSentence);
-    lines.push("");
-
-    lines.push("ÖNERİLER:");
-    if (outputs.rec.length) outputs.rec.forEach((x) => lines.push(`- ${x}`));
-    else lines.push("- —");
-
-    return lines.join("\n");
-  }, [findingsText, outputs.reportExtraBucket, outputs.finalSentence, outputs.rec]);
-
-  // 3) Tam çıktı (her şey)
-  const allTextToCopy = useMemo(() => {
-    const lines: string[] = [];
-
-    lines.push("=== BULGULAR (ORGAN BAŞLIKLI) ===");
-    lines.push(findingsText || "—");
-    lines.push("");
-
-    if (outputs.reportExtraBucket.length) {
-      lines.push("=== EK BULGULAR ===");
-      outputs.reportExtraBucket.forEach((x) => lines.push(`• ${x}`));
-      lines.push("");
-    }
-
-    lines.push("=== AYIRICI TANI (ORGAN BAZLI) ===");
-    lines.push(ddxText === "—" ? "—" : ddxText);
-    lines.push("");
-
-    lines.push("=== ÖNERİLER ===");
-    if (outputs.rec.length) outputs.rec.forEach((x) => lines.push(`• ${x}`));
-    else lines.push("—");
-    lines.push("");
-
-    lines.push("=== İLERİ İNCELEME (SEKANS DAHİL) ===");
-    if (outputs.advanced.length) outputs.advanced.forEach((x) => lines.push(`• ${x}`));
-    else lines.push("—");
-    lines.push("");
-
-    lines.push("=== ACİL / UYARI ===");
-    if (outputs.alerts.length) outputs.alerts.forEach((x) => lines.push(`• ${x}`));
-    else lines.push("—");
-    lines.push("");
-
-    lines.push("=== SONUÇ (TEK CÜMLE) ===");
-    lines.push(outputs.finalSentence);
-
-    return lines.join("\n");
-  }, [findingsText, outputs.reportExtraBucket, outputs.rec, outputs.advanced, outputs.alerts, outputs.finalSentence, ddxText]);
-
-  function resetAll() {
-    setMode("Var/Yok → Detay");
-    setExtraFindings("");
-
-    setExamType("BT");
-    setCtContrast("Bilinmiyor");
-    setMrDynamic("Bilinmiyor");
-
-    setMalignHx("Bilinmiyor");
-    setCirrhosis("Bilinmiyor");
-    setFeverInf("Bilinmiyor");
-    setJaundiceChol("Bilinmiyor");
-
-    setLiverLesion("Yok");
-    setFattyLiver("Bilinmiyor");
-    setLesionCount("Tek");
-    setLargestMm("18");
-    setSegment("S7");
-    setMargin("Düzgün");
-    setVascularInv("Bilinmiyor");
-
-    setCtDensity("Hipodens");
-    setCtEnhPattern("Periferik nodüler");
-    setCtFillIn("Var");
-    setCtWashout("Yok");
-
-    setMrT1("Bilinmiyor");
-    setMrT2("Bilinmiyor");
-    setDwiRestrict("Bilinmiyor");
-    setMrEnhPattern("Bilinmiyor");
-    setMrWashout("Bilinmiyor");
-    setHbPhase("Bilinmiyor");
-
-    setGbPath("Yok");
-    setGbDx("Kolesistolitiazis (taş)");
-    setGbWallThick("Bilinmiyor");
-    setGbPeriFluid("Bilinmiyor");
-    setGbDistension("Bilinmiyor");
-    setMurphy("Bilinmiyor");
-    setGbGas("Yok");
-    setPolypMm("6");
-    setGbComp("Yok");
-
-    setBdPath("Yok");
-    setBdCause("Belirsiz");
-    setBdDil("Bilinmiyor");
-    setBdLevel("Bilinmiyor");
-    setCholangitis("Yok");
-    setBdStone("Yok");
-    setBdStricture("Bilinmiyor");
-    setPscPattern("Yok");
-    setBdMassSuspect("Bilinmiyor");
-
-    setFinalFormat("Olasılık dili");
-  }
+  const showCTPattern = showCT && ctContrast === "Kontrastlı";
+  const showMRDynFields = showMR && mrDynamic === "Dinamik var";
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      <div className="mx-auto max-w-6xl px-4 py-10">
-        <div className="mb-4 flex flex-col gap-2">
-          <div className="text-center text-2xl font-semibold">Abdomen AI Yardımcı Ajan (v1) — Karaciğer + Safra</div>
-
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <Pill active={mode === "Var/Yok → Detay"} onClick={() => setMode("Var/Yok → Detay")}>
-              Var/Yok → Detay
-            </Pill>
-            <Pill active={mode === "Rapor dili + öneri"} onClick={() => setMode("Rapor dili + öneri")}>
-              Rapor dili + öneri
-            </Pill>
-            <Pill active={examType === "BT"} onClick={() => setExamType("BT")}>
-              BT
-            </Pill>
-            <Pill active={examType === "MR"} onClick={() => setExamType("MR")}>
-              MR
-            </Pill>
-            <Pill active={examType === "BT+MR"} onClick={() => setExamType("BT+MR")}>
-              BT+MR
-            </Pill>
+      <div className="mx-auto max-w-6xl px-4 py-6">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold text-neutral-900">
+              Abdomen AI Yardımcı Ajan (v1) — Karaciğer + Safra (BT/MR/BT+MR)
+            </h1>
+            <p className="mt-1 text-sm text-neutral-600">
+              Formu doldurdukça <span className="font-semibold">AI Çıktı paneli canlı güncellenir</span>.
+              (Demo / kural tabanlı)
+            </p>
           </div>
 
-          <div className="mt-2 flex items-center justify-end gap-2">
+          <div className="flex gap-2">
             <button
-              type="button"
-              className="h-10 rounded-xl border border-neutral-900 bg-neutral-900 px-4 text-sm font-medium text-white hover:bg-neutral-800"
-              onClick={() => {
-                outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
+              onClick={() => copyText(output.fullText)}
+              className="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
             >
-              Çıktıya Git
+              Tam Çıktıyı Kopyala
             </button>
-
             <button
-              type="button"
-              className="h-10 rounded-xl border border-neutral-300 bg-white px-4 text-sm font-medium text-neutral-800 hover:bg-neutral-50"
               onClick={resetAll}
+              className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-100"
             >
               Sıfırla
             </button>
           </div>
-
-          <div className="text-center text-xs text-neutral-500">
-            ✅ Canlı çıktı: alanları değiştirdikçe rapor/ayırıcı tanı/öneriler otomatik güncellenir.
-          </div>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-12">
+        {/* Layout */}
+        <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
           {/* LEFT */}
-          <div className="lg:col-span-7 xl:col-span-8 grid gap-4">
-            <Section title="1) İnceleme & Klinik Zemin">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Field label="İnceleme tipi" hint="BT seçilirse MR alanları gizlenir; MR seçilirse BT alanları gizlenir.">
-                  <Select value={examType} onChange={(v) => setExamType(v as any)} options={["BT", "MR", "BT+MR"]} />
-                </Field>
-
-                <Field label="Malignite öyküsü">
-                  <Select value={malignHx} onChange={(v) => setMalignHx(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-                </Field>
-
-                {showCT && (
-                  <Field label="BT kontrast durumu" hint="Kontrastsız BT seçilirse kontrast patern soruları gizlenir.">
-                    <Select value={ctContrast} onChange={(v) => setCtContrast(v as any)} options={["Bilinmiyor", "Kontrastsız", "Kontrastlı (dinamik)"]} />
-                  </Field>
-                )}
-
-                {showMR && (
-                  <Field label="MR dinamik seri" hint="Dinamiksiz seçilirse dinamik patern soruları gizlenir.">
-                    <Select value={mrDynamic} onChange={(v) => setMrDynamic(v as any)} options={["Bilinmiyor", "Dinamiksiz", "Dinamik (arteryel/portal/geç)"]} />
-                  </Field>
-                )}
-
-                <Field label="Siroz / kronik KC">
-                  <Select value={cirrhosis} onChange={(v) => setCirrhosis(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-                </Field>
-
-                <Field label="Ateş / enfeksiyon">
-                  <Select value={feverInf} onChange={(v) => setFeverInf(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-                </Field>
-
-                <Field label="Sarılık / kolestaz">
-                  <Select value={jaundiceChol} onChange={(v) => setJaundiceChol(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-                </Field>
-              </div>
-            </Section>
-
-            <Section title="2) Karaciğer (Parankim & Lezyon)">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Field label="Karaciğerde lezyon">
-                  <Select value={liverLesion} onChange={(v) => setLiverLesion(v as any)} options={["Yok", "Var"]} />
-                </Field>
-
-                <Field label="Yağlı karaciğer">
-                  <Select value={fattyLiver} onChange={(v) => setFattyLiver(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-                </Field>
-
-                <Field label="Lezyon sayısı" disabled={liverLesion !== "Var"}>
-                  <Select value={lesionCount} onChange={(v) => setLesionCount(v as any)} options={["Tek", "Çok", "Bilinmiyor"]} disabled={liverLesion !== "Var"} />
-                </Field>
-
-                <Field label="Segment" disabled={liverLesion !== "Var"}>
-                  <Select value={segment} onChange={(v) => setSegment(v as any)} options={["Bilinmiyor", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"]} disabled={liverLesion !== "Var"} />
-                </Field>
-
-                <Field label="En büyük boyut (mm)" disabled={liverLesion !== "Var"}>
-                  <Input value={largestMm} onChange={setLargestMm} placeholder="örn: 18" disabled={liverLesion !== "Var"} />
-                </Field>
-
-                <Field label="Sınır" disabled={liverLesion !== "Var"}>
-                  <Select value={margin} onChange={(v) => setMargin(v as any)} options={["Düzgün", "Düzensiz", "Bilinmiyor"]} disabled={liverLesion !== "Var"} />
-                </Field>
-
-                <Field label="Vasküler invazyon" disabled={liverLesion !== "Var"}>
-                  <Select value={vascularInv} onChange={(v) => setVascularInv(v as any)} options={["Bilinmiyor", "Yok", "Var"]} disabled={liverLesion !== "Var"} />
-                </Field>
+          <div className="space-y-4">
+            {/* 1) İnceleme & Klinik */}
+            <div className={cx(leftCard, "p-4")}>
+              <div className="mb-3 flex items-center justify-between">
+                <div className={sectionTitle}>1) İnceleme & Klinik Zemin</div>
+                <div className="text-xs text-neutral-500">
+                  İpucu: Modality’ye göre ilgili alanlar görünür/gizlenir.
+                </div>
               </div>
 
-              {showCT && (
-                <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
-                  <div className="mb-3 text-sm font-semibold">BT (Karaciğer)</div>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <Field label="Nonkontrast densite" disabled={liverLesion !== "Var"}>
-                      <Select value={ctDensity} onChange={(v) => setCtDensity(v as any)} options={["Hipodens", "İzodens", "Hiperdens", "Bilinmiyor"]} disabled={liverLesion !== "Var"} />
-                    </Field>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <div className={label}>İnceleme tipi</div>
+                  <select
+                    className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                    value={modality}
+                    onChange={(e) => setModality(e.target.value as Modality)}
+                  >
+                    <option value="BT">BT</option>
+                    <option value="MR">MR</option>
+                    <option value="BT+MR">BT+MR</option>
+                  </select>
+                  <div className={help}>BT+MR seçilirse iki modalite birlikte değerlendirilir.</div>
+                </div>
 
-                    <Field
-                      label="Kontrastlanma paterni"
-                      disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}
-                      hint={
-                        isCtNonContrast ? "Kontrastsız BT → patern soruları kapalı." : ctContrast === "Bilinmiyor" ? "Kontrast durumu bilinmiyor → patern sınırlı yorumlanır." : undefined
-                      }
+                {showCT ? (
+                  <div>
+                    <div className={label}>BT kontrast durumu</div>
+                    <select
+                      className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                      value={ctContrast}
+                      onChange={(e) => setCtContrast(e.target.value as CTContrast)}
                     >
-                      <Select
-                        value={ctEnhPattern}
-                        onChange={(v) => setCtEnhPattern(v as any)}
-                        options={["Periferik nodüler", "Homojen", "Halka (rim)", "Heterojen", "Arteryel hiper", "Bilinmiyor"]}
-                        disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}
-                      />
-                    </Field>
-
-                    <Field label="Geç dolum (fill-in)" disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}>
-                      <Select value={ctFillIn} onChange={(v) => setCtFillIn(v as any)} options={["Bilinmiyor", "Yok", "Var"]} disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"} />
-                    </Field>
-
-                    <Field label="Washout" disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"}>
-                      <Select value={ctWashout} onChange={(v) => setCtWashout(v as any)} options={["Bilinmiyor", "Yok", "Var"]} disabled={liverLesion !== "Var" || isCtNonContrast || ctContrast === "Bilinmiyor"} />
-                    </Field>
-                  </div>
-                </div>
-              )}
-
-              {showMR && (
-                <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
-                  <div className="mb-3 text-sm font-semibold">MR (Karaciğer)</div>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <Field label="T1 sinyal" disabled={liverLesion !== "Var"}>
-                      <Select value={mrT1} onChange={(v) => setMrT1(v as any)} options={["Bilinmiyor", "Hipo", "İzo", "Hiper"]} disabled={liverLesion !== "Var"} />
-                    </Field>
-
-                    <Field label="T2 sinyal" disabled={liverLesion !== "Var"}>
-                      <Select value={mrT2} onChange={(v) => setMrT2(v as any)} options={["Bilinmiyor", "Hipo", "İzo", "Hiper"]} disabled={liverLesion !== "Var"} />
-                    </Field>
-
-                    <Field label="DWI kısıtlılığı" disabled={liverLesion !== "Var"}>
-                      <Select value={dwiRestrict} onChange={(v) => setDwiRestrict(v as any)} options={["Bilinmiyor", "Yok", "Var"]} disabled={liverLesion !== "Var"} />
-                    </Field>
-
-                    <Field
-                      label="Dinamik kontrast paterni"
-                      disabled={liverLesion !== "Var" || isMrNoDynamic || mrDynamic === "Bilinmiyor"}
-                      hint={
-                        isMrNoDynamic ? "Dinamiksiz MR → patern soruları kapalı." : mrDynamic === "Bilinmiyor" ? "Dinamik durumu bilinmiyor → patern sınırlı yorumlanır." : undefined
-                      }
-                    >
-                      <Select
-                        value={mrEnhPattern}
-                        onChange={(v) => setMrEnhPattern(v as any)}
-                        options={["Bilinmiyor", "Arteryel hiper", "Periferik nodüler", "Halka (rim)", "Homojen", "Heterojen"]}
-                        disabled={liverLesion !== "Var" || isMrNoDynamic || mrDynamic === "Bilinmiyor"}
-                      />
-                    </Field>
-
-                    <Field label="Washout" disabled={liverLesion !== "Var" || isMrNoDynamic || mrDynamic === "Bilinmiyor"}>
-                      <Select value={mrWashout} onChange={(v) => setMrWashout(v as any)} options={["Bilinmiyor", "Yok", "Var"]} disabled={liverLesion !== "Var" || isMrNoDynamic || mrDynamic === "Bilinmiyor"} />
-                    </Field>
-
-                    <Field label="Hepatobiliyer faz (HBP)" hint="Gadoxetic asit yoksa 'Yapılmadı' seç." disabled={liverLesion !== "Var"}>
-                      <Select value={hbPhase} onChange={(v) => setHbPhase(v as any)} options={["Bilinmiyor", "Yapılmadı", "Hipointens", "İzointens", "Hiperintens"]} disabled={liverLesion !== "Var"} />
-                    </Field>
-                  </div>
-                </div>
-              )}
-            </Section>
-
-            <Section title="3) Safra Kesesi (Var/Yok → Detay)">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Field label="Safra kesesinde patoloji">
-                  <Select value={gbPath} onChange={(v) => setGbPath(v as any)} options={["Yok", "Var"]} />
-                </Field>
-
-                {gbPath === "Var" && (
-                  <Field label="Ön tanı / sık patoloji">
-                    <Select
-                      value={gbDx}
-                      onChange={(v) => setGbDx(v as any)}
-                      options={[
-                        "Kolesistolitiazis (taş)",
-                        "Akut kolesistit",
-                        "Kronik kolesistit",
-                        "Polip",
-                        "Kitle (şüpheli)",
-                        "Bilier çamur",
-                        "Porcelain GB",
-                        "Adenomiyomatozis",
-                        "Bilinmiyor",
-                      ]}
-                    />
-                  </Field>
-                )}
-              </div>
-
-              {gbPath === "Var" && (
-                <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
-                  <div className="mb-3 text-sm font-semibold">Detay bulgular</div>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <Field label="Duvar kalınlaşması">
-                      <Select value={gbWallThick} onChange={(v) => setGbWallThick(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-                    </Field>
-                    <Field label="Perikolesistik sıvı">
-                      <Select value={gbPeriFluid} onChange={(v) => setGbPeriFluid(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-                    </Field>
-                    <Field label="Distansiyon">
-                      <Select value={gbDistension} onChange={(v) => setGbDistension(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-                    </Field>
-                    <Field label="Murphy (klinik)">
-                      <Select value={murphy} onChange={(v) => setMurphy(v as any)} options={["Bilinmiyor", "Negatif", "Pozitif"]} />
-                    </Field>
-                    <Field label="Duvar/lümende gaz">
-                      <Select value={gbGas} onChange={(v) => setGbGas(v as any)} options={["Yok", "Var"]} />
-                    </Field>
-                    <Field label="Polip boyutu (mm)" disabled={gbDx !== "Polip"}>
-                      <Input value={polypMm} onChange={setPolypMm} disabled={gbDx !== "Polip"} />
-                    </Field>
-                    <Field label="Perforasyon/komplikasyon">
-                      <Select value={gbComp} onChange={(v) => setGbComp(v as any)} options={["Yok", "Perforasyon şüphesi", "Ampiyem", "Gangren", "Bilinmiyor"]} />
-                    </Field>
-                  </div>
-                </div>
-              )}
-            </Section>
-
-            <Section title="4) Safra Yolları (Var/Yok → Detay)">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Field label="Safra yollarında patoloji">
-                  <Select value={bdPath} onChange={(v) => setBdPath(v as any)} options={["Yok", "Var"]} />
-                </Field>
-
-                {bdPath === "Var" && (
-                  <Field label="Olası neden">
-                    <Select value={bdCause} onChange={(v) => setBdCause(v as any)} options={["Belirsiz", "Koledok taşı", "Benign striktür", "Malign obstrüksiyon", "Kolanjit", "PSC (şüpheli)", "İatrojenik"]} />
-                  </Field>
-                )}
-              </div>
-
-              {bdPath === "Var" && (
-                <div className="mt-4 rounded-2xl border border-neutral-200 p-4">
-                  <div className="mb-3 text-sm font-semibold">Detay bulgular</div>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <Field label="Dilatas­yon">
-                      <Select value={bdDil} onChange={(v) => setBdDil(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-                    </Field>
-                    <Field label="Seviye">
-                      <Select value={bdLevel} onChange={(v) => setBdLevel(v as any)} options={["Bilinmiyor", "İntrahepatik", "Ekstrahepatik", "Her ikisi"]} />
-                    </Field>
-                    <Field label="Kolanjit şüphesi">
-                      <Select value={cholangitis} onChange={(v) => setCholangitis(v as any)} options={["Yok", "Var"]} />
-                    </Field>
-                    <Field label="Koledok taşı">
-                      <Select value={bdStone} onChange={(v) => setBdStone(v as any)} options={["Yok", "Var"]} />
-                    </Field>
-                    <Field label="Striktür tipi">
-                      <Select value={bdStricture} onChange={(v) => setBdStricture(v as any)} options={["Bilinmiyor", "Yok", "Benign striktür", "Malign striktür"]} />
-                    </Field>
-                    <Field label="PSC patern">
-                      <Select value={pscPattern} onChange={(v) => setPscPattern(v as any)} options={["Yok", "Var"]} />
-                    </Field>
-                    <Field label="Kitle şüphesi">
-                      <Select value={bdMassSuspect} onChange={(v) => setBdMassSuspect(v as any)} options={["Bilinmiyor", "Yok", "Var"]} />
-                    </Field>
-                  </div>
-                </div>
-              )}
-            </Section>
-
-            <Section title="Ek Bulgular / İnsidental / Kesit alanına giren diğer bulgular" right={<div className="text-xs text-neutral-500">Serbest metin</div>}>
-              <TextArea
-                value={extraFindings}
-                onChange={setExtraFindings}
-                placeholder="Örn: Sağ böbrek alt polde 6 mm nonobstrüktif taş. Dalakta 8 mm hipodens lezyon (kist lehine). Akciğer bazallerinde bant atelektazi..."
-              />
-              <div className="mt-2 text-xs text-neutral-500">
-                Bu alan <b>EK BULGULAR</b> başlığına düşer ve SONUÇ cümlesine de kısa şekilde entegre edilir.
-              </div>
-            </Section>
-          </div>
-
-          {/* RIGHT */}
-          <div className="lg:col-span-5 xl:col-span-4">
-            <div className="lg:sticky lg:top-4 grid gap-4">
-              <div ref={outputRef} />
-
-              <Section
-                title="AI Çıktı"
-                right={
-                  <div className="flex flex-wrap items-center justify-end gap-2">
-                    <CopyButton
-                      text={findingsAndConclusionToCopy}
-                      label="Bulgular+Sonuç"
-                      copiedLabel="Kopyalandı"
-                    />
-                    <CopyButton text={reportOnlyToCopy} label="Raporu Kopyala" copiedLabel="Rapor Kopyalandı" />
-                    <CopyButton text={allTextToCopy} label="Tam Çıktı" copiedLabel="Tam Çıktı Kopyalandı" />
-                    <div className="text-xs text-neutral-500">(Canlı)</div>
-                  </div>
-                }
-              >
-                <div className="grid gap-4">
-                  <Card title="Bulgular (Organ Başlıklı)">
-                    <div className="space-y-4 text-sm">
-                      {outputs.findingsBlocks.map((b) => (
-                        <div key={b.title}>
-                          <div className="mb-2 text-xs font-semibold tracking-wide text-neutral-700">
-                            {b.title.toUpperCase()}
-                          </div>
-                          <ul className="list-disc space-y-2 pl-5">
-                            {b.lines.map((l, i) => (
-                              <li key={i}>{l}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))}
+                      <option value="Bilinmiyor">Bilinmiyor</option>
+                      <option value="Kontrastsız">Kontrastsız</option>
+                      <option value="Kontrastlı">Kontrastlı</option>
+                    </select>
+                    <div className={help}>
+                      Kontrastsız seçilirse kontrast paterni soruları gizlenir.
                     </div>
-                  </Card>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-3 text-sm text-neutral-500">
+                    BT seçili değil → BT alanları gizli
+                  </div>
+                )}
 
-                  {outputs.reportExtraBucket.length ? (
-                    <Card title="Ek Bulgular">
-                      <ul className="list-disc space-y-2 pl-5 text-sm">
-                        {outputs.reportExtraBucket.map((x, i) => (
-                          <li key={i}>{x}</li>
+                {showMR ? (
+                  <div>
+                    <div className={label}>MR dinamik/HBP durumu</div>
+                    <select
+                      className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                      value={mrDynamic}
+                      onChange={(e) => setMrDynamic(e.target.value as MRDynamic)}
+                    >
+                      <option value="Bilinmiyor">Bilinmiyor</option>
+                      <option value="Dinamiksiz">Dinamiksiz</option>
+                      <option value="Dinamik var">Dinamik var</option>
+                    </select>
+                    <div className={help}>
+                      Dinamiksiz seçilirse arteriyel/washout/HBP alanları gizlenir.
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-3 text-sm text-neutral-500">
+                    MR seçili değil → MR alanları gizli
+                  </div>
+                )}
+
+                <div>
+                  <div className={label}>Malignite öyküsü</div>
+                  <select
+                    className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                    value={malignancyHx}
+                    onChange={(e) => setMalignancyHx(e.target.value as YesNoUnknown)}
+                  >
+                    <option>Bilinmiyor</option>
+                    <option>Yok</option>
+                    <option>Var</option>
+                  </select>
+                </div>
+
+                <div>
+                  <div className={label}>Siroz / kronik KC</div>
+                  <select
+                    className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                    value={cirrhosis}
+                    onChange={(e) => setCirrhosis(e.target.value as YesNoUnknown)}
+                  >
+                    <option>Bilinmiyor</option>
+                    <option>Yok</option>
+                    <option>Var</option>
+                  </select>
+                </div>
+
+                <div>
+                  <div className={label}>Ateş / enfeksiyon</div>
+                  <select
+                    className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                    value={feverInf}
+                    onChange={(e) => setFeverInf(e.target.value as YesNoUnknown)}
+                  >
+                    <option>Bilinmiyor</option>
+                    <option>Yok</option>
+                    <option>Var</option>
+                  </select>
+                </div>
+
+                <div>
+                  <div className={label}>Sarılık / kolestaz</div>
+                  <select
+                    className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                    value={jaundiceCholestasis}
+                    onChange={(e) => setJaundiceCholestasis(e.target.value as YesNoUnknown)}
+                  >
+                    <option>Bilinmiyor</option>
+                    <option>Yok</option>
+                    <option>Var</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* 2) Karaciğer */}
+            <div className={cx(leftCard, "p-4")}>
+              <div className="mb-3 flex items-center justify-between">
+                <div className={sectionTitle}>2) Karaciğer (Parankim & Lezyon)</div>
+                <div className="text-xs text-neutral-500">Lezyon=Var seçilince detay açılır.</div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <div className={label}>Karaciğerde lezyon</div>
+                  <select
+                    className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                    value={liverLesion}
+                    onChange={(e) => setLiverLesion(e.target.value as YesNoUnknown)}
+                  >
+                    <option>Yok</option>
+                    <option>Var</option>
+                    <option>Bilinmiyor</option>
+                  </select>
+                </div>
+
+                <div>
+                  <div className={label}>Yağlı karaciğer</div>
+                  <select
+                    className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                    value={fattyLiver}
+                    onChange={(e) => setFattyLiver(e.target.value as YesNoUnknown)}
+                  >
+                    <option>Bilinmiyor</option>
+                    <option>Yok</option>
+                    <option>Var</option>
+                  </select>
+                </div>
+              </div>
+
+              {liverLesion === "Var" ? (
+                <div className="mt-4 space-y-4">
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <div>
+                      <div className={label}>Lezyon sayısı</div>
+                      <select
+                        className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                        value={lesionCount}
+                        onChange={(e) => setLesionCount(e.target.value as "Tek" | "Çoklu")}
+                      >
+                        <option>Tek</option>
+                        <option>Çoklu</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div className={label}>Segment</div>
+                      <select
+                        className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                        value={segment}
+                        onChange={(e) => setSegment(e.target.value)}
+                      >
+                        {["S1", "S2", "S3", "S4a", "S4b", "S5", "S6", "S7", "S8"].map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
                         ))}
-                      </ul>
-                    </Card>
-                  ) : null}
+                      </select>
+                    </div>
+                    <div>
+                      <div className={label}>En büyük boyut (mm)</div>
+                      <input
+                        type="number"
+                        className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                        value={maxSizeMm}
+                        onChange={(e) => setMaxSizeMm(Number(e.target.value))}
+                        min={1}
+                      />
+                    </div>
 
-                  <Card title="Ayırıcı Tanı (Organ bazlı)">
-                    <pre className="whitespace-pre-wrap text-sm leading-relaxed">{ddxText}</pre>
-                  </Card>
+                    <div>
+                      <div className={label}>Sınır</div>
+                      <select
+                        className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                        value={margin}
+                        onChange={(e) => setMargin(e.target.value as any)}
+                      >
+                        <option>Düzgün</option>
+                        <option>Düzensiz</option>
+                        <option>Bilinmiyor</option>
+                      </select>
+                    </div>
 
-                  <Card title="Öneriler">
-                    {outputs.rec.length ? (
-                      <ul className="list-disc space-y-2 pl-5 text-sm">
-                        {outputs.rec.map((x, i) => (
-                          <li key={i}>{x}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <div className="text-sm text-neutral-500">—</div>
-                    )}
-                  </Card>
+                    <div>
+                      <div className={label}>Vasküler invazyon</div>
+                      <select
+                        className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                        value={vascularInvasion}
+                        onChange={(e) => setVascularInvasion(e.target.value as YesNoUnknown)}
+                      >
+                        <option>Bilinmiyor</option>
+                        <option>Yok</option>
+                        <option>Var</option>
+                      </select>
+                    </div>
+                  </div>
 
-                  <Card title="İleri İnceleme (sekans dahil)">
-                    {outputs.advanced.length ? (
-                      <ul className="list-disc space-y-2 pl-5 text-sm">
-                        {outputs.advanced.map((x, i) => (
-                          <li key={i}>{x}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <div className="text-sm text-neutral-500">—</div>
-                    )}
-                  </Card>
+                  {/* CT sub */}
+                  {showCT ? (
+                    <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                      <div className="mb-2 text-sm font-semibold text-neutral-800">
+                        BT (Karaciğer)
+                      </div>
 
-                  <Card title="Acil / Uyarı">
-                    {outputs.alerts.length ? (
-                      <ul className="list-disc space-y-2 pl-5 text-sm">
-                        {outputs.alerts.map((x, i) => (
-                          <li key={i}>{x}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <div className="text-sm text-neutral-500">—</div>
-                    )}
-                  </Card>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div>
+                          <div className={label}>Nonkontrast densite</div>
+                          <select
+                            className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                            value={ctDensity}
+                            onChange={(e) => setCtDensity(e.target.value as LiverDensity)}
+                          >
+                            <option>Hipodens</option>
+                            <option>İzodens</option>
+                            <option>Hiperdens</option>
+                            <option>Bilinmiyor</option>
+                          </select>
+                        </div>
 
-                  <div className="rounded-2xl border border-neutral-200 bg-white p-4">
-                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                      <div className="font-semibold">Sonuç (Tek Cümle)</div>
-                      <div className="flex items-center gap-2">
-                        <select
-                          className="h-10 rounded-xl border border-neutral-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-neutral-200"
-                          value={finalFormat}
-                          onChange={(e) => setFinalFormat(e.target.value as any)}
-                        >
-                          <option>Olasılık dili</option>
-                          <option>Öneri dili</option>
-                          <option>Nötr</option>
-                        </select>
-                        <CopyButton text={outputs.finalSentence} label="Sonucu Kopyala" copiedLabel="Sonuç Kopyalandı" />
+                        {showCTPattern ? (
+                          <>
+                            <div>
+                              <div className={label}>Kontrastlanma paterni</div>
+                              <select
+                                className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                                value={ctEnhPattern}
+                                onChange={(e) => setCtEnhPattern(e.target.value as CTEnhPattern)}
+                              >
+                                <option value="Belirsiz">Belirsiz</option>
+                                <option value="Periferik nodüler">Periferik nodüler</option>
+                                <option value="Homojen erken">Homojen erken</option>
+                                <option value="Heterojen">Heterojen</option>
+                                <option value="Halka tarzı (rim)">Halka tarzı (rim)</option>
+                                <option value="Progressif santral">Progressif santral</option>
+                                <option value="Non-enhancing">Non-enhancing</option>
+                                <option value="Bilinmiyor">Bilinmiyor</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <div className={label}>Geç dolum (fill-in)</div>
+                              <select
+                                className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                                value={ctFillIn}
+                                onChange={(e) => setCtFillIn(e.target.value as YesNoUnknown)}
+                              >
+                                <option>Bilinmiyor</option>
+                                <option>Yok</option>
+                                <option>Var</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <div className={label}>Washout</div>
+                              <select
+                                className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                                value={ctWashout}
+                                onChange={(e) => setCtWashout(e.target.value as YesNoUnknown)}
+                              >
+                                <option>Bilinmiyor</option>
+                                <option>Yok</option>
+                                <option>Var</option>
+                              </select>
+                            </div>
+
+                            <div className="md:col-span-2 text-xs text-neutral-500">
+                              Kontrastlı BT seçili. Patern verisi ayırıcı tanıyı rafine eder.
+                            </div>
+                          </>
+                        ) : (
+                          <div className="md:col-span-1 rounded-xl border border-dashed border-neutral-300 bg-white p-3 text-sm text-neutral-500">
+                            BT kontrastlı değil → patern alanları gizli (baz ddx yine üretilecek).
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="rounded-xl border border-neutral-300 bg-white p-3 text-sm">{outputs.finalSentence}</div>
+                  ) : null}
 
-                    <div className="mt-2 text-xs text-neutral-500">
-                      ✅ Canlı çıktı: alanları değiştirdikçe rapor/ayırıcı tanı/öneriler otomatik güncellenir.
+                  {/* MR sub */}
+                  {showMR ? (
+                    <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                      <div className="mb-2 text-sm font-semibold text-neutral-800">
+                        MR (Karaciğer)
+                      </div>
+
+                      <div className="grid gap-3 md:grid-cols-3">
+                        <div>
+                          <div className={label}>T1</div>
+                          <select
+                            className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                            value={mrT1}
+                            onChange={(e) => setMrT1(e.target.value as MRT1)}
+                          >
+                            <option>Bilinmiyor</option>
+                            <option>Hipo</option>
+                            <option>İzo</option>
+                            <option>Hiper</option>
+                          </select>
+                        </div>
+                        <div>
+                          <div className={label}>T2</div>
+                          <select
+                            className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                            value={mrT2}
+                            onChange={(e) => setMrT2(e.target.value as MRT2)}
+                          >
+                            <option>Bilinmiyor</option>
+                            <option>Hipo</option>
+                            <option>İzo</option>
+                            <option>Hiper</option>
+                          </select>
+                        </div>
+                        <div>
+                          <div className={label}>DWI</div>
+                          <select
+                            className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                            value={mrDwi}
+                            onChange={(e) => setMrDwi(e.target.value as DWI)}
+                          >
+                            <option>Bilinmiyor</option>
+                            <option>Restriksiyon yok</option>
+                            <option>Restriksiyon var</option>
+                          </select>
+                        </div>
+
+                        {showMRDynFields ? (
+                          <>
+                            <div>
+                              <div className={label}>Arteriyel hiper</div>
+                              <select
+                                className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                                value={mrArterialHyper}
+                                onChange={(e) => setMrArterialHyper(e.target.value as YesNoUnknown)}
+                              >
+                                <option>Bilinmiyor</option>
+                                <option>Yok</option>
+                                <option>Var</option>
+                              </select>
+                            </div>
+                            <div>
+                              <div className={label}>Washout</div>
+                              <select
+                                className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                                value={mrWashout}
+                                onChange={(e) => setMrWashout(e.target.value as YesNoUnknown)}
+                              >
+                                <option>Bilinmiyor</option>
+                                <option>Yok</option>
+                                <option>Var</option>
+                              </select>
+                            </div>
+                            <div>
+                              <div className={label}>Kapsül</div>
+                              <select
+                                className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                                value={mrCapsule}
+                                onChange={(e) => setMrCapsule(e.target.value as YesNoUnknown)}
+                              >
+                                <option>Bilinmiyor</option>
+                                <option>Yok</option>
+                                <option>Var</option>
+                              </select>
+                            </div>
+
+                            <div className="md:col-span-3">
+                              <div className={label}>HBP (hepatobiliyer faz)</div>
+                              <select
+                                className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                                value={mrHBP}
+                                onChange={(e) => setMrHBP(e.target.value as any)}
+                              >
+                                <option>Bilinmiyor</option>
+                                <option>Hipointens</option>
+                                <option>İzointens</option>
+                                <option>Hiperintens</option>
+                              </select>
+                              <div className={help}>Dinamik/HBP var ise ddx rafine edilir (FNH/HCC vb).</div>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="md:col-span-3 rounded-xl border border-dashed border-neutral-300 bg-white p-3 text-sm text-neutral-500">
+                            Dinamik/HBP yok → yine de T1/T2/DWI kombinasyonlarından “baz ddx” üretilecektir.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="mt-3 rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-3 text-sm text-neutral-500">
+                  Lezyon “Var” seçilirse karaciğer detay alanları açılır.
+                </div>
+              )}
+            </div>
+
+            {/* 3) Safra Kesesi */}
+            <div className={cx(leftCard, "p-4")}>
+              <div className="mb-3 flex items-center justify-between">
+                <div className={sectionTitle}>3) Safra Kesesi (Var/Yok → Detay)</div>
+                <div className="text-xs text-neutral-500">Var seçilince sub-seçimler açılır.</div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <div className={label}>Safra kesesinde patoloji</div>
+                  <select
+                    className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                    value={gbPath}
+                    onChange={(e) => setGbPath(e.target.value as YesNoUnknown)}
+                  >
+                    <option>Yok</option>
+                    <option>Var</option>
+                    <option>Bilinmiyor</option>
+                  </select>
+                </div>
+
+                {gbPath === "Var" ? (
+                  <div>
+                    <div className={label}>Ön tanı / sık patoloji</div>
+                    <select
+                      className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                      value={gbDx}
+                      onChange={(e) => setGbDx(e.target.value as any)}
+                    >
+                      <option>Kolesistolitiazis (taş)</option>
+                      <option>Biliyer çamur</option>
+                      <option>Akut kolesistit</option>
+                      <option>Kronik kolesistit</option>
+                      <option>Polip</option>
+                      <option>Porcelain GB</option>
+                      <option>Emfizematöz kolesistit</option>
+                      <option>GB kitle şüphesi</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-3 text-sm text-neutral-500">
+                    Patoloji=Var değil → detay gizli
+                  </div>
+                )}
+              </div>
+
+              {gbPath === "Var" ? (
+                <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                  <div className="mb-2 text-sm font-semibold text-neutral-800">Detay bulgular</div>
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <div>
+                      <div className={label}>Duvar kalınlaşması</div>
+                      <select
+                        className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                        value={gbWall}
+                        onChange={(e) => setGbWall(e.target.value as YesNoUnknown)}
+                      >
+                        <option>Bilinmiyor</option>
+                        <option>Yok</option>
+                        <option>Var</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div className={label}>Perikolesistik sıvı</div>
+                      <select
+                        className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                        value={gbPeriFluid}
+                        onChange={(e) => setGbPeriFluid(e.target.value as YesNoUnknown)}
+                      >
+                        <option>Bilinmiyor</option>
+                        <option>Yok</option>
+                        <option>Var</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div className={label}>Distansiyon</div>
+                      <select
+                        className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                        value={gbDistension}
+                        onChange={(e) => setGbDistension(e.target.value as YesNoUnknown)}
+                      >
+                        <option>Bilinmiyor</option>
+                        <option>Yok</option>
+                        <option>Var</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <div className={label}>Murphy (klinik)</div>
+                      <select
+                        className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                        value={gbMurphy}
+                        onChange={(e) => setGbMurphy(e.target.value as YesNoUnknown)}
+                      >
+                        <option>Bilinmiyor</option>
+                        <option>Yok</option>
+                        <option>Var</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div className={label}>Duvar/lümende gaz</div>
+                      <select
+                        className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                        value={gbGas}
+                        onChange={(e) => setGbGas(e.target.value as any)}
+                      >
+                        <option value="Yok">Yok</option>
+                        <option value="Var">Var</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <div className={label}>Polip boyutu (mm)</div>
+                      <input
+                        type="number"
+                        className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                        value={gbPolypMm}
+                        onChange={(e) => setGbPolypMm(Number(e.target.value))}
+                        min={1}
+                      />
+                      <div className={help}>Sadece polip senaryosunda anlamlı.</div>
+                    </div>
+
+                    <div className="md:col-span-3">
+                      <div className={label}>Komplikasyon</div>
+                      <select
+                        className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                        value={gbComplication}
+                        onChange={(e) => setGbComplication(e.target.value as any)}
+                      >
+                        <option>Yok</option>
+                        <option>Bilinmiyor</option>
+                        <option>Perforasyon şüphesi</option>
+                        <option>Gangren/nekroz şüphesi</option>
+                      </select>
                     </div>
                   </div>
                 </div>
-              </Section>
+              ) : null}
+            </div>
 
-              <div className="text-xs text-neutral-500">
-                ⚠️ Klinik karar destek amaçlıdır; klinik/laboratuvar ve önceki tetkiklerle korelasyon esastır.
+            {/* 4) Safra Yolları */}
+            <div className={cx(leftCard, "p-4")}>
+              <div className="mb-3 flex items-center justify-between">
+                <div className={sectionTitle}>4) Safra Yolları (Var/Yok → Detay)</div>
+                <div className="text-xs text-neutral-500">Var seçilince sub-seçimler açılır.</div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <div className={label}>Safra yollarında patoloji</div>
+                  <select
+                    className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                    value={bdPath}
+                    onChange={(e) => setBdPath(e.target.value as YesNoUnknown)}
+                  >
+                    <option>Yok</option>
+                    <option>Var</option>
+                    <option>Bilinmiyor</option>
+                  </select>
+                </div>
+
+                {bdPath === "Var" ? (
+                  <div>
+                    <div className={label}>Olası neden</div>
+                    <select
+                      className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                      value={bdCause}
+                      onChange={(e) => setBdCause(e.target.value as any)}
+                    >
+                      <option>Belirsiz</option>
+                      <option>Koledok taşı</option>
+                      <option>Benign striktür</option>
+                      <option>Malign obstrüksiyon</option>
+                      <option>PSC paterni</option>
+                      <option>Kolangit şüphesi</option>
+                      <option>Pankreatit ile ilişkili</option>
+                      <option>Stent/operasyon sonrası</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-3 text-sm text-neutral-500">
+                    Patoloji=Var değil → detay gizli
+                  </div>
+                )}
+              </div>
+
+              {bdPath === "Var" ? (
+                <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                  <div className="mb-2 text-sm font-semibold text-neutral-800">Detay bulgular</div>
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <div>
+                      <div className={label}>Dilatatasyon</div>
+                      <select
+                        className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                        value={bdDilatation}
+                        onChange={(e) => setBdDilatation(e.target.value as YesNoUnknown)}
+                      >
+                        <option>Bilinmiyor</option>
+                        <option>Yok</option>
+                        <option>Var</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div className={label}>Seviye</div>
+                      <select
+                        className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                        value={bdLevel}
+                        onChange={(e) => setBdLevel(e.target.value as any)}
+                      >
+                        <option>Bilinmiyor</option>
+                        <option>İntrahepatik</option>
+                        <option>Ekstrahepatik</option>
+                        <option>Her ikisi</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div className={label}>Kolangit şüphesi</div>
+                      <select
+                        className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                        value={bdCholangitis}
+                        onChange={(e) => setBdCholangitis(e.target.value as YesNoUnknown)}
+                      >
+                        <option>Bilinmiyor</option>
+                        <option>Yok</option>
+                        <option>Var</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <div className={label}>Kitle şüphesi</div>
+                      <select
+                        className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                        value={bdMassSusp}
+                        onChange={(e) => setBdMassSusp(e.target.value as YesNoUnknown)}
+                      >
+                        <option>Bilinmiyor</option>
+                        <option>Yok</option>
+                        <option>Var</option>
+                      </select>
+                    </div>
+
+                    <div className="md:col-span-2 rounded-xl border border-dashed border-neutral-300 bg-white p-3 text-xs text-neutral-500">
+                      İpucu: Patoloji=Var + kolestaz/dilatasyon varsa önerilerde MRCP/ERCP otomatik güçlenir.
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {/* Ek bulgular */}
+            <div className={cx(leftCard, "p-4")}>
+              <div className="mb-2 flex items-center justify-between">
+                <div className={sectionTitle}>
+                  Ek Bulgular / İnsidental / Kesit alanına giren diğer bulgular
+                </div>
+                <div className="text-xs text-neutral-500">Yazdığın metin rapora ve final cümleye entegre olur.</div>
+              </div>
+              <textarea
+                className="mt-1 w-full rounded-2xl border border-neutral-300 bg-white px-3 py-3 text-sm"
+                rows={4}
+                value={incidentalText}
+                onChange={(e) => setIncidentalText(e.target.value)}
+                placeholder="Örn: Sağ böbrekte 12 mm basit kist. Sol adrenal 8 mm yağ içerikli adenom ile uyumlu..."
+              />
+              <div className={help}>Buraya yazılan metin “Ek bulgular/insidental” olarak ayrı cümlede eklenir.</div>
+            </div>
+          </div>
+
+          {/* RIGHT: Sticky AI Panel */}
+          <div className="lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)] lg:overflow-auto">
+            <div className={cx(panelCard, "space-y-3")}>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="text-lg font-bold text-neutral-900">AI Çıktı</div>
+                  <div className="text-xs text-neutral-500">(Canlı) Kural tabanlı</div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => copyText(output.reportText)}
+                    className="rounded-xl bg-neutral-900 px-3 py-2 text-xs font-semibold text-white hover:bg-neutral-800"
+                  >
+                    Raporu Kopyala
+                  </button>
+                  <button
+                    onClick={() => copyText(output.fullText)}
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-xs font-semibold text-neutral-900 hover:bg-neutral-100"
+                  >
+                    Tam Çıktıyı Kopyala
+                  </button>
+                </div>
+              </div>
+
+              {/* Bulgular */}
+              <div className="rounded-2xl border border-neutral-200 bg-white p-3">
+                <div className={subTitle}>Bulgular (Rapor Dili)</div>
+                <div className="mt-2 text-sm text-neutral-800">
+                  {output.reportLines.length ? (
+                    <ul className="list-disc space-y-1 pl-5">
+                      {output.reportLines.map((x, i) => (
+                        <li key={i}>{x}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="text-neutral-500">
+                      Patoloji lehine seçili bulgu yok → rapor satırı oluşturulmadı.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Ayırıcı tanı */}
+              <div className="rounded-2xl border border-neutral-200 bg-white p-3">
+                <div className={subTitle}>Ayırıcı Tanı (Organ bazlı)</div>
+
+                <div className="mt-2 space-y-3 text-sm">
+                  {output.organDdxBlocks.filter((b) => b.show).length === 0 ? (
+                    <div className="text-neutral-500">Ayırıcı tanı üretilmedi.</div>
+                  ) : (
+                    output.organDdxBlocks
+                      .filter((b) => b.show)
+                      .map((b) => (
+                        <div key={b.title} className="rounded-xl border border-neutral-100 bg-neutral-50 p-2">
+                          <div className="font-semibold text-neutral-900">{b.title}</div>
+                          {b.high.length ? (
+                            <div className="mt-1">
+                              <div className="text-xs font-semibold text-neutral-700">Yüksek olasılık</div>
+                              <ul className="list-disc space-y-0.5 pl-5">
+                                {b.high.map((x, i) => (
+                                  <li key={i}>{x}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : null}
+                          {b.mid.length ? (
+                            <div className="mt-1">
+                              <div className="text-xs font-semibold text-neutral-700">Orta olasılık</div>
+                              <ul className="list-disc space-y-0.5 pl-5">
+                                {b.mid.map((x, i) => (
+                                  <li key={i}>{x}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </div>
+                      ))
+                  )}
+                </div>
+              </div>
+
+              {/* Öneriler */}
+              <div className="rounded-2xl border border-neutral-200 bg-white p-3">
+                <div className={subTitle}>Öneriler</div>
+                <div className="mt-2 text-sm text-neutral-800">
+                  {output.recs.length ? (
+                    <ul className="list-disc space-y-1 pl-5">
+                      {output.recs.map((x, i) => (
+                        <li key={i}>{x}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="text-neutral-500">(Öneri yok)</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Acil/Uyarı */}
+              <div className="rounded-2xl border border-neutral-200 bg-white p-3">
+                <div className={subTitle}>Acil / Uyarı</div>
+                <div className="mt-2 text-sm text-neutral-800">
+                  {output.warnings.length ? (
+                    <ul className="list-disc space-y-1 pl-5">
+                      {output.warnings.map((x, i) => (
+                        <li key={i}>{x}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="text-neutral-500">(Acil/uyarı yok)</div>
+                  )}
+                </div>
+              </div>
+
+              {/* İleri inceleme + sekans */}
+              <div className="rounded-2xl border border-neutral-200 bg-white p-3">
+                <div className={subTitle}>İleri İnceleme (Tetkik + Sekans)</div>
+                <div className="mt-2 text-sm text-neutral-800">
+                  {output.adv.length ? (
+                    <ul className="list-disc space-y-1 pl-5">
+                      {output.adv.map((x, i) => (
+                        <li key={i}>{x}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="text-neutral-500">(İleri inceleme önerisi yok)</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Final rapor */}
+              <div className="rounded-2xl border border-neutral-200 bg-white p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className={subTitle}>Final Rapor (Tek cümle)</div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      className="rounded-xl border border-neutral-300 bg-white px-2 py-1 text-xs"
+                      value={finalFormat}
+                      onChange={(e) => setFinalFormat(e.target.value as FinalFormat)}
+                    >
+                      <option>Olasılık dili</option>
+                      <option>Öneri dili</option>
+                    </select>
+                    <button
+                      onClick={() => copyText(output.finalSentence || "")}
+                      className="rounded-xl bg-neutral-900 px-3 py-2 text-xs font-semibold text-white hover:bg-neutral-800"
+                    >
+                      Kopyala
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-2 rounded-xl border border-neutral-200 bg-neutral-50 p-2 text-sm text-neutral-800">
+                  {output.finalSentence ? output.finalSentence : "(Final cümle oluşmadı)"}
+                </div>
+
+                <div className="mt-2 text-xs text-neutral-500">
+                  Not: Bu modül klinik karar desteği amaçlıdır; klinik/laboratuvar ve önceki tetkiklerle korelasyon esastır.
+                </div>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Footer hint */}
+        <div className="mt-6 text-xs text-neutral-500">
+          İpucu: “BT kontrast durumu = Kontrastsız/Bilinmiyor” olsa bile karaciğer lezyonu için baz ayırıcı tanı üretilir.
+          MR dinamik olmasa bile T1/T2/DWI kombinasyonları baz ddx oluşturur.
         </div>
       </div>
     </div>
