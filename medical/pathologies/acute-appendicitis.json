@@ -1,0 +1,747 @@
+{
+  "id": "acute-appendicitis",
+  "title": "Akut Apandisit",
+  "aliases": [
+    "appendicitis",
+    "acute appendicitis",
+    "akut apandisit",
+    "AA"
+  ],
+  "tags": [
+    "acute abdomen",
+    "RLQ pain",
+    "McBurney",
+    "appendicolith",
+    "perforation",
+    "pediatric",
+    "pregnancy"
+  ],
+  "modalities": [
+    "USG",
+    "CT",
+    "MR"
+  ],
+  "summary": "Akut apandisit; apendiksin akut inflamasyonu olup sağ alt kadran ağrısının en sık cerrahi nedenlerindendir. Klinik değerlendirme + skorlar (Alvarado/AIR) yararlı olsa da görüntüleme (USG/CT/MR) negatif apendektomiyi azaltır. Komplike apandisit (perforasyon/apse/flegmon) yönetimi; antibiyotik, drenaj ve cerrahi zamanlamasını değiştirir.",
+  "search_keywords": {
+    "patient": [
+      "sağ alt karın ağrısı",
+      "sağ kasık ağrısı",
+      "karın ağrısı göbekten sağa indi",
+      "ateş ve karın ağrısı",
+      "bulantı kusma karın ağrısı",
+      "yürürken sağ tarafta ağrı"
+    ],
+    "clinician": [
+      "acute appendicitis",
+      "RLQ pain",
+      "migratory pain",
+      "McBurney",
+      "Rovsing",
+      "psoas sign",
+      "obturator sign",
+      "leukocytosis",
+      "CRP",
+      "Alvarado score",
+      "AIR score",
+      "appendicolith",
+      "perforated appendicitis",
+      "phlegmon",
+      "periappendiceal abscess"
+    ],
+    "radiology": [
+      "appendix >6 mm",
+      "noncompressible appendix",
+      "periappendiceal fat stranding",
+      "appendicolith",
+      "wall enhancement",
+      "mural hyperemia",
+      "cecal apical thickening",
+      "phlegmon",
+      "abscess",
+      "extraluminal gas",
+      "perforation",
+      "DWI restriction"
+    ]
+  },
+  "disease_links": {
+    "progression": [],
+    "risk_of": [
+      "periappendiceal-abscess",
+      "appendiceal-perforation"
+    ],
+    "red_flag_for": []
+  },
+  "core": {
+    "definition": {
+      "title": "Tanım",
+      "items": [
+        {
+          "text": "Apendiksin akut inflamasyonu; obstrüksiyon (fekalit/lenfoid hiperplazi) sık tetikleyicidir.",
+          "w": 4
+        },
+        {
+          "text": "Komplike apandisit: perforasyon, apse, flegmon veya yaygın peritonit bulguları.",
+          "w": 5
+        }
+      ]
+    },
+    "etiology": {
+      "title": "Etiyoloji / Patogenez",
+      "items": [
+        {
+          "text": "Lümen obstrüksiyonu: fekalit (appendicolith), lenfoid hiperplazi (öz. çocuk), nadiren tümör.",
+          "w": 4
+        },
+        {
+          "text": "Bakteriyel çoğalma + intraluminal basınç artışı → iskemi → nekroz/perforasyon (komplike).",
+          "w": 5
+        }
+      ]
+    },
+    "risk_factors": {
+      "title": "Risk faktörleri / risk grupları",
+      "items": [
+        {
+          "text": "Çocuk/ergen yaş grubu (insidans yüksek).",
+          "w": 2
+        },
+        {
+          "text": "Gebelikte atipik lokalizasyon/klinik → tanı gecikebilir.",
+          "w": 3
+        },
+        {
+          "text": "Yaşlı/immünsüprese hastada atipik tablo ve perforasyon riski daha yüksek olabilir.",
+          "w": 3
+        }
+      ]
+    },
+    "pathophysiology_short": "Obstrüksiyon sonrası mukus birikimi ve intraluminal basınç artışı venöz konjesyon/iskemiye yol açar. İlerleyen inflamasyon transmural nekroz ve perforasyonla sonuçlanabilir; periappendiceal flegmon/apse gelişebilir."
+  },
+  "clinical": {
+    "symptoms": {
+      "title": "Semptomlar",
+      "items": [
+        {
+          "text": "Ağrı: sıklıkla periumbilikal başlayıp sağ alt kadrana lokalize olur (migratuvar ağrı).",
+          "w": 5
+        },
+        {
+          "text": "Anoreksi (sık), bulantı-kusma.",
+          "w": 3
+        },
+        {
+          "text": "Hafif ateş; komplike olguda yüksek ateş/sepsis bulguları.",
+          "w": 3
+        }
+      ]
+    },
+    "exam": {
+      "title": "Fizik muayene",
+      "items": [
+        {
+          "text": "Sağ alt kadranda hassasiyet (McBurney noktası).",
+          "w": 5
+        },
+        {
+          "text": "Rebound/defans; yaygın peritonit perforasyon lehine.",
+          "w": 5
+        },
+        {
+          "text": "Rovsing/psoas/obturator testleri (pozitif olabilir).",
+          "w": 2
+        }
+      ]
+    },
+    "red_flags": {
+      "title": "Acil kırmızı bayraklar",
+      "items": [
+        {
+          "text": "Yaygın peritonit bulguları, sepsis/şok bulguları.",
+          "w": 5
+        },
+        {
+          "text": "İleri yaş/immünsüpresyon + ağır ağrı/ateş + belirgin lökositoz → komplike olasılığı artar.",
+          "w": 4
+        },
+        {
+          "text": "Palpabl kitle/apse şüphesi, persistan kusma/ileus.",
+          "w": 4
+        }
+      ]
+    },
+    "scores": {
+      "title": "Skor / sınıflama",
+      "items": [
+        {
+          "text": "Alvarado skoru (klinik + lab); risk sınıflaması için.",
+          "w": 2
+        },
+        {
+          "text": "AIR score (Appendicitis Inflammatory Response) – risk stratifikasyonu.",
+          "w": 2
+        },
+        {
+          "text": "Komplike vs komplike olmayan ayrımı görüntüleme ile güçlenir.",
+          "w": 3
+        }
+      ]
+    },
+    "physical_exam": []
+  },
+  "labs": {
+    "key_labs": {
+      "title": "Laboratuvar (key labs)",
+      "items": [
+        {
+          "text": "Lökositoz ve nötrofili (destekleyici, nonspesifik).",
+          "w": 2
+        },
+        {
+          "text": "CRP (özellikle komplike olguda daha yüksek olabilir; zamanla artar).",
+          "w": 2
+        },
+        {
+          "text": "İdrar tahlili: hafif pyüri/hematüri görülebilir (apandisiti dışlamaz).",
+          "w": 1
+        },
+        {
+          "text": "Gebelik olasılığında β-hCG (ayırıcı tanı için kritik).",
+          "w": 4
+        }
+      ]
+    },
+    "notes": {
+      "title": "Laboratuvar notları",
+      "items": [
+        {
+          "text": "Normal WBC/CRP apandisiti dışlamaz (erken olgu, atipik).",
+          "w": 3
+        },
+        {
+          "text": "Gebelerde ve çocuklarda klinik+USG öncelikli yaklaşım sık kullanılır.",
+          "w": 2
+        }
+      ]
+    }
+  },
+  "imaging": {
+    "by_modality": {
+      "USG": {
+        "when_to_image": {
+          "title": "Endikasyon (USG)",
+          "items": [
+            {
+              "text": "İlk basamak (özellikle çocuk ve gebede) RLQ ağrıda apandisit değerlendirmesi.",
+              "w": 5
+            },
+            {
+              "text": "Jinekolojik ayırıcı tanı için pelvik USG ile birlikte değerlendirilebilir.",
+              "w": 3
+            }
+          ]
+        },
+        "main_findings": {
+          "title": "Ana bulgular (USG)",
+          "items": [
+            {
+              "text": "Nonkompresibl tübüler yapı; çap genelde >6 mm.",
+              "w": 5
+            },
+            {
+              "text": "Duvar kalınlaşması, mural hiperemi (Doppler).",
+              "w": 4
+            },
+            {
+              "text": "Periappendiceal hiperekojen yağ (inflamasyon).",
+              "w": 4
+            },
+            {
+              "text": "Appendicolith (hiperekojen odak + akustik gölge).",
+              "w": 4
+            }
+          ]
+        },
+        "supportive_findings": {
+          "title": "Destekleyici (USG)",
+          "items": [
+            {
+              "text": "Periappendiceal serbest sıvı.",
+              "w": 2
+            },
+            {
+              "text": "Flegmon/apse şüphesi: kompleks sıvı koleksiyonu.",
+              "w": 4
+            },
+            {
+              "text": "Reaktif mezenterik lenf nodları.",
+              "w": 1
+            }
+          ]
+        },
+        "complications": {
+          "title": "Komplikasyon (USG)",
+          "items": [
+            {
+              "text": "Periappendiceal apse/koleksiyon (kompleks, septalı).",
+              "w": 5
+            },
+            {
+              "text": "Perforasyon şüphesini artıran bulgular: belirgin koleksiyon, duvar süreksizliği (görülürse).",
+              "w": 4
+            }
+          ]
+        },
+        "pitfalls": {
+          "title": "Pitfalls (USG)",
+          "items": [
+            {
+              "text": "Görüntülenemeyen apendiks apandisiti dışlamaz; obezite/gaz/retroçekal yerleşim sınırlayabilir.",
+              "w": 5
+            },
+            {
+              "text": "Terminal ileit/Meckel divertiküliti/mezenterik adenit benzer görünüm verebilir.",
+              "w": 3
+            }
+          ]
+        },
+        "ddx": {
+          "title": "DDx (USG)",
+          "items": [
+            {
+              "text": "Mezenterik adenit",
+              "w": 2
+            },
+            {
+              "text": "Terminal ileit (Crohn/infeksiyöz)",
+              "w": 3
+            },
+            {
+              "text": "Ovarian torsiyon/kist rüptürü (kadın)",
+              "w": 4
+            },
+            {
+              "text": "Ektopik gebelik",
+              "w": 5
+            }
+          ]
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": [
+            {
+              "title": "Mezenterik adenit vs apandisit",
+              "bullets": [
+                "Adenitte: belirgin mezenterik lenf nodları; apendiks normal/kompresibl olabilir.",
+                "Apandisitte: nonkompresibl >6 mm apendiks + periappendiceal yağ inflamasyonu daha baskın."
+              ]
+            },
+            {
+              "title": "Over torsiyonu vs apandisit",
+              "bullets": [
+                "Torsiyonda: overde büyüme, periferik foliküller, kan akımında azalma ve pelvik ağrı ön planda.",
+                "Apandisitte: tubüler nonkompresibl apendiks ve RLQ peritoneal irritasyon bulguları."
+              ]
+            }
+          ]
+        }
+      },
+      "CT": {
+        "when_to_image": {
+          "title": "Endikasyon (CT)",
+          "items": [
+            {
+              "text": "Erişkinde RLQ ağrıda tanısal doğrulama/ayırıcı tanı (özellikle USG non-diagnostik).",
+              "w": 5
+            },
+            {
+              "text": "Komplikasyon şüphesi (perforasyon/apse/flegmon) veya atipik klinik.",
+              "w": 5
+            }
+          ]
+        },
+        "main_findings": {
+          "title": "Ana bulgular (CT)",
+          "items": [
+            {
+              "text": "Apendiks çap artışı (çoğunlukla >6 mm) ve duvar kalınlaşması/enhansmanı.",
+              "w": 5
+            },
+            {
+              "text": "Periappendiceal yağ stranding (inflamasyon).",
+              "w": 5
+            },
+            {
+              "text": "Appendicolith (komplikasyon riskini artırabilir).",
+              "w": 4
+            },
+            {
+              "text": "Çevre peritoneal reaksiyon / cecal apical thickening (destekleyici).",
+              "w": 3
+            }
+          ]
+        },
+        "supportive_findings": {
+          "title": "Destekleyici (CT)",
+          "items": [
+            {
+              "text": "Periappendiceal sıvı, reaktif lenf nodları.",
+              "w": 2
+            },
+            {
+              "text": "Hafif ileus bulguları.",
+              "w": 1
+            }
+          ]
+        },
+        "complications": {
+          "title": "Komplikasyon (CT)",
+          "items": [
+            {
+              "text": "Perforasyon: ekstraluminal gaz, duvar defekti, yaygın peritonit bulguları.",
+              "w": 5
+            },
+            {
+              "text": "Flegmon/apse: çevrede yumuşak doku kitlesi veya rim-enhancing koleksiyon.",
+              "w": 5
+            },
+            {
+              "text": "Piyoflebit/portal ven trombozu (nadir; şüphede dikkat).",
+              "w": 2
+            }
+          ]
+        },
+        "pitfalls": {
+          "title": "Pitfalls (CT)",
+          "items": [
+            {
+              "text": "Normal apendiks çapı değişken olabilir; tek başına çap artışı yerine periappendiceal inflamasyonla birlikte yorumla.",
+              "w": 4
+            },
+            {
+              "text": "Epiploic appendagitis/sağ kolon divertiküliti apandisiti taklit edebilir.",
+              "w": 3
+            }
+          ]
+        },
+        "ddx": {
+          "title": "DDx (CT)",
+          "items": [
+            {
+              "text": "Epiploik appendajit",
+              "w": 3
+            },
+            {
+              "text": "Sağ kolon divertiküliti",
+              "w": 3
+            },
+            {
+              "text": "Üreter taşı (sağ)",
+              "w": 4
+            },
+            {
+              "text": "Terminal ileit",
+              "w": 3
+            }
+          ]
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": [
+            {
+              "title": "Epiploik appendajit vs apandisit",
+              "bullets": [
+                "Epiploikte: kolona komşu yağ yoğunluklu oval lezyon ve periferal hiperattenüe rim; apendiks genellikle normal.",
+                "Apandisitte: dilate/duvarı kalın apendiks + periappendiceal inflamasyon odak noktası apendikstir."
+              ]
+            },
+            {
+              "title": "Üreter taşı vs apandisit",
+              "bullets": [
+                "Taşta: üreter boyunca kalkül + hidroureteronefroz ve kolik tarzı ağrı.",
+                "Apandisitte: primer inflamasyon apendikste, periappendiceal yağ stranding belirgin."
+              ]
+            }
+          ]
+        }
+      },
+      "MR": {
+        "when_to_image": {
+          "title": "Endikasyon (MR)",
+          "items": [
+            {
+              "text": "Gebede veya radyasyondan kaçınılan hastada USG non-diagnostik ise MR.",
+              "w": 5
+            },
+            {
+              "text": "CT kontrast verilemeyen seçilmiş olguda alternatif.",
+              "w": 3
+            }
+          ]
+        },
+        "main_findings": {
+          "title": "Ana bulgular (MR)",
+          "items": [
+            {
+              "text": "Dilate apendiks, duvar kalınlaşması; T2’de periappendiceal ödem/sıvı.",
+              "w": 5
+            },
+            {
+              "text": "DWI’de inflamatuvar segmentte restriksiyon (destekleyici).",
+              "w": 3
+            }
+          ]
+        },
+        "supportive_findings": {
+          "title": "Destekleyici (MR)",
+          "items": [
+            {
+              "text": "Periappendiceal yağ ödemi ve küçük koleksiyonlar.",
+              "w": 3
+            }
+          ]
+        },
+        "complications": {
+          "title": "Komplikasyon (MR)",
+          "items": [
+            {
+              "text": "Apse/flegmon: koleksiyon, duvarlı yapı; DWI restriksiyon gösterebilir.",
+              "w": 5
+            }
+          ]
+        },
+        "pitfalls": {
+          "title": "Pitfalls (MR)",
+          "items": [
+            {
+              "text": "Hareket artefaktı ve suboptimal protokol tanıyı zorlaştırabilir.",
+              "w": 3
+            },
+            {
+              "text": "DWI restriksiyonu nonspesifik olabilir; morfoloji ile birlikte değerlendir.",
+              "w": 2
+            }
+          ]
+        },
+        "ddx": {
+          "title": "DDx (MR)",
+          "items": [
+            {
+              "text": "Over torsiyonu/kist rüptürü",
+              "w": 4
+            },
+            {
+              "text": "Terminal ileit",
+              "w": 3
+            }
+          ]
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": [
+            {
+              "title": "Gebede jinekolojik nedenler",
+              "bullets": [
+                "Pelvik organ kaynaklı patolojilerde ovaryum/uterus bulguları ön planda olur.",
+                "Apandisitte tubular apendiks + periappendiceal ödem/sıvı baskın olur."
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "modalities": {
+      "USG": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "CT": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "MR": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      }
+    }
+  },
+  "management": {
+    "first_line": {
+      "title": "İlk yaklaşım (first line)",
+      "items": [
+        {
+          "text": "Klinik risk + skor + görüntüleme ile tanı doğrula; analjezi ve sıvı desteği.",
+          "w": 4
+        },
+        {
+          "text": "Komplike şüphede geniş spektrum antibiyotik ve cerrahi konsültasyonu.",
+          "w": 5
+        }
+      ]
+    },
+    "when_to_escalate": {
+      "title": "Ne zaman escalate?",
+      "items": [
+        {
+          "text": "Peritonit, sepsis, perforasyon/apse bulgusu → acil cerrahi/IR değerlendirmesi.",
+          "w": 5
+        },
+        {
+          "text": "Gebede klinik kötüleşme veya tanısal belirsizlik → hızlı ileri görüntüleme (MR) ve multidisipliner karar.",
+          "w": 4
+        }
+      ]
+    },
+    "complication_management": {
+      "title": "Komplikasyon yönetimi (özet)",
+      "items": [
+        {
+          "text": "Apse/flegmon: seçilmiş olguda antibiyotik + perkütan drenaj; cerrahi zamanlaması kliniğe göre.",
+          "w": 5
+        },
+        {
+          "text": "Perforasyon/yaygın peritonit: genellikle cerrahi yaklaşım gerekir.",
+          "w": 5
+        }
+      ]
+    },
+    "follow_up": {
+      "title": "Takip / kontrol",
+      "items": [
+        {
+          "text": "Komplike olguda klinik ve inflamatuvar belirteç trendi; koleksiyon şüphesinde kontrol görüntüleme.",
+          "w": 3
+        },
+        {
+          "text": "Antibiyotikle non-operatif yaklaşım düşünülürse nüks/başarısızlık riski hastaya anlatılmalı.",
+          "w": 2
+        }
+      ]
+    }
+  },
+  "specialties": [
+    {
+      "specialty": "radiology",
+      "summary": "USG’de nonkompresibl >6 mm apendiks ve periappendiceal inflamasyonu vurgula. CT’de apendiks dilatasyonu + yağ stranding temel; perforasyon/apse/flegmon bulgularını sistematik raporla. Gebede USG sonrası MR tercihlerini akılda tut.",
+      "keywords": [
+        ">6 mm",
+        "noncompressible",
+        "fat stranding",
+        "appendicolith",
+        "abscess",
+        "extraluminal gas",
+        "perforation",
+        "MRI pregnancy"
+      ]
+    },
+    {
+      "specialty": "emergency_medicine",
+      "summary": "RLQ ağrıda skor + görüntüleme stratejisi; sepsis/peritonit kırmızı bayraklarını erken yakala.",
+      "keywords": [
+        "Alvarado",
+        "AIR score",
+        "peritonitis",
+        "sepsis",
+        "RLQ pain"
+      ]
+    },
+    {
+      "specialty": "general_surgery",
+      "summary": "Komplike olmayan olguda cerrahi vs seçilmiş olguda antibiyotik yaklaşımı; komplike olguda apse/perforasyon yönetimi ve zamanlama.",
+      "keywords": [
+        "appendectomy",
+        "abscess drainage",
+        "perforation",
+        "phlegmon"
+      ]
+    },
+    {
+      "specialty": "obstetrics_gynecology",
+      "summary": "Gebede apandisit tanısı atipik olabilir; USG non-diagnostik ise MR ile ayırıcı tanı (torsiyon/ektopik vb.).",
+      "keywords": [
+        "pregnancy",
+        "MRI",
+        "ectopic",
+        "torsion",
+        "RLQ pain"
+      ]
+    },
+    {
+      "specialty": "microbiology",
+      "summary": "Komplike olguda (apse/perforasyon) kültür ve antibiyotik seçimi; lokal direnç paternleri ile uyum.",
+      "keywords": [
+        "intraabdominal infection",
+        "cultures",
+        "antibiotics"
+      ]
+    },
+    {
+      "specialty": "pharmacology",
+      "summary": "Antibiyotik rejimleri (komplike olgu), analjezi ve antiemetiklerin güvenli kullanımı.",
+      "keywords": [
+        "antibiotics",
+        "analgesia",
+        "antiemetic"
+      ]
+    },
+    {
+      "specialty": "biochemistry",
+      "summary": "WBC/CRP trendleri; β-hCG ile gebelik dışlanması; UA bulgularının ayırıcı tanıda yorumlanması.",
+      "keywords": [
+        "WBC",
+        "CRP",
+        "beta-hCG",
+        "urinalysis"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "label": "WSES Jerusalem Guidelines 2020 — Diagnosis & Treatment of Acute Appendicitis",
+      "detail": "Tanı stratejisi, non-operatif yaklaşım, komplikasyon yönetimi ve antibiyotik/cerrahi önerileri.",
+      "url": "https://wjes.biomedcentral.com/articles/10.1186/s13017-020-00306-3"
+    },
+    {
+      "label": "ACR Appropriateness Criteria — Right Lower Quadrant Pain (Suspected Appendicitis)",
+      "detail": "USG/CT/MR görüntüleme seçimi ve uygunluk önerileri.",
+      "url": "https://acsearch.acr.org/docs/69357/narrative/"
+    }
+  ],
+  "defaults": {
+    "modality": "CT",
+    "specialty": "radiology"
+  },
+  "meta": {
+    "id": "acute-appendicitis",
+    "title": "Acute Appendicitis",
+    "version": "v1",
+    "last_updated": "2026-01-17"
+  },
+  "branches": {
+    "emergency": {},
+    "surgery": {},
+    "gastroenterology": {},
+    "radiology": {},
+    "infectious_disease": {},
+    "microbiology": {},
+    "biochemistry": {},
+    "pharmacology": {},
+    "urology": {},
+    "internal_medicine": {}
+  },
+  "references": []
+}

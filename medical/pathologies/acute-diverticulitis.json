@@ -1,0 +1,402 @@
+{
+  "id": "acute-diverticulitis",
+  "title": "Akut Divertikülit",
+  "summary": "Kolonik divertiküllerin akut inflamasyonu; komplike olgularda apse/perforasyon/fistül gelişebilir.",
+  "core": {
+    "definition": "Divertikülün mikroperforasyonu ve çevre yağ dokusunda inflamasyon ile seyreden akut klinik tablo.",
+    "etiology": [
+      "Divertikül boynunda obstrüksiyon",
+      "Mikroperforasyon",
+      "Bakteriyel inflamasyon"
+    ],
+    "risk_factors": [
+      "İleri yaş",
+      "Düşük lifli diyet",
+      "Obezite",
+      "Sigara",
+      "NSAİİ kullanımı"
+    ],
+    "pathophysiology_short": "Obstrüksiyon → intraluminal basınç artışı → mikroperforasyon → perikolik inflamasyon; komplike olguda apse/peritonit/fistül."
+  },
+  "clinical": {
+    "symptoms": [
+      "Sol alt kadran ağrısı (tipik)",
+      "Ateş",
+      "Bulantı",
+      "Barsak alışkanlığında değişiklik"
+    ],
+    "physical_exam": [
+      "Sol alt kadranda hassasiyet",
+      "Defans (komplikasyon varsa)",
+      "Peritonit bulguları (perforasyonda)"
+    ],
+    "red_flags": [
+      "Yaygın peritonit / rebound",
+      "Sepsis bulguları",
+      "İmmünsüpresyon",
+      "Persistan kusma / obstrüksiyon şüphesi"
+    ],
+    "scores": [
+      "Hinchey sınıflaması (komplikasyon/apse/peritonit)"
+    ],
+    "exam": {
+      "title": "Fizik muayene",
+      "items": []
+    }
+  },
+  "labs": {
+    "key_labs": [
+      "Lökositoz",
+      "CRP yüksekliği"
+    ],
+    "notes": [
+      "Komplike şüphede laktat / böbrek fonksiyonları / elektrolitler eklenebilir."
+    ]
+  },
+  "radiology": {
+    "when_to_image": [
+      "İlk atakta tanı belirsizse",
+      "Komplike divertikülit şüphesi (apse/perforasyon)",
+      "Tedaviye yanıtsızlık",
+      "İmmünsüprese / ağır klinik"
+    ],
+    "modalities": {
+      "CT": {
+        "when_to_image": [
+          "Komplike şüphede ilk tercih",
+          "Ağır klinik / yaygın peritonit şüphesi"
+        ],
+        "main_findings": [
+          "Segmental kolon duvar kalınlaşması",
+          "Perikolik yağ dokuda stranding",
+          "Divertiküller"
+        ],
+        "supporting_findings": [
+          "Perikolik sıvı",
+          "Flegmon"
+        ],
+        "complications": [
+          "Apse",
+          "Serbest hava / perforasyon",
+          "Fistül",
+          "Obstrüksiyon"
+        ],
+        "ddx": [
+          "Kolon kanseri (fokal duvar kalınlaşması)",
+          "İskemik kolit",
+          "İnflamatuvar barsak hastalığı"
+        ],
+        "pitfalls": [
+          "Akut fazda maligniteyi dışlamak zor olabilir (takip kolonoskopi gerekebilir)."
+        ]
+      },
+      "USG": {
+        "when_to_image": [
+          "Radyasyon istenmeyen durumlar / yatak başı değerlendirme",
+          "Deneyimli operatör varsa"
+        ],
+        "main_findings": [
+          "Hedef benzeri duvar kalınlaşması",
+          "Perikolik hiperekojen yağ dokusu"
+        ],
+        "supporting_findings": [
+          "Sınırlı sıvı",
+          "Apse şüphesinde koleksiyon"
+        ],
+        "complications": [
+          "Apse"
+        ],
+        "ddx": [
+          "Apendisit (sağ alt kadran)",
+          "Kolitis"
+        ],
+        "pitfalls": [
+          "Gaz ve obezite değerlendirmeyi kısıtlayabilir."
+        ]
+      },
+      "MRCP": {
+        "when_to_image": [],
+        "main_findings": [],
+        "supporting_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": []
+      },
+      "MR_MRCP": {
+        "when_to_image": [],
+        "main_findings": [],
+        "supporting_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": []
+      }
+    }
+  },
+  "management": {
+    "first_line": [
+      "Komplike değilse: oral alım, analjezi, klinik izlem (seçilmiş olguda antibiyotik)",
+      "Komplike şüphede: IV antibiyotik + görüntüleme"
+    ],
+    "when_to_escalate": [
+      "Sepsis/peritonit",
+      "Apse > 3 cm (drenaj düşün)",
+      "Perforasyon",
+      "Tedaviye yanıtsızlık"
+    ],
+    "complication_management": [
+      "Apse: perkütan drenaj + antibiyotik (uygunsa)",
+      "Yaygın peritonit/perforasyon: cerrahi konsültasyon"
+    ],
+    "follow_up": [
+      "Akut dönem sonrası kolonoskopi (özellikle ilk atak/atipik bulguda)"
+    ]
+  },
+  "specialties": {
+    "emergency": {
+      "focus": [
+        "Sepsis/peritonit var mı?",
+        "Komplike mi? (apse/perforasyon/obstrüksiyon)",
+        "Analjezi + sıvı + erken görüntüleme"
+      ],
+      "first_line": [
+        "Vital bulgular + sepsis tarama",
+        "Komplike şüphede CT yönlendirme"
+      ],
+      "when_to_escalate": [
+        "Peritonit/sepsis",
+        "Kontrolsüz ağrı",
+        "İmmünsüprese hasta"
+      ],
+      "consults": [
+        "Cerrahi",
+        "Gastroenteroloji (gerekirse)"
+      ]
+    },
+    "surgery": {
+      "focus": [
+        "Perforasyon / yaygın peritonit",
+        "Drenaj gerektiren apse",
+        "Fistül/obstrüksiyon"
+      ],
+      "first_line": [
+        "Komplike olguda değerlendirme + drenaj/cerrahi plan"
+      ],
+      "when_to_escalate": [
+        "Hemodinamik instabilite",
+        "Yaygın peritonit",
+        "Kontrol altına alınamayan apse"
+      ],
+      "consults": [
+        "Yoğun bakım (gerektiğinde)"
+      ]
+    },
+    "gastroenterology": {
+      "focus": [
+        "Takip stratejisi",
+        "Kolonoskopi zamanlaması",
+        "Tekrarlayan atak yönetimi"
+      ],
+      "first_line": [
+        "Akut dönem sonrası takip ve risk azaltma önerileri"
+      ],
+      "when_to_escalate": [
+        "Tekrarlayan/komplike ataklar"
+      ],
+      "consults": []
+    },
+    "infectious_disease": {
+      "focus": [
+        "Antibiyotik seçimi ve süre"
+      ],
+      "first_line": [
+        "Komplike olguda lokal protokole göre IV antibiyotik"
+      ],
+      "when_to_escalate": [
+        "Dirençli enfeksiyon / immünsüprese hasta"
+      ],
+      "consults": []
+    },
+    "neurology": {
+      "focus": [],
+      "first_line": [],
+      "when_to_escalate": [],
+      "consults": []
+    },
+    "dermatology": {
+      "focus": [],
+      "first_line": [],
+      "when_to_escalate": [],
+      "consults": []
+    },
+    "ophthalmology": {
+      "focus": [],
+      "first_line": [],
+      "when_to_escalate": [],
+      "consults": []
+    }
+  },
+  "aliases": [],
+  "tags": [],
+  "modalities": [
+    "USG",
+    "CT",
+    "MR"
+  ],
+  "search_keywords": {
+    "patient": [],
+    "clinician": [],
+    "radiology": []
+  },
+  "disease_links": {
+    "progression": [],
+    "risk_of": [],
+    "red_flag_for": []
+  },
+  "sources": [],
+  "defaults": {
+    "modality": "CT",
+    "specialty": "radiology"
+  },
+  "imaging": {
+    "by_modality": {
+      "USG": {
+        "when_to_image": {
+          "title": "Endikasyon",
+          "items": []
+        },
+        "main_findings": {
+          "title": "Ana bulgular",
+          "items": []
+        },
+        "supportive_findings": {
+          "title": "Destekleyici bulgular",
+          "items": []
+        },
+        "complications": {
+          "title": "Komplikasyonlar",
+          "items": []
+        },
+        "pitfalls": {
+          "title": "Pitfalls",
+          "items": []
+        },
+        "ddx": {
+          "title": "DDx",
+          "items": []
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      },
+      "CT": {
+        "when_to_image": {
+          "title": "Endikasyon",
+          "items": []
+        },
+        "main_findings": {
+          "title": "Ana bulgular",
+          "items": []
+        },
+        "supportive_findings": {
+          "title": "Destekleyici bulgular",
+          "items": []
+        },
+        "complications": {
+          "title": "Komplikasyonlar",
+          "items": []
+        },
+        "pitfalls": {
+          "title": "Pitfalls",
+          "items": []
+        },
+        "ddx": {
+          "title": "DDx",
+          "items": []
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      },
+      "MR": {
+        "when_to_image": {
+          "title": "Endikasyon",
+          "items": []
+        },
+        "main_findings": {
+          "title": "Ana bulgular",
+          "items": []
+        },
+        "supportive_findings": {
+          "title": "Destekleyici bulgular",
+          "items": []
+        },
+        "complications": {
+          "title": "Komplikasyonlar",
+          "items": []
+        },
+        "pitfalls": {
+          "title": "Pitfalls",
+          "items": []
+        },
+        "ddx": {
+          "title": "DDx",
+          "items": []
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      }
+    },
+    "modalities": {
+      "USG": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "CT": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "MR": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      }
+    }
+  },
+  "meta": {
+    "id": "acute-diverticulitis",
+    "title": "Acute Diverticulitis",
+    "version": "v1",
+    "last_updated": "2026-01-17"
+  },
+  "branches": {
+    "emergency": {},
+    "surgery": {},
+    "gastroenterology": {},
+    "radiology": {},
+    "infectious_disease": {},
+    "microbiology": {},
+    "biochemistry": {},
+    "pharmacology": {},
+    "urology": {},
+    "internal_medicine": {}
+  },
+  "references": []
+}

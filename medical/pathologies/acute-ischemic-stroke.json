@@ -1,0 +1,400 @@
+{
+  "id": "acute-ischemic-stroke",
+  "title": "Akut İskemik İnme",
+  "core": {
+    "definition": "Serebral kan akımının akut azalmasına bağlı nörolojik defisit ile seyreden, çoğunlukla tromboz/emboliden kaynaklanan inmedir.",
+    "etiology": [
+      "Büyük damar oklüzyonu (tromboz/embolus)",
+      "Kardiyoemboli (AF vb.)",
+      "Küçük damar hastalığı (laküner)",
+      "Nadir: diseksiyon, vaskülit"
+    ],
+    "risk_factors": [
+      "Hipertansiyon",
+      "Diabetes mellitus",
+      "Atriyal fibrilasyon",
+      "Hiperkolesterolemi",
+      "Sigara",
+      "İleri yaş",
+      "Geçirilmiş TIA/inme"
+    ],
+    "pathophysiology_short": [
+      "İskemik çekirdek + penumbra kavramı",
+      "Zaman bağımlı nöronal hasar",
+      "Reperfüzyon tedavileri (IVT/MT) için hızlı triage"
+    ]
+  },
+  "clinical": {
+    "symptoms": [
+      "Ani başlayan güçsüzlük (kol/bacak)",
+      "Konuşma bozukluğu (afazi/dizartri)",
+      "Görme kaybı/hemianopi",
+      "Yüzde asimetri",
+      "Denge bozukluğu"
+    ],
+    "physical_exam": [
+      "Fokal nörolojik defisit",
+      "Bilinç değişikliği (büyük inmelerde)",
+      "NIHSS ile şiddet değerlendirmesi"
+    ],
+    "scores_classifications": [
+      "NIHSS",
+      "ASPECTS (BT ile MCA alanı erken iskemi skoru)"
+    ],
+    "exam": {
+      "title": "Fizik muayene",
+      "items": []
+    },
+    "red_flags": {
+      "title": "Acil kırmızı bayraklar",
+      "items": []
+    },
+    "scores": {
+      "title": "Skor / sınıflama",
+      "items": []
+    }
+  },
+  "labs": {
+    "patterns": [
+      "Glukoz (hipoglisemi taklidi dışlama)",
+      "Koagülasyon parametreleri (tedavi planı için)",
+      "Troponin/ECG (eşlik eden kardiyak durumlar)"
+    ],
+    "red_flags": [
+      "Hızla kötüleşen nörolojik tablo",
+      "Büyük damar oklüzyonu şüphesi",
+      "Beyin sapı bulguları",
+      "Şiddetli baş ağrısı (hemoraji ayırımı)"
+    ],
+    "key_labs": {
+      "title": "Laboratuvar (key labs)",
+      "items": []
+    },
+    "notes": {
+      "title": "Laboratuvar notları",
+      "items": []
+    }
+  },
+  "radiology": {
+    "overview": "İlk adım kanamayı dışlamak için non-kontrast BT’dir. Uygun hastada CTA/CTP veya MR-DWI/Perf ile büyük damar oklüzyonu ve kurtarılabilir doku değerlendirilir.",
+    "modalities": {
+      "CT": {
+        "summary": "Non-kontrast BT: hemoraji dışlama + erken iskemi bulguları; uygun olguda CTA/CTP ile damar ve perfüzyon değerlendirilir (altyapıya göre).",
+        "key_findings": [
+          "Erken iskemi: insular ribbon kaybı, lentiform silinme",
+          "Sulkus silinmesi, gri-beyaz ayrım kaybı",
+          "Hiperdens damar işareti (trombus)"
+        ],
+        "supportive_findings": [
+          "ASPECTS ile yaygınlık değerlendirmesi"
+        ],
+        "complications": [
+          "Hemorrhagic transformation (takipte)",
+          "Malign MCA infarktı/ödem"
+        ],
+        "pitfalls": [
+          "Çok erken dönemde BT normal olabilir",
+          "Hareket artefaktı",
+          "Eski enfarkt ile karışma"
+        ],
+        "ddx_imaging": [
+          "İntrakraniyal hemoraji (ilk dışlanacak)",
+          "Migren/kriz sonrası değişiklikler",
+          "Tümör/enfeksiyon (subakut tabloda)"
+        ],
+        "how_to_distinguish": [
+          {
+            "name": "Akut vs kronik enfarkt",
+            "how_to_distinguish": "Akutta sulkus silinmesi/ödem ve belirgin gri-beyaz kaybı; kronikte encephalomalacia ve volüm kaybı beklenir."
+          }
+        ]
+      },
+      "MR_MRCP": {
+        "summary": "MR (özellikle DWI) akut iskemide çok duyarlıdır; FLAIR-DWI mismatch bazı olgularda zamanlama hakkında fikir verebilir.",
+        "key_findings": [
+          "DWI kısıtlılığı (akut iskemi)",
+          "ADC düşüklüğü",
+          "FLAIR negatifliği (erken saatler)"
+        ],
+        "supportive_findings": [
+          "MRA ile damar oklüzyonu (altyapıya göre)"
+        ],
+        "complications": [
+          "Hemorrhagic transformation (GRE/SWI ile)",
+          "Ödem/kitle etkisi"
+        ],
+        "pitfalls": [
+          "Küçük kortikal lezyonlarda artefakt",
+          "Posterior fossa değerlendirmesinde teknik sınırlılıklar"
+        ],
+        "ddx_imaging": [
+          "Postiktal değişiklik",
+          "Ensefalit",
+          "Demyelinizan lezyon (klinik bağlama göre)"
+        ],
+        "how_to_distinguish": []
+      },
+      "USG": {
+        "summary": "Karotis/Doppler USG etiyoloji (stenoz) değerlendirmesinde yardımcıdır; akut triage’da primer değil.",
+        "key_findings": [
+          "Karotis stenoz/plak"
+        ],
+        "supportive_findings": [],
+        "complications": [],
+        "pitfalls": [
+          "Akut büyük damar oklüzyonunu doğrudan göstermez",
+          "Operatör bağımlı"
+        ],
+        "ddx_imaging": [],
+        "how_to_distinguish": []
+      }
+    }
+  },
+  "management": {
+    "triage": [
+      "Zaman kritik: semptom başlangıç zamanı belirlenir",
+      "Non-kontrast BT ile hemoraji dışlanır",
+      "Büyük damar oklüzyonu şüphesi varsa CTA/ileri görüntüleme planlanır (altyapıya göre)"
+    ],
+    "initial_approach": [
+      "ABC stabilizasyonu, glukoz kontrolü",
+      "Tromboliz/trombektomi uygunluğu için hızlı değerlendirme (klinik ekip)"
+    ],
+    "next_steps": [
+      "Etiyoloji araştırması (AF, karotis, kardiyoemboli vb.)",
+      "Sekonder korunma planı"
+    ],
+    "first_line": {
+      "title": "İlk yaklaşım (first line)",
+      "items": []
+    },
+    "when_to_escalate": {
+      "title": "Ne zaman escalate?",
+      "items": []
+    },
+    "complication_management": {
+      "title": "Komplikasyon yönetimi",
+      "items": []
+    },
+    "follow_up": {
+      "title": "Takip / kontrol",
+      "items": []
+    }
+  },
+  "specialties": {
+    "emergency": {
+      "focus": "Kapıdan BT’ye süreyi kısaltma, stroke code yönetimi"
+    },
+    "surgery": {
+      "focus": "Gerekirse dekompresif hemikraniektomi (malign ödem) değerlendirmesi"
+    },
+    "gastroenterology": {
+      "focus": "Low relevance (aspirasyon/komplikasyonlar dışında)"
+    },
+    "infectious_disease": {
+      "focus": "Low relevance (endokardit/septik emboli şüphesi varsa)"
+    },
+    "neurology": {
+      "focus": "Reperfüzyon adaylığı, NIHSS, sekonder korunma ve takip"
+    },
+    "dermatology": {
+      "focus": "Low relevance"
+    },
+    "ophthalmology": {
+      "focus": "Görme semptomları/retinal olay ayırımı (seçilmiş olgular)"
+    }
+  },
+  "patient_facing": {
+    "short_explanation": "Beynin bir bölgesine kan akımı azalınca ani felç, konuşma bozukluğu veya görme kaybı gelişebilir. Dakikalar bile önemlidir.",
+    "warning_signs": [
+      "Yüzde kayma",
+      "Kolda/bacakta ani güçsüzlük",
+      "Konuşma bozulması",
+      "Ani görme kaybı",
+      "Şiddetli dengesizlik"
+    ],
+    "what_happens_next": "Acil beyin görüntülemesi yapılır; bazı hastalarda damarı açmaya yönelik tedaviler zaman penceresinde uygulanabilir."
+  },
+  "templates": {
+    "radiology_report": "Non-kontrast BT’de akut intrakraniyal kanama lehine bulgu izlenmemiştir. Erken iskemi bulguları açısından değerlendirme yapılmıştır. Klinik ve gerekirse ileri görüntüleme ile korelasyon önerilir.",
+    "consultation_note": "Klinik tablo akut iskemik inme ile uyumlu olabilir. Zaman penceresi ve reperfüzyon uygunluğu nöroloji/akut inme ekibi tarafından değerlendirilmelidir.",
+    "discharge_instructions": "Yüz-kol-konuşma bulgularından biri olursa 112’yi arayın; ani nörolojik bulgu acildir."
+  },
+  "qa": {
+    "pitfalls": [
+      "Çok erken BT’nin normal olabileceğinin unutulması",
+      "Posterior fossa inmelerinin BT’de kaçabilmesi",
+      "Hipoglisemi gibi taklitlerin atlanması"
+    ],
+    "common_questions": [
+      "BT normalse inme yok mu?",
+      "MR şart mı?",
+      "Tedavi için zaman neden bu kadar önemli?"
+    ]
+  },
+  "aliases": [],
+  "tags": [],
+  "summary": "",
+  "modalities": [
+    "USG",
+    "CT",
+    "MR"
+  ],
+  "search_keywords": {
+    "patient": [],
+    "clinician": [],
+    "radiology": []
+  },
+  "disease_links": {
+    "progression": [],
+    "risk_of": [],
+    "red_flag_for": []
+  },
+  "sources": [],
+  "defaults": {
+    "modality": "CT",
+    "specialty": "radiology"
+  },
+  "imaging": {
+    "by_modality": {
+      "USG": {
+        "when_to_image": {
+          "title": "Endikasyon",
+          "items": []
+        },
+        "main_findings": {
+          "title": "Ana bulgular",
+          "items": []
+        },
+        "supportive_findings": {
+          "title": "Destekleyici bulgular",
+          "items": []
+        },
+        "complications": {
+          "title": "Komplikasyonlar",
+          "items": []
+        },
+        "pitfalls": {
+          "title": "Pitfalls",
+          "items": []
+        },
+        "ddx": {
+          "title": "DDx",
+          "items": []
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      },
+      "CT": {
+        "when_to_image": {
+          "title": "Endikasyon",
+          "items": []
+        },
+        "main_findings": {
+          "title": "Ana bulgular",
+          "items": []
+        },
+        "supportive_findings": {
+          "title": "Destekleyici bulgular",
+          "items": []
+        },
+        "complications": {
+          "title": "Komplikasyonlar",
+          "items": []
+        },
+        "pitfalls": {
+          "title": "Pitfalls",
+          "items": []
+        },
+        "ddx": {
+          "title": "DDx",
+          "items": []
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      },
+      "MR": {
+        "when_to_image": {
+          "title": "Endikasyon",
+          "items": []
+        },
+        "main_findings": {
+          "title": "Ana bulgular",
+          "items": []
+        },
+        "supportive_findings": {
+          "title": "Destekleyici bulgular",
+          "items": []
+        },
+        "complications": {
+          "title": "Komplikasyonlar",
+          "items": []
+        },
+        "pitfalls": {
+          "title": "Pitfalls",
+          "items": []
+        },
+        "ddx": {
+          "title": "DDx",
+          "items": []
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      }
+    },
+    "modalities": {
+      "USG": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "CT": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "MR": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      }
+    }
+  },
+  "meta": {
+    "id": "acute-ischemic-stroke",
+    "title": "Acute Ischemic Stroke",
+    "version": "v1",
+    "last_updated": "2026-01-17"
+  },
+  "branches": {
+    "emergency": {},
+    "surgery": {},
+    "gastroenterology": {},
+    "radiology": {},
+    "infectious_disease": {},
+    "microbiology": {},
+    "biochemistry": {},
+    "pharmacology": {},
+    "urology": {},
+    "internal_medicine": {}
+  },
+  "references": []
+}

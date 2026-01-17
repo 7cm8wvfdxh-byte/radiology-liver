@@ -1,0 +1,355 @@
+{
+  "id": "acute-cholecystitis",
+  "title": "Akut Kolesistit",
+  "core": {
+    "definition": "Safra kesesi duvarının akut inflamasyonudur.",
+    "etiology": [
+      "Sistik kanal obstrüksiyonu (çoğunlukla taş)",
+      "Akalkülöz kolesistit (kritik hastalarda)"
+    ],
+    "pathophysiology": [
+      "Safra stazı",
+      "Mukozal iskemi",
+      "Bakteriyel süperenfeksiyon"
+    ],
+    "risk_factors": [
+      "Safra taşı öyküsü",
+      "Yaşlılık",
+      "Kritik hastalık",
+      "Uzun süreli açlık"
+    ],
+    "pathophysiology_short": ""
+  },
+  "clinical": {
+    "symptoms": [
+      "Sağ üst kadran ağrısı",
+      "Ateş",
+      "Bulantı-kusma"
+    ],
+    "physical_exam": [
+      "Murphy bulgusu",
+      "RUQ hassasiyet"
+    ],
+    "scores_classifications": [
+      "Tokyo Guidelines severity grading"
+    ],
+    "exam": {
+      "title": "Fizik muayene",
+      "items": []
+    },
+    "red_flags": {
+      "title": "Acil kırmızı bayraklar",
+      "items": []
+    },
+    "scores": {
+      "title": "Skor / sınıflama",
+      "items": []
+    }
+  },
+  "labs": {
+    "patterns": [
+      "Lökositoz",
+      "CRP yüksekliği"
+    ],
+    "red_flags": [
+      "Belirgin bilirubin artışı",
+      "ALP/GGT yüksekliği",
+      "Sepsis bulguları"
+    ],
+    "key_labs": {
+      "title": "Laboratuvar (key labs)",
+      "items": []
+    },
+    "notes": {
+      "title": "Laboratuvar notları",
+      "items": []
+    }
+  },
+  "radiology": {
+    "overview": "İlk basamak USG. Klinik güçlü ama USG non-diagnostik ise BT. Kolestazda MRCP.",
+    "modalities": {
+      "USG": {
+        "key_findings": [
+          "Taş/sludge",
+          "Duvar kalınlığı ≥ 3 mm",
+          "Safra kesesi distansiyonu",
+          "Perikolesistik sıvı",
+          "Sonografik Murphy pozitifliği"
+        ],
+        "supportive_findings": [
+          "Duvar ödemi/halo",
+          "Doppler ile hiperemi"
+        ],
+        "complications": [
+          "Perikolesistik apse",
+          "Perforasyon şüphesi"
+        ],
+        "pitfalls": [
+          "Hipoalbuminemi sekonder duvar kalınlaşması",
+          "Yetersiz açlık"
+        ],
+        "ddx_imaging": [
+          "Biliyer kolik (inflamasyon bulgusu yok)",
+          "Akut hepatit (diffüz karaciğer bulguları)"
+        ]
+      },
+      "CT": {
+        "key_findings": [
+          "Duvar kalınlaşması",
+          "Perikolesistik yağ stranding",
+          "Perikolesistik sıvı"
+        ]
+      },
+      "MRCP": {
+        "key_findings": [
+          "Koledok taşı",
+          "Safra yollarında dilatasyon"
+        ]
+      }
+    }
+  },
+  "management": {
+    "emergency": [
+      "Sepsis değerlendirmesi",
+      "Antibiyotik başlanması"
+    ],
+    "medical": [
+      "Antibiyotik",
+      "Analjezi"
+    ],
+    "surgical": [
+      "Uygun olguda kolesistektomi"
+    ],
+    "triage": [
+      "Yüksek riskli hastada drenaj seçenekleri"
+    ],
+    "first_line": {
+      "title": "İlk yaklaşım (first line)",
+      "items": []
+    },
+    "when_to_escalate": {
+      "title": "Ne zaman escalate?",
+      "items": []
+    },
+    "complication_management": {
+      "title": "Komplikasyon yönetimi",
+      "items": []
+    },
+    "follow_up": {
+      "title": "Takip / kontrol",
+      "items": []
+    }
+  },
+  "specialties": {
+    "emergency": {
+      "focus": "Sepsis ve perforasyon dışlanmalı"
+    },
+    "surgery": {
+      "focus": "Zamanlama ve cerrahi uygunluk"
+    },
+    "gastroenterology": {
+      "focus": "Kolestaz/koledok taşı değerlendirmesi"
+    },
+    "infectious_disease": {
+      "focus": "Antibiyotik seçimi (komplike olgular)"
+    },
+    "neurology": {
+      "focus": "Low relevance – sepsis ilişkili delirium dışında"
+    },
+    "dermatology": {
+      "focus": "Sarılığa bağlı pruritus (low relevance)"
+    },
+    "ophthalmology": {
+      "focus": "Skleral ikter (low relevance)"
+    }
+  },
+  "patient_facing": {
+    "short_explanation": "Safra kesesinde iltihap gelişmiştir, genellikle safra taşına bağlıdır.",
+    "warning_signs": [
+      "Artan ateş",
+      "Şiddetli karın ağrısı",
+      "Sarılık"
+    ],
+    "what_happens_next": "Görüntüleme ve gerekirse cerrahi planlama yapılır."
+  },
+  "templates": {
+    "radiology_report": "Safra kesesi lümeninde taş/sludge izlenmekte olup duvar kalınlığı artmıştır...",
+    "consultation_note": "Klinik ve radyolojik bulgular akut kolesistit ile uyumludur.",
+    "discharge_instructions": "Ağrı, ateş veya sarılık gelişirse acilen başvurunuz."
+  },
+  "qa": {
+    "pitfalls": [
+      "Açlık süresinin yetersiz olması",
+      "Sekonder duvar kalınlaşmaları"
+    ],
+    "common_questions": [
+      "Her safra taşı ameliyat gerektirir mi?",
+      "Antibiyotik tek başına yeterli olur mu?"
+    ]
+  },
+  "aliases": [],
+  "tags": [],
+  "summary": "",
+  "modalities": [
+    "USG",
+    "CT",
+    "MR"
+  ],
+  "search_keywords": {
+    "patient": [],
+    "clinician": [],
+    "radiology": []
+  },
+  "disease_links": {
+    "progression": [],
+    "risk_of": [],
+    "red_flag_for": []
+  },
+  "sources": [],
+  "defaults": {
+    "modality": "CT",
+    "specialty": "radiology"
+  },
+  "imaging": {
+    "by_modality": {
+      "USG": {
+        "when_to_image": {
+          "title": "Endikasyon",
+          "items": []
+        },
+        "main_findings": {
+          "title": "Ana bulgular",
+          "items": []
+        },
+        "supportive_findings": {
+          "title": "Destekleyici bulgular",
+          "items": []
+        },
+        "complications": {
+          "title": "Komplikasyonlar",
+          "items": []
+        },
+        "pitfalls": {
+          "title": "Pitfalls",
+          "items": []
+        },
+        "ddx": {
+          "title": "DDx",
+          "items": []
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      },
+      "CT": {
+        "when_to_image": {
+          "title": "Endikasyon",
+          "items": []
+        },
+        "main_findings": {
+          "title": "Ana bulgular",
+          "items": []
+        },
+        "supportive_findings": {
+          "title": "Destekleyici bulgular",
+          "items": []
+        },
+        "complications": {
+          "title": "Komplikasyonlar",
+          "items": []
+        },
+        "pitfalls": {
+          "title": "Pitfalls",
+          "items": []
+        },
+        "ddx": {
+          "title": "DDx",
+          "items": []
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      },
+      "MR": {
+        "when_to_image": {
+          "title": "Endikasyon",
+          "items": []
+        },
+        "main_findings": {
+          "title": "Ana bulgular",
+          "items": []
+        },
+        "supportive_findings": {
+          "title": "Destekleyici bulgular",
+          "items": []
+        },
+        "complications": {
+          "title": "Komplikasyonlar",
+          "items": []
+        },
+        "pitfalls": {
+          "title": "Pitfalls",
+          "items": []
+        },
+        "ddx": {
+          "title": "DDx",
+          "items": []
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      }
+    },
+    "modalities": {
+      "USG": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "CT": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "MR": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      }
+    }
+  },
+  "meta": {
+    "id": "acute-cholecystitis",
+    "title": "Acute Cholecystitis",
+    "version": "v1",
+    "last_updated": "2026-01-17"
+  },
+  "branches": {
+    "emergency": {},
+    "surgery": {},
+    "gastroenterology": {},
+    "radiology": {},
+    "infectious_disease": {},
+    "microbiology": {},
+    "biochemistry": {},
+    "pharmacology": {},
+    "urology": {},
+    "internal_medicine": {}
+  },
+  "references": []
+}

@@ -1,0 +1,395 @@
+{
+  "id": "ureteral-stone",
+  "title": "Üreter Taşı (Renal Kolik)",
+  "core": {
+    "definition": "Üreter lümeninde taşın obstrüksiyon yapması sonucu akut kolik tarzı ağrı ve/veya obstrüktif üropati tablosudur.",
+    "etiology": [
+      "Kalsiyum oksalat/fosfat taşları (en sık)",
+      "Ürik asit taşları",
+      "Strüvit (enfeksiyonla ilişkili)",
+      "Sistin (nadir)"
+    ],
+    "risk_factors": [
+      "Düşük sıvı alımı/dehidratasyon",
+      "Önceki taş öyküsü",
+      "Yüksek tuz/oksalat alımı",
+      "Hiperparatiroidi",
+      "Gut/hiperürisemi",
+      "Enfeksiyon (strüvit)",
+      "Obezite/metabolik sendrom"
+    ],
+    "pathophysiology_short": [
+      "Obstrüksiyon → toplayıcı sistem basıncı ↑ → ağrı",
+      "Üreter peristaltizmi artışı (kolik)",
+      "Uzamış obstrüksiyon → hidronefroz/renal fonksiyon etkilenebilir"
+    ]
+  },
+  "clinical": {
+    "symptoms": [
+      "Flank ağrısı (kolik), kasığa yayılım",
+      "Bulantı-kusma",
+      "Makroskopik/mikroskopik hematüri",
+      "Dizüri/üriner irritatif semptomlar (distal taşta)"
+    ],
+    "physical_exam": [
+      "Kostovertebral açı hassasiyeti",
+      "Ateş varsa enfeksiyon eşlik edebilir"
+    ],
+    "scores_classifications": [
+      "Taş boyutu ve lokalizasyon (spontan düşme olasılığı için pratik sınıflama)",
+      "Obstrüksiyon derecesi (hidronefroz)"
+    ],
+    "exam": {
+      "title": "Fizik muayene",
+      "items": []
+    },
+    "red_flags": {
+      "title": "Acil kırmızı bayraklar",
+      "items": []
+    },
+    "scores": {
+      "title": "Skor / sınıflama",
+      "items": []
+    }
+  },
+  "labs": {
+    "patterns": [
+      "İdrar tahlili: hematüri (sık)",
+      "Lökositoz/CRP (enfeksiyon varsa artabilir)",
+      "Kreatinin (obstrüksiyon/tek böbrek vb. durumlarda)"
+    ],
+    "red_flags": [
+      "Ateş/sepsis bulguları (obstrüksiyon + enfeksiyon acildir)",
+      "Tek böbrek/renal yetmezlik",
+      "Kontrolsüz ağrı",
+      "Gebelik"
+    ],
+    "key_labs": {
+      "title": "Laboratuvar (key labs)",
+      "items": []
+    },
+    "notes": {
+      "title": "Laboratuvar notları",
+      "items": []
+    }
+  },
+  "radiology": {
+    "overview": "Non-kontrast düşük doz BT (KUB) erişkinde en duyarlı yöntemdir. USG özellikle gebelik/çocukta ve hidronefroz değerlendirmesinde ilk basamak olabilir.",
+    "modalities": {
+      "CT": {
+        "summary": "Non-kontrast BT KUB: taşın yeri/boyu, hidronefroz ve alternatif tanılar değerlendirilir.",
+        "key_findings": [
+          "Üreter boyunca hiperdens taş",
+          "Proksimal dilatasyon/hidronefroz",
+          "Periüreterik/perirenal yağ planlarında stranding"
+        ],
+        "supportive_findings": [
+          "Üreteral duvar kalınlaşması/ödem",
+          "İdrar ekstravazasyonu şüphesi (nadir)"
+        ],
+        "complications": [
+          "Obstrüktif üropati",
+          "Perinefrik koleksiyon (nadir, rüptür)"
+        ],
+        "pitfalls": [
+          "Flebolit ile karışma",
+          "Çok küçük taşların atlanması (kesit kalınlığı/artefakt)"
+        ],
+        "ddx_imaging": [
+          "Flebolit",
+          "Appendisit/divertikülit (alt kadran ağrısında)",
+          "Pyelonefrit (klinik + kontrastlı inceleme gerekebilir)"
+        ],
+        "how_to_distinguish": [
+          {
+            "name": "Taş vs flebolit",
+            "how_to_distinguish": "Taş üreter trasesinde ve hidronefroz/stranding ile ilişkili olabilir; flebolitte genellikle 'comet tail' işareti görülebilir."
+          }
+        ]
+      },
+      "USG": {
+        "summary": "Hidronefroz varlığı ve distal üreter/UVJ taşı bazı olgularda görülebilir. Gebelik ve çocukta önemlidir.",
+        "key_findings": [
+          "Hidronefroz/hidroüreter",
+          "UVJ’de hiperekojen fokus + akustik gölge (görülebilirse)"
+        ],
+        "supportive_findings": [
+          "Üreter jetinin azalması (Doppler, destekleyici)"
+        ],
+        "complications": [
+          "İleri hidronefroz"
+        ],
+        "pitfalls": [
+          "Üreterin tamamı görülemeyebilir",
+          "Küçük taşlar kaçabilir"
+        ],
+        "ddx_imaging": [
+          "Fizyolojik pelvikaliektazi (gebelik)",
+          "Pyelonefrit (klinik korelasyon)"
+        ],
+        "how_to_distinguish": []
+      },
+      "MR_MRCP": {
+        "summary": "MR ürografi seçilmiş olguda (özellikle gebelikte) alternatif olabilir; taşın kendisi yerine obstrüksiyon bulguları ön plandadır.",
+        "key_findings": [
+          "Hidroüreteronefroz",
+          "Obstrüksiyon seviyesinde sinyal değişikliği (indirekt)"
+        ],
+        "supportive_findings": [],
+        "complications": [],
+        "pitfalls": [
+          "Taş direkt görünmeyebilir",
+          "Erişilebilirlik"
+        ],
+        "ddx_imaging": [],
+        "how_to_distinguish": []
+      }
+    }
+  },
+  "management": {
+    "triage": [
+      "Ateş/sepsis + obstrüksiyon: acil ürolojik dekompresyon değerlendirmesi",
+      "Stabil: ağrı kontrolü + spontan pasaj olasılığına göre izlem"
+    ],
+    "initial_approach": [
+      "Analjezi ve hidrasyon",
+      "Enfeksiyon şüphesi varsa antibiyotik değerlendirmesi",
+      "Taş boyutu/lokalizasyonuna göre takip planı"
+    ],
+    "next_steps": [
+      "Küçük taşlarda (özellikle distal) medikal ekspulsif tedavi düşünülebilir (klinik karar)",
+      "Büyük taş/komplikasyon: üroloji girişimi (URS, stent vb.)"
+    ],
+    "first_line": {
+      "title": "İlk yaklaşım (first line)",
+      "items": []
+    },
+    "when_to_escalate": {
+      "title": "Ne zaman escalate?",
+      "items": []
+    },
+    "complication_management": {
+      "title": "Komplikasyon yönetimi",
+      "items": []
+    },
+    "follow_up": {
+      "title": "Takip / kontrol",
+      "items": []
+    }
+  },
+  "specialties": {
+    "emergency": {
+      "focus": "Renal kolik yönetimi, sepsis/obstrüksiyon ayırımı, ağrı kontrolü"
+    },
+    "surgery": {
+      "focus": "Üroloji ile koordinasyon (dekompresyon/girişim)"
+    },
+    "gastroenterology": {
+      "focus": "Düşük relevance (karın ağrısı ayırıcı tanı)"
+    },
+    "infectious_disease": {
+      "focus": "Enfekte obstrüksiyon/sepsis olgularında antibiyotik stratejisi"
+    },
+    "neurology": {
+      "focus": "Low relevance"
+    },
+    "dermatology": {
+      "focus": "Low relevance"
+    },
+    "ophthalmology": {
+      "focus": "Low relevance"
+    }
+  },
+  "patient_facing": {
+    "short_explanation": "İdrar kanalında taşın tıkanıklık yapmasıyla oluşan, genellikle ani başlayan şiddetli yan ağrısıdır.",
+    "warning_signs": [
+      "Ateş ve titreme",
+      "Dayanılmaz ağrı veya kusma",
+      "İdrar yapamama",
+      "Tek böbrek/gebelikte ağrı"
+    ],
+    "what_happens_next": "Genellikle idrar tahlili ve görüntüleme yapılır; bazı taşlar kendiliğinden düşer, bazıları için ürolojik işlem gerekebilir."
+  },
+  "templates": {
+    "radiology_report": "Non-kontrast BT’de üreter trasesinde taş ile uyumlu hiperdens odak izlenmektedir. Proksimalde hidroüreteronefroz mevcuttur. Bulgular üreter taşı ile uyumludur.",
+    "consultation_note": "Taş boyutu/lokalizasyon ve obstrüksiyon derecesine göre üroloji değerlendirmesi önerilir. Enfeksiyon bulgusu varsa acil yaklaşım gerekir.",
+    "discharge_instructions": "Ateş, titreme, artan ağrı, idrar yapamama veya kusma olursa acile başvurunuz; bol sıvı alımı ve kontrol planına uyunuz."
+  },
+  "qa": {
+    "pitfalls": [
+      "Flebolitin taş sanılması",
+      "USG ile taş görülmeyince tanının dışlanması",
+      "Enfekte obstrüksiyonun atlanması"
+    ],
+    "common_questions": [
+      "Taş kaç mm ise düşer?",
+      "Bol su içmek taşı düşürür mü?",
+      "BT şart mı?"
+    ]
+  },
+  "aliases": [],
+  "tags": [],
+  "summary": "",
+  "modalities": [
+    "USG",
+    "CT",
+    "MR"
+  ],
+  "search_keywords": {
+    "patient": [],
+    "clinician": [],
+    "radiology": []
+  },
+  "disease_links": {
+    "progression": [],
+    "risk_of": [],
+    "red_flag_for": []
+  },
+  "sources": [],
+  "defaults": {
+    "modality": "CT",
+    "specialty": "radiology"
+  },
+  "imaging": {
+    "by_modality": {
+      "USG": {
+        "when_to_image": {
+          "title": "Endikasyon",
+          "items": []
+        },
+        "main_findings": {
+          "title": "Ana bulgular",
+          "items": []
+        },
+        "supportive_findings": {
+          "title": "Destekleyici bulgular",
+          "items": []
+        },
+        "complications": {
+          "title": "Komplikasyonlar",
+          "items": []
+        },
+        "pitfalls": {
+          "title": "Pitfalls",
+          "items": []
+        },
+        "ddx": {
+          "title": "DDx",
+          "items": []
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      },
+      "CT": {
+        "when_to_image": {
+          "title": "Endikasyon",
+          "items": []
+        },
+        "main_findings": {
+          "title": "Ana bulgular",
+          "items": []
+        },
+        "supportive_findings": {
+          "title": "Destekleyici bulgular",
+          "items": []
+        },
+        "complications": {
+          "title": "Komplikasyonlar",
+          "items": []
+        },
+        "pitfalls": {
+          "title": "Pitfalls",
+          "items": []
+        },
+        "ddx": {
+          "title": "DDx",
+          "items": []
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      },
+      "MR": {
+        "when_to_image": {
+          "title": "Endikasyon",
+          "items": []
+        },
+        "main_findings": {
+          "title": "Ana bulgular",
+          "items": []
+        },
+        "supportive_findings": {
+          "title": "Destekleyici bulgular",
+          "items": []
+        },
+        "complications": {
+          "title": "Komplikasyonlar",
+          "items": []
+        },
+        "pitfalls": {
+          "title": "Pitfalls",
+          "items": []
+        },
+        "ddx": {
+          "title": "DDx",
+          "items": []
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      }
+    },
+    "modalities": {
+      "USG": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "CT": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "MR": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      }
+    }
+  },
+  "meta": {
+    "id": "ureteral-stone",
+    "title": "Ureteral Stone",
+    "version": "v1",
+    "last_updated": "2026-01-17"
+  },
+  "branches": {
+    "emergency": {},
+    "surgery": {},
+    "gastroenterology": {},
+    "radiology": {},
+    "infectious_disease": {},
+    "microbiology": {},
+    "biochemistry": {},
+    "pharmacology": {},
+    "urology": {},
+    "internal_medicine": {}
+  },
+  "references": []
+}

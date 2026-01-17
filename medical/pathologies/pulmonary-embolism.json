@@ -1,0 +1,396 @@
+{
+  "id": "pulmonary-embolism",
+  "title": "Pulmoner Emboli",
+  "core": {
+    "definition": "Pulmoner arterlerin trombüs ile akut obstrüksiyonudur; sıklıkla alt ekstremite derin ven trombozundan kaynaklanır.",
+    "etiology": [
+      "Derin ven trombozu (en sık kaynak)",
+      "Pelvik ven trombozu",
+      "Nadir: tümör embolisi, yağ embolisi, septik emboli"
+    ],
+    "risk_factors": [
+      "Yakın cerrahi/immobilizasyon",
+      "Malignite",
+      "Gebelik/postpartum",
+      "Östrojen içeren ilaçlar",
+      "Önceki VTE öyküsü",
+      "Trombofili",
+      "Uzun seyahat/immobilizasyon",
+      "Obezite"
+    ],
+    "pathophysiology_short": [
+      "Pulmoner vasküler direnç artışı → RV afterload ↑",
+      "RV dilatasyonu/iskemi → şok riski",
+      "V/Q uyumsuzluğu → hipoksemi"
+    ]
+  },
+  "clinical": {
+    "symptoms": [
+      "Ani dispne",
+      "Plevritik göğüs ağrısı",
+      "Taşikardi",
+      "Hemoptizi (bazen)",
+      "Senkop (yüksek riskte)"
+    ],
+    "physical_exam": [
+      "Taşikardi, takipne",
+      "Hipoksemi",
+      "DVT bulguları (tek taraflı bacak şişliği/ağrı)",
+      "Hipotansiyon/şok (masif PE)"
+    ],
+    "scores_classifications": [
+      "Wells skoru / revize Geneva",
+      "PESI / sPESI (risk stratifikasyonu)"
+    ],
+    "exam": {
+      "title": "Fizik muayene",
+      "items": []
+    },
+    "red_flags": {
+      "title": "Acil kırmızı bayraklar",
+      "items": []
+    },
+    "scores": {
+      "title": "Skor / sınıflama",
+      "items": []
+    }
+  },
+  "labs": {
+    "patterns": [
+      "D-dimer (düşük/orta olasılıkta dışlama için)",
+      "Troponin/BNP (RV strain varsa artabilir)",
+      "Arter kan gazı: hipoksemi, hipokapni (spesifik değil)"
+    ],
+    "red_flags": [
+      "Hipotansiyon/şok",
+      "Persistan hipoksemi",
+      "RV disfonksiyonu bulguları",
+      "Yüksek troponin/BNP + klinik kötüleşme"
+    ],
+    "key_labs": {
+      "title": "Laboratuvar (key labs)",
+      "items": []
+    },
+    "notes": {
+      "title": "Laboratuvar notları",
+      "items": []
+    }
+  },
+  "radiology": {
+    "overview": "Klinik olasılık + D-dimer yaklaşımı sonrası, tanıda ana görüntüleme genellikle CTPA’dır. Hemodinamik instabil hastada bedside EKO/RV strain ve kompresyon USG yardımcı olabilir.",
+    "modalities": {
+      "CT": {
+        "summary": "CT Pulmoner Anjiyo (CTPA) tanıda ana yöntem; RV/LV oranı ile sağ kalp yüklenmesi değerlendirilebilir.",
+        "key_findings": [
+          "Pulmoner arterde dolum defekti",
+          "Saddle embolus",
+          "RV/LV oran artışı",
+          "Pulmoner infarkt: periferik kama şeklinde konsolidasyon"
+        ],
+        "supportive_findings": [
+          "Plevral efüzyon (bazen)",
+          "Atelektazi (nonspesifik)"
+        ],
+        "complications": [
+          "Pulmoner infarkt",
+          "Sağ kalp yetmezliği bulguları"
+        ],
+        "pitfalls": [
+          "Yetersiz kontrast opasifikasyonu",
+          "Hareket artefaktı",
+          "Subsegmental dolum defektlerinde yanlış pozitif/negatif"
+        ],
+        "ddx_imaging": [
+          "Pulmoner arterit/vasculitis",
+          "Pulmoner arter tümörü (çok nadir)",
+          "Mukus tıkacı (hava yolu; arter değil)"
+        ],
+        "how_to_distinguish": [
+          {
+            "name": "PE vs artefakt",
+            "how_to_distinguish": "Gerçek dolum defekti damar lümeni içinde, çoklu kesitte izlenir; artefaktlar genellikle tek kesit/kenar uyumsuzdur."
+          }
+        ]
+      },
+      "USG": {
+        "summary": "Alt ekstremite kompresyon venöz USG ile DVT gösterilmesi PE lehine güçlü dolaylı kanıttır; acilde hızlıdır.",
+        "key_findings": [
+          "Kompresyona dirençli ven (DVT)",
+          "Ven içinde ekojen trombüs"
+        ],
+        "supportive_findings": [],
+        "complications": [],
+        "pitfalls": [
+          "Distal DVT kaçabilir",
+          "İyi teknik ve deneyim gerekir"
+        ],
+        "ddx_imaging": [
+          "Baker kisti/hematom",
+          "Sellülit (klinik ayırım)"
+        ],
+        "how_to_distinguish": []
+      },
+      "MR_MRCP": {
+        "summary": "MR pulmoner anjiyo seçilmiş olguda alternatif olabilir (kontrast/CT kısıtlılığı). Rutin ilk seçenek değildir.",
+        "key_findings": [
+          "Pulmoner arterde sinyal/dolum defekti (sekansa bağlı)"
+        ],
+        "supportive_findings": [],
+        "complications": [],
+        "pitfalls": [
+          "Erişilebilirlik ve süre",
+          "Hareket/nefes artefaktı"
+        ],
+        "ddx_imaging": [],
+        "how_to_distinguish": []
+      }
+    }
+  },
+  "management": {
+    "triage": [
+      "Hemoramik instabil/şok: yüksek risk (masif PE) → acil tedavi + görüntüleme stratejisi hız odaklı",
+      "Stabil: klinik olasılık + D-dimer + CTPA"
+    ],
+    "initial_approach": [
+      "Oksijen/ventilasyon desteği",
+      "Hemodinamik destek (gerekirse)",
+      "Antikoagülasyon değerlendirmesi (kanama riski ile)"
+    ],
+    "next_steps": [
+      "Risk sınıfına göre: antikoagülasyon / tromboliz / girişimsel tedavi",
+      "DVT kaynağı için USG",
+      "Altta yatan risk faktörlerini değerlendirme"
+    ],
+    "first_line": {
+      "title": "İlk yaklaşım (first line)",
+      "items": []
+    },
+    "when_to_escalate": {
+      "title": "Ne zaman escalate?",
+      "items": []
+    },
+    "complication_management": {
+      "title": "Komplikasyon yönetimi",
+      "items": []
+    },
+    "follow_up": {
+      "title": "Takip / kontrol",
+      "items": []
+    }
+  },
+  "specialties": {
+    "emergency": {
+      "focus": "Hızlı risk stratifikasyonu, instabil hastada resüsitasyon + tanısal yol"
+    },
+    "surgery": {
+      "focus": "Nadir: cerrahi embolektomi; seçilmiş masif PE olguları"
+    },
+    "gastroenterology": {
+      "focus": "Düşük relevance (antikoagülasyon/GI kanama riski danışılabilir)"
+    },
+    "infectious_disease": {
+      "focus": "Düşük relevance (septik emboli şüphesi varsa)"
+    },
+    "neurology": {
+      "focus": "Düşük relevance (senkop/hipoksiye bağlı nörolojik semptom ayırımı)"
+    },
+    "dermatology": {
+      "focus": "Low relevance"
+    },
+    "ophthalmology": {
+      "focus": "Low relevance"
+    }
+  },
+  "patient_facing": {
+    "short_explanation": "Akciğer damarlarında pıhtı oluşmasıdır. Nefes darlığı ve göğüs ağrısı yapabilir ve acil değerlendirme gerektirir.",
+    "warning_signs": [
+      "Ani başlayan şiddetli nefes darlığı",
+      "Bayılma",
+      "Göğüs ağrısı + terleme",
+      "Morarma / ciddi oksijen düşüklüğü"
+    ],
+    "what_happens_next": "Kan testleri ve genellikle kontrastlı BT ile değerlendirme yapılır; uygun hastada kan sulandırıcı tedavi başlanır."
+  },
+  "templates": {
+    "radiology_report": "CTPA’da pulmoner arter dallarında dolum defekti izlenmektedir. RV strain bulguları açısından RV/LV oranı değerlendirildi. Bulgular pulmoner emboli ile uyumludur.",
+    "consultation_note": "Klinik + görüntüleme bulguları PE ile uyumlu. Risk stratifikasyonu ve antikoagülasyon planı klinik ekipçe yapılmalıdır.",
+    "discharge_instructions": "Nefes darlığı artışı, göğüs ağrısı, bayılma, kanlı balgam veya ciddi kanama bulgusu olursa acile başvurunuz."
+  },
+  "qa": {
+    "pitfalls": [
+      "Düşük olasılıkta gereksiz CTPA (radyasyon/kontrast)",
+      "Subsegmental PE’de klinik korelasyon eksikliği",
+      "Kontrast yetersizliği nedeniyle yanlış negatif"
+    ],
+    "common_questions": [
+      "D-dimer yüksekse kesin PE mi?",
+      "CTPA şart mı, USG ile olur mu?",
+      "Kan sulandırıcı ne kadar kullanılır?"
+    ]
+  },
+  "aliases": [],
+  "tags": [],
+  "summary": "",
+  "modalities": [
+    "USG",
+    "CT",
+    "MR"
+  ],
+  "search_keywords": {
+    "patient": [],
+    "clinician": [],
+    "radiology": []
+  },
+  "disease_links": {
+    "progression": [],
+    "risk_of": [],
+    "red_flag_for": []
+  },
+  "sources": [],
+  "defaults": {
+    "modality": "CT",
+    "specialty": "radiology"
+  },
+  "imaging": {
+    "by_modality": {
+      "USG": {
+        "when_to_image": {
+          "title": "Endikasyon",
+          "items": []
+        },
+        "main_findings": {
+          "title": "Ana bulgular",
+          "items": []
+        },
+        "supportive_findings": {
+          "title": "Destekleyici bulgular",
+          "items": []
+        },
+        "complications": {
+          "title": "Komplikasyonlar",
+          "items": []
+        },
+        "pitfalls": {
+          "title": "Pitfalls",
+          "items": []
+        },
+        "ddx": {
+          "title": "DDx",
+          "items": []
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      },
+      "CT": {
+        "when_to_image": {
+          "title": "Endikasyon",
+          "items": []
+        },
+        "main_findings": {
+          "title": "Ana bulgular",
+          "items": []
+        },
+        "supportive_findings": {
+          "title": "Destekleyici bulgular",
+          "items": []
+        },
+        "complications": {
+          "title": "Komplikasyonlar",
+          "items": []
+        },
+        "pitfalls": {
+          "title": "Pitfalls",
+          "items": []
+        },
+        "ddx": {
+          "title": "DDx",
+          "items": []
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      },
+      "MR": {
+        "when_to_image": {
+          "title": "Endikasyon",
+          "items": []
+        },
+        "main_findings": {
+          "title": "Ana bulgular",
+          "items": []
+        },
+        "supportive_findings": {
+          "title": "Destekleyici bulgular",
+          "items": []
+        },
+        "complications": {
+          "title": "Komplikasyonlar",
+          "items": []
+        },
+        "pitfalls": {
+          "title": "Pitfalls",
+          "items": []
+        },
+        "ddx": {
+          "title": "DDx",
+          "items": []
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      }
+    },
+    "modalities": {
+      "USG": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "CT": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "MR": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      }
+    }
+  },
+  "meta": {
+    "id": "pulmonary-embolism",
+    "title": "Pulmonary Embolism",
+    "version": "v1",
+    "last_updated": "2026-01-17"
+  },
+  "branches": {
+    "emergency": {},
+    "surgery": {},
+    "gastroenterology": {},
+    "radiology": {},
+    "infectious_disease": {},
+    "microbiology": {},
+    "biochemistry": {},
+    "pharmacology": {},
+    "urology": {},
+    "internal_medicine": {}
+  },
+  "references": []
+}

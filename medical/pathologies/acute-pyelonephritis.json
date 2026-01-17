@@ -1,0 +1,739 @@
+{
+  "id": "acute-pyelonephritis",
+  "version": "v1",
+  "names": {
+    "tr": "Akut Pyelonefrit",
+    "en": "Acute Pyelonephritis"
+  },
+  "summary": {
+    "tr": "Üst üriner sistem (renal pelvis + parankim) bakteriyel enfeksiyonu. Klinik olarak ateş, yan ağrısı (CVA hassasiyeti) ve piyüri ile seyreder; komplike olgularda obstrüksiyon, apse, ampiyem/pyonefroz ve sepsis riski artar.",
+    "en": "Bacterial infection of the upper urinary tract (renal pelvis + parenchyma), typically with fever, flank pain/CVA tenderness and pyuria; complicated cases carry risk of obstruction, abscess, pyonephrosis and sepsis."
+  },
+  "search": {
+    "keywords": [
+      {
+        "k": "pyelonephritis",
+        "w": 6
+      },
+      {
+        "k": "akut pyelonefrit",
+        "w": 6
+      },
+      {
+        "k": "flank pain fever pyuria",
+        "w": 5
+      },
+      {
+        "k": "CVA tenderness",
+        "w": 4
+      },
+      {
+        "k": "üst üriner enfeksiyon",
+        "w": 4
+      },
+      {
+        "k": "komplike ÜSE",
+        "w": 4
+      },
+      {
+        "k": "renal abscess",
+        "w": 4
+      },
+      {
+        "k": "pyonephrosis",
+        "w": 5
+      },
+      {
+        "k": "obstructive uropathy infection",
+        "w": 4
+      },
+      {
+        "k": "strüvit",
+        "w": 2
+      },
+      {
+        "k": "ESBL UTI",
+        "w": 3
+      }
+    ],
+    "keyword_map": {
+      "patient_language": [
+        {
+          "k": "böbrek enfeksiyonu",
+          "w": 6
+        },
+        {
+          "k": "yan ağrısı ateş",
+          "w": 5
+        },
+        {
+          "k": "idrarda yanma ateş titreme",
+          "w": 5
+        },
+        {
+          "k": "idrarda kötü koku",
+          "w": 3
+        },
+        {
+          "k": "bel ağrısı ateş",
+          "w": 4
+        }
+      ],
+      "clinician_language": [
+        {
+          "k": "febrile UTI",
+          "w": 4
+        },
+        {
+          "k": "CVA tenderness",
+          "w": 4
+        },
+        {
+          "k": "complicated pyelonephritis",
+          "w": 5
+        },
+        {
+          "k": "obstructing stone + infection",
+          "w": 6
+        },
+        {
+          "k": "renal/perinephric abscess",
+          "w": 5
+        },
+        {
+          "k": "emphysematous pyelonephritis",
+          "w": 6
+        }
+      ],
+      "radiology_language": [
+        {
+          "k": "striated nephrogram",
+          "w": 5
+        },
+        {
+          "k": "perinephric stranding",
+          "w": 4
+        },
+        {
+          "k": "renal abscess rim enhancement",
+          "w": 5
+        },
+        {
+          "k": "pyonephrosis debris level",
+          "w": 5
+        },
+        {
+          "k": "gas in collecting system",
+          "w": 6
+        }
+      ]
+    }
+  },
+  "branches": [
+    {
+      "id": "emergency",
+      "label": "emergency"
+    },
+    {
+      "id": "urology",
+      "label": "urology"
+    },
+    {
+      "id": "nephrology",
+      "label": "nephrology"
+    },
+    {
+      "id": "infectious_disease",
+      "label": "infectious_disease"
+    },
+    {
+      "id": "internal_medicine",
+      "label": "internal_medicine"
+    },
+    {
+      "id": "family_medicine",
+      "label": "family_medicine"
+    },
+    {
+      "id": "obgyn",
+      "label": "obgyn"
+    },
+    {
+      "id": "pediatrics",
+      "label": "pediatrics"
+    },
+    {
+      "id": "intensive_care",
+      "label": "intensive_care"
+    },
+    {
+      "id": "microbiology",
+      "label": "microbiology"
+    },
+    {
+      "id": "biochemistry",
+      "label": "biochemistry"
+    },
+    {
+      "id": "pharmacology",
+      "label": "pharmacology"
+    },
+    {
+      "id": "radiology",
+      "label": "radiology"
+    }
+  ],
+  "modalities": [
+    "USG",
+    "CT",
+    "MR"
+  ],
+  "core": {
+    "definition": {
+      "tr": "Renal pelvis ve parankimin akut bakteriyel enfeksiyonu (üst ÜSE).",
+      "en": "Acute bacterial infection of renal pelvis and parenchyma (upper UTI)."
+    },
+    "etiology": [
+      {
+        "t": "E. coli (en sık)",
+        "w": 5
+      },
+      {
+        "t": "Diğer Enterobacterales (Klebsiella, Proteus)",
+        "w": 3
+      },
+      {
+        "t": "Enterococcus spp.",
+        "w": 2
+      },
+      {
+        "t": "Obstrüksiyon/taş ilişkili enfeksiyon",
+        "w": 4
+      },
+      {
+        "t": "Kateter/sağlık bakımı ilişkili patojenler",
+        "w": 3
+      }
+    ],
+    "risk_factors": [
+      {
+        "t": "Gebelik",
+        "w": 4
+      },
+      {
+        "t": "DM / immünsüpresyon",
+        "w": 4
+      },
+      {
+        "t": "Üriner obstrüksiyon (taş, striktür, tümör)",
+        "w": 5
+      },
+      {
+        "t": "Vezikoüreteral reflü",
+        "w": 3
+      },
+      {
+        "t": "Yakın zamanda ÜSE / antibiyotik kullanımı",
+        "w": 3
+      },
+      {
+        "t": "Kateter / enstrümantasyon",
+        "w": 3
+      },
+      {
+        "t": "Erkek cinsiyet (komplike kabul)",
+        "w": 3
+      }
+    ],
+    "pathophysiology_short": "Genellikle alt üriner sistemden yükselen enfeksiyon → interstisyel inflamasyon/ödem; komplike olguda obstrüksiyon + artmış intrapelvik basınç → pyonefroz/apse ve sepsis riski.",
+    "red_flags": [
+      {
+        "t": "Hipotansiyon / septik şok bulguları",
+        "w": 6
+      },
+      {
+        "t": "Persistan yüksek ateş > 48–72s tedaviye rağmen",
+        "w": 5
+      },
+      {
+        "t": "Şiddetli flank ağrısı + obstrüksiyon şüphesi",
+        "w": 6
+      },
+      {
+        "t": "Gebelik + febril ÜSE",
+        "w": 5
+      },
+      {
+        "t": "DM + gaz şüphesi (emfizematöz piyelo)",
+        "w": 6
+      },
+      {
+        "t": "Tek böbrek / transplant böbrek",
+        "w": 5
+      }
+    ]
+  },
+  "clinical": {
+    "symptoms": [
+      {
+        "t": "Ateş/titreme",
+        "w": 5
+      },
+      {
+        "t": "Yan ağrısı (flank pain)",
+        "w": 5
+      },
+      {
+        "t": "Disüri, sık idrara çıkma",
+        "w": 3
+      },
+      {
+        "t": "Bulantı-kusma",
+        "w": 3
+      }
+    ],
+    "physical_exam": [
+      {
+        "t": "CVA hassasiyeti (kostovertebral açı)",
+        "w": 5
+      },
+      {
+        "t": "Taşikardi / sepsis bulguları",
+        "w": 4
+      },
+      {
+        "t": "Dehidratasyon",
+        "w": 2
+      }
+    ],
+    "red_flags": []
+  },
+  "labs": {
+    "key_labs": [
+      {
+        "t": "İdrar tahlili: lökosit esteraz/nitrit, piyüri",
+        "w": 5
+      },
+      {
+        "t": "İdrar kültürü + antibiyogram",
+        "w": 5
+      },
+      {
+        "t": "Hemogram: lökositoz (değişken)",
+        "w": 3
+      },
+      {
+        "t": "CRP/Prokalsitonin (şiddet/seyir)",
+        "w": 3
+      },
+      {
+        "t": "Kreatinin/eGFR (obstrüksiyon/AKI)",
+        "w": 4
+      },
+      {
+        "t": "Kan kültürü (sepsis/komplike)",
+        "w": 4
+      }
+    ],
+    "notes": [
+      {
+        "t": "Kültür antibiyotik başlamadan önce idealdir; ancak gecikme sepsiste sakıncalı.",
+        "w": 3
+      },
+      {
+        "t": "Direnç riskinde (ESBL/sağlık bakımı ilişkili) ampirik seçim genişletilir.",
+        "w": 3
+      }
+    ]
+  },
+  "imaging": {
+    "USG": {
+      "when_to_image": [
+        {
+          "t": "Gebelikte ilk basamak",
+          "w": 5
+        },
+        {
+          "t": "Obstrüksiyon/hidronefroz şüphesi",
+          "w": 5
+        },
+        {
+          "t": "İlk 48–72 saatte düzelmeyen olgu (komplikasyon taraması)",
+          "w": 4
+        }
+      ],
+      "main_findings": [
+        {
+          "t": "Hidronefroz / obstrüksiyon bulguları",
+          "w": 5
+        },
+        {
+          "t": "Pyonefroz: toplayıcı sistemde ekojen debris/seviye",
+          "w": 5
+        },
+        {
+          "t": "Renal/perirenal koleksiyon şüphesi (apse)",
+          "w": 4
+        }
+      ],
+      "supportive_findings": [
+        {
+          "t": "Böbrek boyut artışı/ödem (nonspesifik)",
+          "w": 2
+        },
+        {
+          "t": "Kortikomedüller ayrımda silinme (nonspesifik)",
+          "w": 2
+        }
+      ],
+      "complications": [
+        {
+          "t": "Pyonefroz (ürolojik acil)",
+          "w": 6
+        },
+        {
+          "t": "Renal/perinefrik apse",
+          "w": 5
+        }
+      ],
+      "ddx": [
+        {
+          "t": "Renal kolik/taş (enfeksiyonsuz)",
+          "w": 3
+        },
+        {
+          "t": "Akut interstisyel nefrit",
+          "w": 2
+        },
+        {
+          "t": "Renal infarkt",
+          "w": 2
+        }
+      ],
+      "pitfalls": [
+        {
+          "t": "Erken dönemde USG normal olabilir.",
+          "w": 4
+        },
+        {
+          "t": "Apse küçükse kaçabilir; klinik kötüleşmede CT/MR gerekir.",
+          "w": 4
+        }
+      ]
+    },
+    "CT": {
+      "when_to_image": [
+        {
+          "t": "Komplike piyelonefrit şüphesi (obstrüksiyon, taş, apse, gaz)",
+          "w": 6
+        },
+        {
+          "t": "Tedaviye yanıt yok / 48–72 saatte düzelmeme",
+          "w": 5
+        },
+        {
+          "t": "Şiddetli sepsis / immünsüpresyon / DM",
+          "w": 5
+        }
+      ],
+      "protocol": [
+        {
+          "t": "Tercihen kontrastlı (nefrogram fazı ± geç faz); taş/obstrüksiyon için nonkontrast eklenebilir.",
+          "w": 4
+        }
+      ],
+      "main_findings": [
+        {
+          "t": "Striated nephrogram / heterojen parankimal kontrastlanma",
+          "w": 5,
+          "weight": 6
+        },
+        {
+          "t": "Perinefrik yağ doku stranding",
+          "w": 4,
+          "weight": 4
+        },
+        {
+          "t": "Fokal hipodens alanlar (lobar nefrit)",
+          "w": 4,
+          "weight": 4
+        }
+      ],
+      "supportive_findings": [
+        {
+          "t": "Üreter duvar kalınlaşması / periüreterik stranding",
+          "w": 3,
+          "weight": 3
+        },
+        {
+          "t": "Hidronefroz / obstrüksiyon (taş)",
+          "w": 5,
+          "weight": 6
+        }
+      ],
+      "complications": [
+        {
+          "t": "Renal/perinefrik apse: rim-enhancement + santral hipodensite",
+          "w": 6,
+          "weight": 7
+        },
+        {
+          "t": "Emfizematöz piyelonefrit: parankimde veya toplayıcı sistemde gaz",
+          "w": 6,
+          "weight": 8
+        },
+        {
+          "t": "Pyonefroz",
+          "w": 6,
+          "weight": 7
+        }
+      ],
+      "ddx": [
+        {
+          "t": "Renal infarkt (kortikal kama şeklinde hipoperfüzyon)",
+          "w": 3,
+          "weight": 4
+        },
+        {
+          "t": "Renal tümör (fokal kitleleşme) / apse ile karışabilir",
+          "w": 2,
+          "weight": 2
+        }
+      ],
+      "pitfalls": [
+        {
+          "t": "Kontrastsız CT parankimal inflamasyonu kaçırabilir; komplikasyon/taş için iyi ama ‘piyelo’ sensitivitesi sınırlı.",
+          "w": 4
+        },
+        {
+          "t": "Kortikomedüller faz seçimi ve hidrasyon durumu görünümü etkileyebilir.",
+          "w": 2
+        }
+      ],
+      "distinguish": [
+        {
+          "title": "Renal infarkt vs akut piyelonefrit",
+          "points": [
+            "İnfarktta kama şeklinde kortikal hipoperfüzyon, sıklıkla toplayıcı sistem bulgusu/piyüri eşlik etmeyebilir.",
+            "Piyeloda striated nephrogram + perinefrik stranding ve klinikte piyüri/ateş daha tipik."
+          ]
+        },
+        {
+          "title": "Renal apse vs solid kitle",
+          "points": [
+            "Apsede rim-enhancement + santral sıvı yoğunluğu, klinik enfeksiyon bulguları ve tedaviyle gerileme.",
+            "Solid kitlelerde persistans, daha solid kontrast paterni ve enfeksiyon kliniği olmayabilir."
+          ]
+        }
+      ]
+    },
+    "MR": {
+      "when_to_image": [
+        {
+          "t": "Kontrast verilemeyen hastada (seçilmiş olgular)",
+          "w": 4
+        },
+        {
+          "t": "Gebelikte USG yetersiz ve komplikasyon şüphesi",
+          "w": 4
+        }
+      ],
+      "main_findings": [
+        {
+          "t": "DWI kısıtlanma (fokal enfeksiyon/apse lehine)",
+          "w": 5
+        },
+        {
+          "t": "T2’de ödem/heterojen sinyal; perinefrik ödem",
+          "w": 3
+        }
+      ],
+      "complications": [
+        {
+          "t": "Apse: belirgin DWI kısıtlanma + T2 sıvı içerik",
+          "w": 5
+        }
+      ],
+      "pitfalls": [
+        {
+          "t": "MR erişilebilirliği/çekim süresi akut sepsiste sınırlayıcı olabilir.",
+          "w": 2
+        }
+      ]
+    },
+    "modalities": {
+      "USG": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "CT": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "MR": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      }
+    }
+  },
+  "management": {
+    "first_line": [
+      {
+        "t": "Hemodinamik değerlendirme + sepsis protokolü (gerektiğinde)",
+        "w": 6
+      },
+      {
+        "t": "Uygun ampirik antibiyotik (yerel direnç + komplike riskine göre) → kültüre göre daralt",
+        "w": 5
+      },
+      {
+        "t": "Sıvı replasmanı, analjezi/antiemetik, oral alım değerlendirmesi",
+        "w": 4
+      }
+    ],
+    "when_to_escalate": [
+      {
+        "t": "Obstrüksiyon/pyonefroz şüphesi → acil üroloji + drenaj",
+        "w": 6
+      },
+      {
+        "t": "48–72 saatte klinik yanıt yok → görüntüleme + apse/gaz/taş araştır",
+        "w": 5
+      },
+      {
+        "t": "Persistan hipotansiyon/laktat ↑ → YBÜ",
+        "w": 6
+      }
+    ],
+    "complication_management": [
+      {
+        "t": "Renal/perinefrik apse: antibiyotik + gerekirse perkütan drenaj",
+        "w": 5
+      },
+      {
+        "t": "Emfizematöz piyelo: acil geniş spektrum + drenaj/cerrahi kararı",
+        "w": 6
+      }
+    ],
+    "follow_up": [
+      {
+        "t": "Klinik iyileşme yoksa veya komplike olguda kontrol görüntüleme düşün",
+        "w": 3
+      },
+      {
+        "t": "Tekrarlayan olguda altta yatan taş/obstrüksiyon/reflü araştır",
+        "w": 3
+      }
+    ]
+  },
+  "specialties": {
+    "urology": {
+      "focus": [
+        "Obstrüksiyon + enfeksiyon (pyonefroz) aciliyeti",
+        "Taş/striktür/tümör kaynaklı tıkanma",
+        "Drenaj (stent/nefrostomi) endikasyonları"
+      ],
+      "search_jargon": [
+        "pyonephrosis",
+        "obstructing stone infection",
+        "JJ stent",
+        "percutaneous nephrostomy"
+      ]
+    },
+    "infectious_disease": {
+      "focus": [
+        "Direnç riski (ESBL/sağlık bakımı ilişkili) ve ampirik seçim",
+        "De-eskalasyon / süre",
+        "Bakteriyemi yönetimi"
+      ],
+      "search_jargon": [
+        "ESBL UTI",
+        "febrile UTI bacteremia",
+        "carbapenem sparing"
+      ]
+    },
+    "microbiology": {
+      "focus": [
+        "Kültür örnek kalitesi ve kontaminasyon ayrımı",
+        "Antibiyogram yorumu (ESBL, AmpC, VRE)",
+        "Kan kültürü pozitifliğinde raporlama"
+      ],
+      "search_jargon": [
+        "ESBL",
+        "AmpC",
+        "VRE",
+        "MIC interpretation"
+      ]
+    },
+    "biochemistry": {
+      "focus": [
+        "CRP/Prokalsitonin trendi",
+        "Böbrek fonksiyon testleri (Kreatinin/eGFR) ve doz ayarı etkisi",
+        "Laktat (sepsis şiddeti)"
+      ],
+      "search_jargon": [
+        "procalcitonin trend",
+        "lactate sepsis",
+        "AKI creatinine"
+      ]
+    },
+    "pharmacology": {
+      "focus": [
+        "Renal doz ayarı (eGFR) ve nefrotoksisite",
+        "İlaç-ilaç etkileşimleri",
+        "Gebelikte antibiyotik güvenliliği"
+      ],
+      "search_jargon": [
+        "renal dose adjustment",
+        "nephrotoxicity",
+        "pregnancy safe antibiotics"
+      ]
+    },
+    "radiology": {
+      "focus": [
+        "Komplike piyeloda CT bulguları ve komplikasyon ayrımı",
+        "Apse vs tümör vs infarkt ayrımı",
+        "Obstrüksiyon/taş değerlendirmesi"
+      ],
+      "search_jargon": [
+        "striated nephrogram",
+        "perinephric stranding",
+        "renal abscess rim enhancement"
+      ]
+    }
+  },
+  "sources": [
+    {
+      "type": "guideline",
+      "title": "NICE NG111 – Pyelonephritis (acute): antimicrobial prescribing (Visual summary, updated Sep 2024)",
+      "url": "https://www.nice.org.uk/guidance/ng111/resources/visual-summary-pdf-6544161037"
+    },
+    {
+      "type": "guideline",
+      "title": "European Association of Urology (EAU) – Urological Infections Guidelines (overview entry)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/38714379/"
+    }
+  ],
+  "meta": {
+    "id": "acute-pyelonephritis",
+    "title": "Acute Pyelonephritis",
+    "version": "v1",
+    "last_updated": "2026-01-17"
+  },
+  "references": []
+}

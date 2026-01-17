@@ -1,0 +1,960 @@
+{
+  "id": "acute-pancreatitis",
+  "title": "Akut Pankreatit",
+  "aliases": [
+    "acute pancreatitis",
+    "akut pankreatitis",
+    "AP"
+  ],
+  "tags": [
+    "acute abdomen",
+    "epigastric pain",
+    "lipase",
+    "gallstone",
+    "alcohol",
+    "SIRS"
+  ],
+  "modalities": [
+    "USG",
+    "CT",
+    "MR"
+  ],
+  "summary": "Akut pankreatit; pankreasın akut inflamasyonu olup en sık biliyer (safra taşı/mikrolitiyazis) ve alkol ile ilişkilidir. Tanı klasik olarak 3 kriterden en az 2’si ile konur: (1) tipik epigastrik ağrı (sırta yayılabilir), (2) lipaz/amylaz ≥3× ULN, (3) görüntüleme ile uyumlu bulgular. Şiddet Revised Atlanta 2012’ye göre organ yetmezliği ve lokal/sistemik komplikasyon varlığı ile sınıflanır (mild / moderately severe / severe).",
+  "search_keywords": {
+    "patient": [
+      "şiddetli mide ağrısı",
+      "karın ağrısı sırta vuruyor",
+      "epigastrik ağrı",
+      "kusma ile karın ağrısı",
+      "alkol sonrası karın ağrısı",
+      "safra taşı sonrası karın ağrısı",
+      "ateş ve karın ağrısı"
+    ],
+    "clinician": [
+      "akut pankreatit",
+      "epigastrik ağrı",
+      "lipaz yüksekliği",
+      "amilaz yüksekliği",
+      "ALT 150 biliyer",
+      "biliyer pankreatit",
+      "hipertrigliseridemi pankreatit",
+      "post-ERCP pankreatit",
+      "Revised Atlanta",
+      "BISAP",
+      "SIRS",
+      "organ yetmezliği"
+    ],
+    "radiology": [
+      "peripancreatic fat stranding",
+      "interstitial edematous pancreatitis",
+      "necrotizing pancreatitis",
+      "APFC",
+      "ANC",
+      "pseudocyst",
+      "WON",
+      "gas in collection",
+      "pseudoaneurysm",
+      "splenic vein thrombosis",
+      "CT severity index"
+    ]
+  },
+  "disease_links": {
+    "progression": [
+      "chronic-pancreatitis"
+    ],
+    "risk_of": [
+      "pancreatic-pseudocyst",
+      "walled-off-necrosis",
+      "splenic-vein-thrombosis"
+    ],
+    "red_flag_for": [
+      "pancreatic-cancer"
+    ]
+  },
+  "core": {
+    "definition": {
+      "title": "Tanım",
+      "items": [
+        {
+          "text": "Tanı: 3 kriterden ≥2’si (tipik ağrı, lipaz/amylaz ≥3× ULN, görüntüleme ile uyumlu bulgular).",
+          "w": 5
+        },
+        {
+          "text": "Şiddet: Revised Atlanta 2012 (organ yetmezliği süresi + lokal/sistemik komplikasyon).",
+          "w": 4
+        }
+      ]
+    },
+    "etiology": {
+      "title": "Etiyoloji (en sık → daha nadir)",
+      "items": [
+        {
+          "text": "Biliyer (safra taşı / mikrolitiyazis)",
+          "w": 5
+        },
+        {
+          "text": "Alkol",
+          "w": 4
+        },
+        {
+          "text": "Hipertrigliseridemi",
+          "w": 4
+        },
+        {
+          "text": "Post-ERCP",
+          "w": 3
+        },
+        {
+          "text": "İlaç ilişkili (nadir; ilaç listesi klinik bağlama göre)",
+          "w": 1
+        },
+        {
+          "text": "Hiperkalsemi",
+          "w": 2
+        },
+        {
+          "text": "Travma",
+          "w": 1
+        },
+        {
+          "text": "Otoimmün pankreatit atağı (ayırıcı tanı; IgG4 vb.)",
+          "w": 1
+        },
+        {
+          "text": "İdiopatik (mikrolitiyazis/kanal anomalileri/genetik vb. dışlandıktan sonra)",
+          "w": 2
+        }
+      ]
+    },
+    "risk_factors": {
+      "title": "Risk faktörleri",
+      "items": [
+        {
+          "text": "Safra taşı hastalığı / koledok taşı riski",
+          "w": 4
+        },
+        {
+          "text": "Aşırı alkol kullanımı",
+          "w": 4
+        },
+        {
+          "text": "Çok yüksek trigliserid düzeyi",
+          "w": 4
+        },
+        {
+          "text": "Daha önce pankreatit atağı",
+          "w": 3
+        },
+        {
+          "text": "ERCP öyküsü",
+          "w": 3
+        },
+        {
+          "text": "Bazı ilaçlar (örn. valproat, azatioprin, tiazid vb. klinik korelasyon)",
+          "w": 1
+        }
+      ]
+    },
+    "pathophysiology_short": "Asiner hücre hasarı ve intrapankreatik enzim aktivasyonu → lokal inflamasyon, ödem/nekroz; sistemik inflamatuvar yanıt (SIRS) ve organ yetmezliği özellikle ilk hafta mortaliteyi belirler. Lokal koleksiyonlar Revised Atlanta terminolojisi ile zaman ve içerik (sıvı vs nekrotik debris) üzerinden adlandırılır."
+  },
+  "clinical": {
+    "symptoms": {
+      "title": "Semptomlar",
+      "items": [
+        {
+          "text": "Epigastrik ağrı (sıklıkla sırta yayılır)",
+          "w": 5
+        },
+        {
+          "text": "Bulantı-kusma",
+          "w": 4
+        },
+        {
+          "text": "Ateş (özellikle ağır/komplike olguda)",
+          "w": 2
+        },
+        {
+          "text": "İştahsızlık / oral alım azalması",
+          "w": 2
+        }
+      ]
+    },
+    "exam": {
+      "title": "Fizik muayene",
+      "items": [
+        {
+          "text": "Epigastrik hassasiyet",
+          "w": 4
+        },
+        {
+          "text": "İleus/distansiyon",
+          "w": 2
+        },
+        {
+          "text": "Ağır olguda şok/hipoperfüzyon bulguları",
+          "w": 4
+        }
+      ]
+    },
+    "red_flags": {
+      "title": "Acil kırmızı bayraklar",
+      "items": [
+        {
+          "text": "Persistan organ yetmezliği (>48 saat) şüphesi (hipotansiyon, hipoksemi, oligüri, konfüzyon)",
+          "w": 5
+        },
+        {
+          "text": "Şok / ağır SIRS / laktat artışı",
+          "w": 5
+        },
+        {
+          "text": "Biliyer pankreatitte kolanjit bulguları (ateş-ikter/sepsis)",
+          "w": 5
+        },
+        {
+          "text": "Kanama şüphesi (hemoglobin düşüşü, hemodinamik instabilite) veya pseudoanevrizma şüphesi",
+          "w": 4
+        },
+        {
+          "text": "Abdominal kompartman sendromu şüphesi (ileri distansiyon + organ disfonksiyonu)",
+          "w": 3
+        }
+      ]
+    },
+    "scores": {
+      "title": "Skor / sınıflama (V1)",
+      "items": [
+        {
+          "text": "Revised Atlanta 2012: mild / moderately severe / severe",
+          "w": 4
+        },
+        {
+          "text": "SIRS kriterleri (erken risk)",
+          "w": 4
+        },
+        {
+          "text": "BISAP (erken risk tahmini)",
+          "w": 2
+        },
+        {
+          "text": "CT severity index (görüntüleme temelli; klinik ile birlikte)",
+          "w": 1
+        }
+      ]
+    },
+    "physical_exam": []
+  },
+  "labs": {
+    "key_labs": {
+      "title": "Laboratuvar (key labs)",
+      "items": [
+        {
+          "text": "Lipaz (≥3× ULN) — tanı için en güçlü biyokimyasal destek",
+          "w": 5
+        },
+        {
+          "text": "Amilaz (≥3× ULN) — lipazdan daha az spesifik",
+          "w": 3
+        },
+        {
+          "text": "ALT belirgin yüksekliği (özellikle erken dönemde; biliyer etiyoloji lehine olabilir)",
+          "w": 3
+        },
+        {
+          "text": "BUN/Kreatinin trendi (hipovolemi/şiddet izlemi için kritik)",
+          "w": 3
+        },
+        {
+          "text": "Hematokrit (hemokonsantrasyon; erken risk göstergesi olabilir)",
+          "w": 2
+        },
+        {
+          "text": "CRP (48–72 saat civarı şiddet/nekroz öngörüsünde yardımcı)",
+          "w": 2
+        },
+        {
+          "text": "Trigliserid (etioloji; çok yüksekse neden olabilir)",
+          "w": 4
+        },
+        {
+          "text": "Kalsiyum (etioloji + ağır seyirle ilişki olabilir)",
+          "w": 2
+        },
+        {
+          "text": "LFT paternleri (kolestaz/obstrüksiyon değerlendirmesi)",
+          "w": 2
+        }
+      ]
+    },
+    "notes": {
+      "title": "Laboratuvar notları",
+      "items": [
+        {
+          "text": "Enzimler normal olabilir: geç başvuru, hipertrigliseridemiye bağlı atak vb. → klinik korelasyon şart.",
+          "w": 3
+        },
+        {
+          "text": "Biliyer şüphede LFT + koledok dilatasyonu + klinik kolanjit birlikte değerlendirilir.",
+          "w": 3
+        },
+        {
+          "text": "Tek başına lipaz yüksekliği pankreatit dışı nedenlerle de görülebilir (klinik/görüntüleme ile doğrula).",
+          "w": 2
+        }
+      ]
+    }
+  },
+  "imaging": {
+    "by_modality": {
+      "USG": {
+        "when_to_image": {
+          "title": "Endikasyon (USG)",
+          "items": [
+            {
+              "text": "Biliyer etiyoloji değerlendirmesi: safra taşı/çamur, koledok dilatasyonu",
+              "w": 5
+            },
+            {
+              "text": "İlk değerlendirmede yatak başı hızlı tarama (ancak pankreas değerlendirmesi gazla sınırlanabilir)",
+              "w": 2
+            }
+          ]
+        },
+        "main_findings": {
+          "title": "Ana bulgular (USG)",
+          "items": [
+            {
+              "text": "Safra taşı / biliyer çamur (biliyer pankreatit için ipucu)",
+              "w": 5
+            },
+            {
+              "text": "Koledok dilatasyonu (obstrüksiyon/taş lehine)",
+              "w": 4
+            },
+            {
+              "text": "Pankreas ödemi/büyüme (sıkça sınırlı görülebilir)",
+              "w": 2
+            },
+            {
+              "text": "Peripankreatik sıvı / assit (dolaylı bulgu)",
+              "w": 3
+            }
+          ]
+        },
+        "supportive_findings": {
+          "title": "Destekleyici (USG)",
+          "items": [
+            {
+              "text": "Safra kesesinde duvar kalınlaşması/perikolesistik sıvı eşlik edebilir (biliyer süreç)",
+              "w": 2
+            },
+            {
+              "text": "Plevral efüzyon/serbest sıvı (dolaylı ağır seyir ipucu olabilir)",
+              "w": 1
+            }
+          ]
+        },
+        "complications": {
+          "title": "Komplikasyon (USG)",
+          "items": [
+            {
+              "text": "Koleksiyon şüphesi (USG ile sınırlı karakterizasyon)",
+              "w": 2
+            },
+            {
+              "text": "Biliyer obstrüksiyon/kolanjit lehine bulguların eşliği",
+              "w": 3
+            }
+          ]
+        },
+        "pitfalls": {
+          "title": "Pitfalls (USG)",
+          "items": [
+            {
+              "text": "Barsak gazı nedeniyle pankreas yetersiz değerlendirilebilir → negatif USG pankreatiti dışlamaz.",
+              "w": 5
+            },
+            {
+              "text": "USG nekroz/enfekte nekroz değerlendirmede yetersiz; komplikasyon şüphesinde CT/MR gerekir.",
+              "w": 4
+            }
+          ]
+        },
+        "ddx": {
+          "title": "DDx (USG)",
+          "items": [
+            {
+              "text": "Akut kolesistit/kolanjit",
+              "w": 3
+            },
+            {
+              "text": "Peptik ülser hastalığı/duodenit",
+              "w": 2
+            },
+            {
+              "text": "Hepatobilier kolik",
+              "w": 2
+            }
+          ]
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": [
+            {
+              "title": "Akut kolesistit vs pankreatit",
+              "bullets": [
+                "Kolesistitte primer bulgu: safra kesesi duvar kalınlaşması, perikolesistik sıvı, sonografik Murphy.",
+                "Pankreatitte tanıda lipaz yüksekliği ve peripankreatik inflamasyon daha belirleyicidir."
+              ]
+            }
+          ]
+        }
+      },
+      "CT": {
+        "when_to_image": {
+          "title": "Endikasyon (CT)",
+          "items": [
+            {
+              "text": "Ağır klinik / kötüleşme / komplikasyon şüphesi (nekroz, kanama, enfeksiyon)",
+              "w": 5
+            },
+            {
+              "text": "Tanı belirsiz ve alternatif ciddi patolojiler dışlanacaksa",
+              "w": 4
+            },
+            {
+              "text": "Erken rutin CT her hastaya gerekmez; zamanlama klinik bağlama göre seçilir.",
+              "w": 3
+            }
+          ]
+        },
+        "main_findings": {
+          "title": "Ana bulgular (CT)",
+          "items": [
+            {
+              "text": "Peripankreatik yağ stranding / inflamasyon",
+              "w": 5
+            },
+            {
+              "text": "Pankreas büyüme/ödem (interstisyel ödematöz tip)",
+              "w": 4
+            },
+            {
+              "text": "Peripankreatik sıvı: APFC (interstisyel tipte, erken dönemde)",
+              "w": 4
+            }
+          ]
+        },
+        "supportive_findings": {
+          "title": "Destekleyici (CT)",
+          "items": [
+            {
+              "text": "Fasya planlarında kalınlaşma, retroperitoneal yayılım",
+              "w": 3
+            },
+            {
+              "text": "İleus bulguları, plevral efüzyon (dolaylı şiddet ipucu)",
+              "w": 2
+            }
+          ]
+        },
+        "complications": {
+          "title": "Komplikasyon (CT) — Revised Atlanta",
+          "items": [
+            {
+              "text": "Nekrotizan pankreatit: kontrastlı CT’de nonenhancing alanlar",
+              "w": 5
+            },
+            {
+              "text": "ANC (<4 hafta): sıvı + nekrotik debris içeren koleksiyon",
+              "w": 5
+            },
+            {
+              "text": "WON (≥4 hafta): kapsüllü, solid debris içeren koleksiyon",
+              "w": 5
+            },
+            {
+              "text": "Psödokist (≥4 hafta, sıvı içerikli; interstisyel tip komplikasyonu)",
+              "w": 4
+            },
+            {
+              "text": "Enfekte nekroz: koleksiyonda gaz veya güçlü klinik/lab şüphe",
+              "w": 5
+            },
+            {
+              "text": "Vasküler: pseudoanevrizma/aktif kanama, splenik ven trombozu",
+              "w": 4
+            },
+            {
+              "text": "Abdominal kompartman sendromu şüphesi (masif sıvı, distansiyon) → klinik ile",
+              "w": 2
+            }
+          ]
+        },
+        "pitfalls": {
+          "title": "Pitfalls (CT)",
+          "items": [
+            {
+              "text": "İlk 48–72 saatte nekroz olduğundan az görülebilir; erken negatif CT ağır seyri dışlamaz.",
+              "w": 5
+            },
+            {
+              "text": "Terminoloji hatası: <4 haftada psödokist değil APFC/ANC olasılığı daha yüksek.",
+              "w": 5
+            },
+            {
+              "text": "WON vs psödokist ayrımında debris (solid komponent) kaçırılabilir.",
+              "w": 4
+            },
+            {
+              "text": "Koleksiyonda gaz yok diye enfeksiyon dışlanmaz; klinik korelasyon gerekir.",
+              "w": 3
+            }
+          ]
+        },
+        "ddx": {
+          "title": "DDx (CT)",
+          "items": [
+            {
+              "text": "Perfore peptik ülser/duodenal perforasyon",
+              "w": 4
+            },
+            {
+              "text": "Mezenterik iskemi",
+              "w": 4
+            },
+            {
+              "text": "Akut kolesistit/kolanjit",
+              "w": 3
+            },
+            {
+              "text": "Duodenit",
+              "w": 2
+            },
+            {
+              "text": "Aort patolojileri (diseksiyon vb.)",
+              "w": 2
+            }
+          ]
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": [
+            {
+              "title": "Perfore ülser vs pankreatit",
+              "bullets": [
+                "Serbest hava + ülser krateri/periduodenal hava → perforasyon lehine.",
+                "Pankreas/peripankreatik primer inflamasyon + lipaz↑ → pankreatit lehine."
+              ]
+            },
+            {
+              "title": "Mezenterik iskemi vs pankreatit",
+              "bullets": [
+                "İskemide: barsak duvarında hipoperfüzyon/ödem, vasküler oklüzyon bulguları, laktat↑.",
+                "Pankreatitte: pankreas/peripankreatik inflamasyon ve Atlanta terminolojisine uyan koleksiyonlar."
+              ]
+            },
+            {
+              "title": "Psödokist vs WON",
+              "bullets": [
+                "Psödokist: ≥4 hafta, sıvı içerik, solid debris yok/çok az.",
+                "WON: ≥4 hafta, kapsüllü, belirgin solid debris."
+              ]
+            }
+          ]
+        }
+      },
+      "MR": {
+        "when_to_image": {
+          "title": "Endikasyon (MR/MRCP)",
+          "items": [
+            {
+              "text": "Biliyer etiyoloji/koledok taşı şüphesi: MRCP ile kanal değerlendirmesi",
+              "w": 5
+            },
+            {
+              "text": "Koleksiyon karakterizasyonu (debris → WON ayrımı) ve komplikasyon değerlendirmesi",
+              "w": 4
+            },
+            {
+              "text": "CT kontrast verilemeyen olguda alternatif (renal disfonksiyon vb.)",
+              "w": 3
+            }
+          ]
+        },
+        "main_findings": {
+          "title": "Ana bulgular (MR)",
+          "items": [
+            {
+              "text": "T2’de pankreas/peripankreatik ödem ve sıvı koleksiyonları",
+              "w": 4
+            },
+            {
+              "text": "Koleksiyon içinde debris gösterimi (WON/ANC ayrımında güçlü)",
+              "w": 5
+            },
+            {
+              "text": "MRCP’de koledok taşı/obstrüksiyon bulguları (biliyer etiyoloji)",
+              "w": 4
+            }
+          ]
+        },
+        "supportive_findings": {
+          "title": "Destekleyici (MR)",
+          "items": [
+            {
+              "text": "DWI’de restriksiyon (enfekte koleksiyon şüphesinde destekleyici; tek başına kesin değil)",
+              "w": 2
+            },
+            {
+              "text": "Dinamik varsa nekroz/nonenhancement değerlendirilebilir",
+              "w": 2
+            }
+          ]
+        },
+        "complications": {
+          "title": "Komplikasyon (MR)",
+          "items": [
+            {
+              "text": "WON/psödokist ayrımı (debris varlığı)",
+              "w": 5
+            },
+            {
+              "text": "Biliyer obstrüksiyon/kolanjit lehine MRCP bulguları",
+              "w": 4
+            },
+            {
+              "text": "Duktal kaçak/komünikasyon şüphesi (seçilmiş olguda) — ileri değerlendirme",
+              "w": 2
+            }
+          ]
+        },
+        "pitfalls": {
+          "title": "Pitfalls (MR)",
+          "items": [
+            {
+              "text": "Ağrı/nefes artefaktı görüntü kalitesini bozabilir.",
+              "w": 3
+            },
+            {
+              "text": "Debris değerlendirmesi sekans seçimine ve protokole bağımlıdır.",
+              "w": 3
+            },
+            {
+              "text": "DWI restriksiyonu nonspesifik olabilir; klinik/diğer bulgularla yorumlanmalı.",
+              "w": 2
+            }
+          ]
+        },
+        "ddx": {
+          "title": "DDx (MR)",
+          "items": [
+            {
+              "text": "Duodenit/ülser",
+              "w": 2
+            },
+            {
+              "text": "Biliyer patolojiler (kolanjit/kolesistit)",
+              "w": 3
+            },
+            {
+              "text": "Pankreas tümörü ile obstrüksiyon (özellikle atipik/uzamış tabloda)",
+              "w": 2
+            }
+          ]
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": [
+            {
+              "title": "Biliyer obstrüksiyon/kolanjit var mı?",
+              "bullets": [
+                "MRCP’de koledok taş/darlık + klinik kolanjit → acil ERCP endikasyonu doğabilir.",
+                "Saf pankreatit atağında koledok normal olabilir; etiyolojiye göre yönetim değişir."
+              ]
+            },
+            {
+              "title": "Akut pankreatit vs pankreas kanseri (kırmızı bayrak yaklaşımı)",
+              "bullets": [
+                "Atipik/uzamış semptom, kilo kaybı, progresif ikter, ‘double-duct’ bulgusu → malignite düşün.",
+                "Akut atakta tipik inflamasyon bulguları ve klinik/lab uyumu ön plandadır; şüphede ileri değerlendirme planlanır."
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "modalities": {
+      "USG": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "CT": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "MR": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      }
+    }
+  },
+  "management": {
+    "first_line": {
+      "title": "İlk yaklaşım (first line)",
+      "items": [
+        {
+          "text": "Hemodinamik değerlendirme + ağrı kontrolü + uygun IV sıvı (çoğu hastada ‘moderately aggressive’ yaklaşım)",
+          "w": 5
+        },
+        {
+          "text": "Erken enteral beslenme (tolere edildikçe); hafif olguda erken oral beslenme",
+          "w": 5
+        },
+        {
+          "text": "Etiyoloji araştır: biliyer (USG/MRCP), alkol, TG, Ca, post-ERCP, ilaçlar",
+          "w": 4
+        },
+        {
+          "text": "Rutin profilaktik antibiyotik önerilmez (enfeksiyon kanıtı yoksa)",
+          "w": 5
+        }
+      ]
+    },
+    "when_to_escalate": {
+      "title": "Ne zaman escalate?",
+      "items": [
+        {
+          "text": "Persistan organ yetmezliği (>48 saat) / kötüleşen SIRS → ICU değerlendirmesi",
+          "w": 5
+        },
+        {
+          "text": "Biliyer pankreatitte kolanjit şüphesi → acil ERCP",
+          "w": 5
+        },
+        {
+          "text": "Enfekte nekroz şüphesi (klinik sepsis ± koleksiyonda gaz) → antibiyotik + step-up girişim planı",
+          "w": 5
+        },
+        {
+          "text": "Kanama/pseudoanevrizma şüphesi → acil IR/cerrahi konsültasyonu",
+          "w": 5
+        }
+      ]
+    },
+    "complication_management": {
+      "title": "Komplikasyon yönetimi (özet)",
+      "items": [
+        {
+          "text": "Biliyer pankreatit: hafif olguda kolesistektomi tercihen taburcu olmadan; kolanjitte acil ERCP",
+          "w": 5
+        },
+        {
+          "text": "Nekroz: stabil hastada müdahaleyi mümkünse ≥4 hafta ertele (koleksiyon duvarı olgunlaşsın)",
+          "w": 5
+        },
+        {
+          "text": "Enfekte nekroz: antibiyotik + ‘step-up’ (perkütan/endoskopik drenaj → gerekirse nekrozektomi)",
+          "w": 5
+        },
+        {
+          "text": "Psödokist/WON: semptom/komplikasyon varsa drenaj; değilse izlem",
+          "w": 4
+        },
+        {
+          "text": "Vasküler komplikasyon: pseudoanevrizma/aktif kanama → endovasküler tedavi öncelikli olabilir",
+          "w": 4
+        }
+      ]
+    },
+    "follow_up": {
+      "title": "Takip / kontrol",
+      "items": [
+        {
+          "text": "Klinik + BUN/hematokrit/CRP trendi ile risk izlem",
+          "w": 3
+        },
+        {
+          "text": "Koleksiyon terminolojisi zaman bağımlıdır: <4 hafta APFC/ANC, ≥4 hafta psödokist/WON",
+          "w": 5
+        },
+        {
+          "text": "Etiyolojiye yönelik ikincil önleme: alkol bırakma, TG kontrolü, biliyer kaynakta taş/GB yönetimi",
+          "w": 4
+        }
+      ]
+    }
+  },
+  "specialties": [
+    {
+      "specialty": "radiology",
+      "summary": "Revised Atlanta terminolojisi ile raporla (APFC/ANC/psödokist/WON). Nekroz/enfekte nekroz bulguları, vasküler komplikasyonlar (pseudoanevrizma, venöz tromboz) ve müdahale zamanlaması açısından kritik noktaları belirt.",
+      "keywords": [
+        "APFC",
+        "ANC",
+        "WON",
+        "pseudocyst",
+        "nonenhancement",
+        "gas in collection",
+        "pseudoaneurysm",
+        "splenic vein thrombosis"
+      ]
+    },
+    {
+      "specialty": "gastroenterology",
+      "summary": "İlk 48–72 saatte sıvı/analjezi/beslenme stratejisi, antibiyotik endikasyonu, ERCP gerekliliği (kolanjit), biliyer olguda kolesistektomi zamanlaması ve komplike nekrozda step-up yaklaşımı.",
+      "keywords": [
+        "ERCP",
+        "MRCP",
+        "enteral feeding",
+        "biliary pancreatitis",
+        "infected necrosis",
+        "step-up"
+      ]
+    },
+    {
+      "specialty": "general_surgery",
+      "summary": "Komplike nekrozda müdahale gerekliliği ve zamanlaması (stabil hastada ≥4 hafta geciktirme), step-up yaklaşım ve seçilmiş olguda cerrahi nekrozektomi rolü.",
+      "keywords": [
+        "necrosectomy",
+        "step-up",
+        "delayed intervention",
+        "WON",
+        "infected necrosis"
+      ]
+    },
+    {
+      "specialty": "emergency_medicine",
+      "summary": "Erken risk stratifikasyonu (SIRS/BISAP), hipovolemi ve sepsis yönetimi, biliyer kolanjit ve organ yetmezliği kırmızı bayraklarını erken tanı.",
+      "keywords": [
+        "SIRS",
+        "BISAP",
+        "hypovolemia",
+        "organ failure",
+        "cholangitis"
+      ]
+    },
+    {
+      "specialty": "critical_care",
+      "summary": "Persistan organ yetmezliği olan hastada yoğun bakım izlemi; ARDS/AKI/hemodinamik destek, abdominal kompartman sendromu ve sepsis yaklaşımı.",
+      "keywords": [
+        "ICU",
+        "ARDS",
+        "AKI",
+        "shock",
+        "abdominal compartment syndrome"
+      ]
+    },
+    {
+      "specialty": "endocrinology",
+      "summary": "Hipertrigliseridemiye bağlı pankreatitte TG düşürme stratejileri ve uzun dönem lipid kontrolü; diyabet/metabolik risk yönetimi.",
+      "keywords": [
+        "hypertriglyceridemia",
+        "lipid control",
+        "diabetes",
+        "TG"
+      ]
+    },
+    {
+      "specialty": "biochemistry",
+      "summary": "Lipaz/amylaz yorumlama, hepatobilier paternler, TG ve kalsiyumun etiyoloji/şiddet bağlamında değerlendirilmesi; BUN/hematokrit trendlerinin prognozla ilişkisi.",
+      "keywords": [
+        "lipase",
+        "amylase",
+        "ALT",
+        "BUN",
+        "hematocrit",
+        "CRP",
+        "triglyceride",
+        "calcium"
+      ]
+    },
+    {
+      "specialty": "pharmacology",
+      "summary": "İlaç ilişkili pankreatit şüphesinde ilaç öyküsü değerlendirme ve olası ajanların gözden geçirilmesi; analjezi ve destek tedavilerinin güvenli kullanımı.",
+      "keywords": [
+        "drug-induced pancreatitis",
+        "analgesia",
+        "opioid",
+        "NSAID",
+        "medication history"
+      ]
+    },
+    {
+      "specialty": "microbiology",
+      "summary": "Enfekte nekroz/sekonder enfeksiyon şüphesinde antibiyotik endikasyonu ve kültür stratejileri; profilaktik antibiyotiğin rutinde önerilmemesi ilkesini destekle.",
+      "keywords": [
+        "infected necrosis",
+        "antibiotics",
+        "sepsis",
+        "culture",
+        "gas in collection"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "label": "ACG Guideline (2024) — Management of Acute Pancreatitis (AJG full text)",
+      "detail": "Tanı, etiyoloji değerlendirmesi, sıvı/analjezi, beslenme, antibiyotikler, ERCP/kolesistektomi zamanlaması, nekroz yönetimi.",
+      "url": "https://journals.lww.com/ajg/fulltext/2024/03000/american_college_of_gastroenterology_guidelines_.14.aspx"
+    },
+    {
+      "label": "Revised Atlanta Classification (2012) — Definitions & Classification (Banks et al., Gut 2013) PDF",
+      "detail": "Şiddet sınıflaması ve koleksiyon terminolojisi (APFC, ANC, psödokist, WON) ile görüntüleme tanımları.",
+      "url": "https://naspghan.org/files/documents/pdfs/training/curriculum-resources/pancreatic-disease/Banks_Classification_of_acute_pancreatitis-2012_revision_of_the_Atlantal_classification_and_definitions_by_international_consensus.pdf"
+    },
+    {
+      "label": "AGA Institute Guideline (2018) — Initial Management of Acute Pancreatitis",
+      "detail": "İlk 48–72 saat yönetimi: antibiyotikler, beslenme, ERCP ve kolesistektomi zamanlaması (özet/pratik öneriler).",
+      "url": "https://www.gastrojournal.org/article/S0016-5085%2818%2930076-3/fulltext"
+    },
+    {
+      "label": "IAP/APA Evidence-based Guidelines (2013) — Management of Acute Pancreatitis (Pancreatology) PDF",
+      "detail": "Kapsamlı kanıt temelli öneriler: sıvı, beslenme, girişim/endoskopi/cerrahi, nekroz yönetimi.",
+      "url": "https://www.mdl.nl/sites/www.mdl.nl/files/richlijnen/IAP-APA_Evidence-based_Guidelines_Management_Acute_Pancreatitis_-_Pancreatology_2013.pdf"
+    },
+    {
+      "label": "AGA Clinical Practice Update (2020) — Management of Pancreatic Necrosis (Best Practice Advice)",
+      "detail": "Nekrozda müdahale zamanlaması ve modern yaklaşım (endoskopik/perkütan/cerrahi rolleri).",
+      "url": "https://www.sciencedirect.com/science/article/abs/pii/S0016508519412936"
+    }
+  ],
+  "defaults": {
+    "modality": "CT",
+    "specialty": "radiology"
+  },
+  "meta": {
+    "id": "acute-pancreatitis",
+    "title": "Acute Pancreatitis",
+    "version": "v1",
+    "last_updated": "2026-01-17"
+  },
+  "branches": {
+    "emergency": {},
+    "surgery": {},
+    "gastroenterology": {},
+    "radiology": {},
+    "infectious_disease": {},
+    "microbiology": {},
+    "biochemistry": {},
+    "pharmacology": {},
+    "urology": {},
+    "internal_medicine": {}
+  },
+  "references": []
+}

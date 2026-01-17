@@ -1,0 +1,219 @@
+{
+  "meta": {
+    "id": "_TEMPLATE",
+    "title": "_TEMPLATE",
+    "version": "1.0",
+    "tags": {
+      "organ": [],
+      "region": [],
+      "urgency": [],
+      "age": []
+    },
+    "last_updated": "2026-01-17"
+  },
+  "specialties": [
+    {
+      "id": "emergency",
+      "label": "Emergency",
+      "focus": []
+    },
+    {
+      "id": "surgery",
+      "label": "Surgery",
+      "focus": []
+    },
+    {
+      "id": "radiology",
+      "label": "Radiology",
+      "focus": []
+    }
+  ],
+  "clinical": {
+    "summary": "TODO: 1–2 cümle klinik özet",
+    "definition": "TODO: tanım",
+    "etiology": [],
+    "risk_factors": [],
+    "symptoms": [],
+    "physical_exam": [],
+    "red_flags": [],
+    "scores": [
+      {
+        "name": "TODO: skor adı",
+        "items": [],
+        "note": "TODO: kısa not"
+      }
+    ],
+    "exam": {
+      "title": "Fizik muayene",
+      "items": []
+    }
+  },
+  "labs": {
+    "key_labs": [],
+    "notes": []
+  },
+  "imaging": {
+    "by_modality": {
+      "USG": {
+        "when_to_image": [],
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "reporting_sentences": [],
+        "next_steps": [],
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      },
+      "CT": {
+        "when_to_image": [],
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "reporting_sentences": [],
+        "next_steps": [],
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      },
+      "MR": {
+        "when_to_image": {
+          "title": "Endikasyon",
+          "items": []
+        },
+        "main_findings": {
+          "title": "Ana bulgular",
+          "items": []
+        },
+        "supportive_findings": {
+          "title": "Destekleyici bulgular",
+          "items": []
+        },
+        "complications": {
+          "title": "Komplikasyonlar",
+          "items": []
+        },
+        "pitfalls": {
+          "title": "Pitfalls",
+          "items": []
+        },
+        "ddx": {
+          "title": "DDx",
+          "items": []
+        },
+        "how_to_distinguish": {
+          "title": "Nasıl ayırt ederiz?",
+          "items": []
+        }
+      }
+    },
+    "modalities": {
+      "USG": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "CT": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      },
+      "MR": {
+        "when_to_image": "",
+        "main_findings": [],
+        "supportive_findings": [],
+        "complications": [],
+        "ddx": [],
+        "pitfalls": [],
+        "differentiate_from": []
+      }
+    }
+  },
+  "management": {
+    "first_line": [],
+    "when_to_escalate": [],
+    "complication_management": [],
+    "follow_up": []
+  },
+  "radiology_reporting": {
+    "structured_findings": [
+      {
+        "finding": "TODO: bulgu başlığı",
+        "options": [
+          "var",
+          "yok"
+        ],
+        "note": "TODO: not"
+      }
+    ],
+    "impression_templates": [],
+    "recommendations": []
+  },
+  "id": "_TEMPLATE",
+  "title": "_TEMPLATE",
+  "aliases": [],
+  "tags": [],
+  "summary": "",
+  "modalities": [
+    "USG",
+    "CT",
+    "MR"
+  ],
+  "search_keywords": {
+    "patient": [],
+    "clinician": [],
+    "radiology": []
+  },
+  "disease_links": {
+    "progression": [],
+    "risk_of": [],
+    "red_flag_for": []
+  },
+  "sources": [],
+  "defaults": {
+    "modality": "CT",
+    "specialty": "radiology"
+  },
+  "core": {
+    "definition": {
+      "title": "Tanım",
+      "items": []
+    },
+    "etiology": {
+      "title": "Etiyoloji",
+      "items": []
+    },
+    "risk_factors": {
+      "title": "Risk faktörleri",
+      "items": []
+    },
+    "pathophysiology_short": ""
+  },
+  "branches": {
+    "emergency": {},
+    "surgery": {},
+    "gastroenterology": {},
+    "radiology": {},
+    "infectious_disease": {},
+    "microbiology": {},
+    "biochemistry": {},
+    "pharmacology": {},
+    "urology": {},
+    "internal_medicine": {}
+  },
+  "references": []
+}
